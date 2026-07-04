@@ -1126,9 +1126,11 @@ Ran lint. See lint-report.md for details.
 - **[UI] 설정 화면 개선 및 공통 Alert 정렬 오류 수정**
   - **수정 파일**:
     - [app/(user)/settings/layout.tsx](file:///C:/Workspace/Projects/OpenTutor/app/(user)/settings/layout.tsx)
+    - [app/(user)/settings/page.tsx](file:///C:/Workspace/Projects/OpenTutor/app/(user)/settings/page.tsx)
     - [components/ui/alert.tsx](file:///C:/Workspace/Projects/OpenTutor/components/ui/alert.tsx)
   - **작업 내용**:
     - **설정 내 프로필 메뉴 비활성화**: 당장 사용하지 않는 '프로필' 메뉴를 설정 레이아웃 네비게이션에서 보이지 않도록 숨김 처리했습니다.
+    - **설정 진입 리다이렉트 변경**: 메인 설정 페이지(`/settings`) 진입 시, 이전 디폴트 목적지였던 프로필 대신 에이전트 설정 페이지(`/settings/agent`)로 바로 리다이렉트되도록 경로를 수정했습니다.
     - **공통 Alert 레이아웃 정렬 수정**: Tailwind v4의 미지원 CSS 변수 `--spacing`으로 인해 grid columns 크기 계산이 깨져, Alert 내부의 타이틀과 설명이 가운데 정렬로 보이거나 아이콘 간격이 텍스트 길이에 따라 변하는 문제를 `grid-cols-[16px_1fr]`로 고정하여 수정했습니다.
   - **Concepts**: [[SettingsUIRefinementAndAlertLayoutFix]]
 
