@@ -28,22 +28,7 @@ const DEFAULT_DB = {
   course_package_items: [],
   user_package_subscriptions: [],
   user_progress: [],
-  user_external_agents: [
-    {
-      id: 'agent-1',
-      user_id: 'local-user-id',
-      name: '기본 에이전트',
-      endpoint: 'http://localhost:8000',
-      api_key: '',
-      web_ui_url: '',
-      status: 'online',
-      selected_model: 'deepseek-v4-flash',
-      is_ai_tutor: true,
-      is_tutor_configured: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }
-  ],
+  user_external_agents: [],
   user_external_agent_messages: [],
   macros: []
 };
