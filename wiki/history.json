@@ -1,0 +1,414 @@
+{
+  "ingested": [
+    {
+      "slug": "2026-07-04-unified-course-bundle-upload-refactoring",
+      "title": "PennyPress: 통합 번들(.zip) 기반 강좌 업로드 리팩토링 및 클라이언트 사전 검증 도입",
+      "source_file": "wiki/sources/2026-07-04-unified-course-bundle-upload-refactoring.md",
+      "ingested_at": "2026-07-04T16:40:00Z",
+      "pages_created": [
+        "sources/2026-07-04-unified-course-bundle-upload-refactoring.md"
+      ]
+    },
+    {
+      "slug": "2026-07-01-user-admin-dashboard-ui-improvements",
+      "title": "사용자 및 관리자 대시보드 UI 개선, 강좌 검색 및 나의 강좌 카드 이동성 및 여백 개선",
+      "source_file": "wiki/sources/2026-07-01-user-admin-dashboard-ui-improvements.md",
+      "ingested_at": "2026-07-01T18:12:00Z",
+      "pages_created": [
+        "sources/2026-07-01-user-admin-dashboard-ui-improvements.md"
+      ]
+    },
+    {
+      "slug": "pennypress-service-plan",
+      "title": "PennyPress 서비스 기획서",
+      "source_file": "docs/PennyPress_Service_Plan.md",
+      "ingested_at": "2026-06-12T00:00:00Z",
+      "pages_created": [
+        "sources/pennypress-service-plan.md",
+        "entities/PennyPress.md",
+        "entities/HermesAgent.md",
+        "concepts/ContentMonitoring.md",
+        "concepts/AIAgentWorker.md",
+        "concepts/PointSystem.md"
+      ]
+    },
+    {
+      "slug": "design-system",
+      "title": "PennyPress Design System & UI Guide",
+      "source_file": "DESIGN.md",
+      "ingested_at": "2026-06-13T00:00:00Z",
+      "pages_created": [
+        "sources/design-system.md",
+        "concepts/DesignSystem.md"
+      ]
+    },
+    {
+      "slug": "hydra-agent-goal",
+      "title": "HydraAgent 서비스 전환 목표 및 구현 결과",
+      "source_file": "docs/HydraAgentGoal.md",
+      "ingested_at": "2026-06-13T12:00:00Z",
+      "pages_created": [
+        "sources/hydra-agent-goal.md",
+        "concepts/HydraAgentService.md"
+      ]
+    },
+    {
+      "slug": "2026-06-12-pennypress-phase2",
+      "title": "PennyPress Phase 2 Implementation Plan — HydraAgent 연동",
+      "source_file": "docs/superpowers/plans/2026-06-12-pennypress-phase2.md",
+      "ingested_at": "2026-06-14T08:51:01Z",
+      "pages_created": [
+        "sources/2026-06-12-pennypress-phase2.md",
+        "concepts/Phase2Plan.md",
+        "concepts/SupabaseSchema.md",
+        "concepts/HermesWorkerAPI.md",
+        "concepts/SSEUpdates.md"
+      ]
+    },
+    {
+      "slug": "hydra-agent-local-setup",
+      "title": "Hydra Agent 로컬 개발환경 구성 — 작업 요약",
+      "source_file": "docs/hydra-agent-local-setup-summary.md",
+      "ingested_at": "2026-06-14T08:54:39Z",
+      "pages_created": [
+        "sources/hydra-agent-local-setup.md",
+        "concepts/HydraAgentLocalSetup.md"
+      ]
+    },
+    {
+      "slug": "hermes-guide",
+      "title": "Hermes Agent 완전 가이드",
+      "source_file": "docs/HERMES_GUIDE.md",
+      "ingested_at": "2026-06-14T08:54:39Z",
+      "pages_created": [
+        "sources/hermes-guide.md",
+        "concepts/HermesArchitecture.md",
+        "concepts/HermesSkills.md",
+        "concepts/HermesCron.md",
+        "concepts/HermesSecurity.md"
+      ]
+    },
+    {
+      "slug": "install-windows-wsl2",
+      "title": "Hydra Agent Windows WSL2 로컬 설치 및 구동 가이드",
+      "source_file": "docs/INSTALL_WINDOWS_WSL2.md",
+      "ingested_at": "2026-06-14T08:54:39Z",
+      "pages_created": [
+        "sources/install-windows-wsl2.md",
+        "concepts/WSL2Setup.md",
+        "concepts/PM2Management.md"
+      ]
+    },
+    {
+      "slug": "hydra-agent-guideline",
+      "title": "Hydra Agent 작업 지침 (GUIDELINE)",
+      "source_file": "hydra-agent/GUIDELINE.md",
+      "ingested_at": "2026-06-14T08:54:39Z",
+      "pages_created": [
+        "sources/hydra-agent-guideline.md",
+        "concepts/HydraAgentGuideline.md"
+      ]
+    },
+    {
+      "slug": "database-schema",
+      "title": "PennyPress Database Schema",
+      "source_file": "docs/DATABASE_SCHEMA.md",
+      "ingested_at": "2026-06-14T09:20:00Z",
+      "pages_created": [
+        "sources/database-schema.md"
+      ]
+    },
+    {
+      "slug": "supabase-setup",
+      "title": "Supabase Setup Guide",
+      "source_file": "docs/SUPABASE_SETUP.md",
+      "ingested_at": "2026-06-14T09:20:00Z",
+      "pages_created": [
+        "sources/supabase-setup.md"
+      ]
+    },
+    {
+      "slug": "hermes-agent",
+      "title": "hermes-agent",
+      "source_file": "wiki/originals/hermes-agent.md",
+      "ingested_at": "2026-06-14T10:31:00Z",
+      "pages_created": [
+        "sources/hermes-agent.md"
+      ]
+    },
+    {
+      "slug": "hermes-api-server",
+      "title": "Open WebUI / API Server",
+      "source_file": "wiki/originals/hermes-api-server.md",
+      "ingested_at": "2026-06-14T10:31:00Z",
+      "pages_created": [
+        "sources/hermes-api-server.md"
+      ]
+    },
+    {
+      "slug": "hermes-architecture",
+      "title": "Hermes Agent Architecture",
+      "source_file": "wiki/originals/hermes-architecture.md",
+      "ingested_at": "2026-06-14T10:31:00Z",
+      "pages_created": [
+        "sources/hermes-architecture.md"
+      ]
+    },
+    {
+      "slug": "hermes-guide-pytorch-kr",
+      "title": "자기 개선형 AI 에이전트인 Hermes Agent의 실무자 가이드 (feat. Blake Crosley)",
+      "source_file": "wiki/originals/hermes-guide-pytorch-kr.md",
+      "ingested_at": "2026-06-14T10:31:00Z",
+      "pages_created": [
+        "sources/hermes-guide-pytorch-kr.md"
+      ]
+    },
+    {
+      "slug": "hermes-messaging",
+      "title": "Messaging Gateway",
+      "source_file": "wiki/originals/hermes-messaging.md",
+      "ingested_at": "2026-06-14T10:31:00Z",
+      "pages_created": [
+        "sources/hermes-messaging.md"
+      ]
+    },
+    {
+      "slug": "hermes-quickstart",
+      "title": "Hermes Agent Quickstart",
+      "source_file": "wiki/originals/hermes-quickstart.md",
+      "ingested_at": "2026-06-14T10:31:00Z",
+      "pages_created": [
+        "sources/hermes-quickstart.md"
+      ]
+    },
+    {
+      "slug": "pennypress-service-spec",
+      "title": "PennyPress 서비스 명세서 (HydraAgent 호스팅 서비스)",
+      "source_file": "docs/pennypress-service-spec.md",
+      "ingested_at": "2026-06-20T13:11:00Z",
+      "pages_created": [
+        "sources/pennypress-service-spec.md"
+      ]
+    },
+    {
+      "slug": "external-hermes-agent-integration",
+      "title": "PennyPress External Hermes Agent Integration 구현 계획 및 결과",
+      "source_file": "docs/superpowers/plans/2026-06-20-external-hermes-agent-integration.md",
+      "ingested_at": "2026-06-20T13:50:00Z",
+      "pages_created": [
+        "sources/external-hermes-agent-integration.md",
+        "concepts/ExternalHermesAgent.md"
+      ]
+    },
+    {
+      "slug": "install-actual-hermes-wsl2",
+      "title": "실제 에르메스 에이전트 WSL2 로컬 설치 및 구동 가이드",
+      "source_file": "docs/INSTALL_ACTUAL_HERMES_WSL2.md",
+      "ingested_at": "2026-06-20T19:46:00Z",
+      "pages_created": [
+        "sources/install-actual-hermes-wsl2.md"
+      ]
+    },
+    {
+      "slug": "wsl-hermes-ip-binding-troubleshooting",
+      "title": "WSL2 Hermes Agent IP 조회 및 바인딩 오류 트러블슈팅",
+      "source_file": "docs/wsl-hermes-ip-binding-troubleshooting.md",
+      "ingested_at": "2026-06-21T12:47:00Z",
+      "pages_created": [
+        "sources/wsl-hermes-ip-binding-troubleshooting.md"
+      ]
+    },
+    {
+      "slug": "external-agent-kanban-integration",
+      "title": "PennyPress 외부 에이전트 [칸반/웹UI] 연동 및 대시보드 자동 기동 구현",
+      "source_file": "docs/superpowers/plans/2026-06-21-external-agent-kanban-integration.md",
+      "ingested_at": "2026-06-21T13:20:00Z",
+      "pages_created": [
+        "sources/external-agent-kanban-integration.md"
+      ]
+    },
+    {
+      "slug": "sidebar-unimplemented-menus-update",
+      "title": "PennyPress 사이드바 미구현 메뉴 레이아웃 정리",
+      "source_file": "docs/sidebar-unimplemented-menus-update.md",
+      "ingested_at": "2026-06-21T13:44:00Z",
+      "pages_created": [
+        "sources/sidebar-unimplemented-menus-update.md"
+      ]
+    },
+    {
+      "slug": "hermes-dashboard-api",
+      "title": "Hermes Dashboard API 인증 및 사용법",
+      "source_file": "wiki/originals/hermes-dashboard-api.md",
+      "ingested_at": "2026-06-21T10:23:11Z",
+      "pages_created": [
+        "sources/hermes-dashboard-api.md",
+        "concepts/HermesDashboardAPI.md"
+      ]
+    },
+    {
+      "slug": "2026-06-23-auth-redirect-bugfix",
+      "title": "PennyPress 로그인 무한 리다이렉트 루프 및 Vercel 배포 오류 해결",
+      "source_file": "wiki/sources/2026-06-23-auth-redirect-bugfix.md",
+      "ingested_at": "2026-06-23T10:56:00Z",
+      "pages_created": [
+        "sources/2026-06-23-auth-redirect-bugfix.md",
+        "concepts/AuthenticationTroubleshooting.md"
+      ]
+    },
+    {
+      "slug": "admin-page-fixes",
+      "title": "Admin Page UI Fixes & Error Handling",
+      "source_file": "wiki/originals/admin-ui-fixes-20260623.md",
+      "ingested_at": "2026-06-23T11:40:00Z",
+      "pages_created": [
+        "sources/admin-ui-fixes.md"
+      ]
+    },
+    {
+      "slug": "admin-api-500-error",
+      "title": "Admin API 500 에러 및 Supabase 서비스 롤 키 트러블슈팅",
+      "source_file": "wiki/sources/admin-api-500-error.md",
+      "ingested_at": "2026-06-23T12:19:00Z",
+      "pages_created": [
+        "sources/admin-api-500-error.md"
+      ]
+    },
+    {
+      "slug": "2026-06-26-ai-agent-course-integration",
+      "title": "PennyPress AI Agent 강좌 서비스 연동 (Vivo Academy 마이그레이션)",
+      "source_file": "docs/vivo/MIGRATION_GUIDE.md",
+      "ingested_at": "2026-06-26T19:10:00Z",
+      "pages_created": [
+        "sources/2026-06-26-ai-agent-course-integration.md",
+        "concepts/VivoAcademyMigration.md"
+      ]
+    },
+    {
+      "slug": "vivo-lecture-guidelines",
+      "title": "Vivo Academy 강의 생성 및 AI Agent 가이드라인",
+      "source_file": "docs/vivo/lecture",
+      "ingested_at": "2026-06-26T19:10:00Z",
+      "pages_created": [
+        "sources/vivo-lecture-guidelines.md",
+        "concepts/CourseCreatorAgent.md"
+      ]
+    },
+    {
+      "slug": "admin-course-upload-bugfix",
+      "title": "PennyPress: Admin 강좌 등록 버그 픽스 및 Storage 리팩토링",
+      "source_file": "wiki/sources/admin-course-upload-bugfix.md",
+      "ingested_at": "2026-06-26T13:41:27.048Z",
+      "pages_created": [
+        "sources/admin-course-upload-bugfix.md"
+      ]
+    },
+    {
+      "slug": "loading-empty-states",
+      "title": "사용자 및 관리자 포털 빈 상태(Empty State) 플래시 방지 및 Skeleton UI 적용",
+      "source_file": "wiki/sources/loading-empty-states.md",
+      "ingested_at": "2026-06-27T07:20:00.000Z",
+      "pages_created": [
+        "sources/loading-empty-states.md"
+      ]
+    },
+    {
+      "slug": "vercel-preview-oauth-troubleshooting",
+      "title": "Vercel Preview Deployment 환경에서 Google 로그인 requested path is invalid 에러 해결 가이드",
+      "source_file": "wiki/concepts/VercelPreviewOAuthTroubleshooting.md",
+      "ingested_at": "2026-06-27T16:40:00.000Z",
+      "pages_created": [
+        "concepts/VercelPreviewOAuthTroubleshooting.md"
+      ]
+    },
+    {
+      "slug": "windows-zip-path-bugfix",
+      "title": "Windows 환경 Zip 파일 업로드 경로 버그 수정",
+      "source_file": "wiki/sources/windows-zip-path-bugfix.md",
+      "ingested_at": "2026-06-28T10:32:00.000Z",
+      "pages_created": [
+        "sources/windows-zip-path-bugfix.md",
+        "concepts/WindowsZipPathHandling.md"
+      ]
+    },
+    {
+      "slug": "2026-06-28-sso-bypass-supabase-storage",
+      "title": "Vercel SSO 우회를 위한 Supabase Storage 리소스 업로드 및 fallback ToC 구현",
+      "source_file": "wiki/sources/2026-06-28-sso-bypass-supabase-storage.md",
+      "ingested_at": "2026-06-28T13:33:00.000Z",
+      "pages_created": [
+        "sources/2026-06-28-sso-bypass-supabase-storage.md",
+        "concepts/SSOBypassSupabaseStorage.md"
+      ]
+    },
+    {
+      "slug": "2026-06-28-ai-tutor-hidden-message",
+      "title": "강좌 학습 화면 AI 튜터 '히든 메시지' 파싱 및 자료 준비 상태 UI 연동",
+      "source_file": "wiki/sources/2026-06-28-ai-tutor-hidden-message.md",
+      "ingested_at": "2026-06-28T13:53:00.000Z",
+      "pages_created": [
+        "sources/2026-06-28-ai-tutor-hidden-message.md",
+        "concepts/HiddenMessageParsing.md"
+      ]
+    },
+    {
+      "slug": "2026-06-28-ai-tutor-soul-setup",
+      "title": "시스템 점검 메시지 화면 비노출 처리 및 AI 튜터 자동 셋업 프롬프트 연동",
+      "source_file": "wiki/concepts/AITutorExclusivePersonaSetup.md",
+      "ingested_at": "2026-06-28T14:02:00.000Z",
+      "pages_created": [
+        "concepts/AITutorExclusivePersonaSetup.md"
+      ]
+    },
+    {
+      "slug": "2026-06-28-sidebar-settings-overhaul",
+      "title": "PennyPress 사이드바 메뉴 개선 및 설정 페이지 하위 메뉴 구조화",
+      "source_file": "wiki/sources/2026-06-28-sidebar-settings-overhaul.md",
+      "ingested_at": "2026-06-28T16:00:00.000Z",
+      "pages_created": [
+        "sources/2026-06-28-sidebar-settings-overhaul.md"
+      ]
+    },
+    {
+      "slug": "my-courses-detail-and-unsubscription",
+      "title": "나의 강좌 상세 화면, 구독 취소 및 AI 튜터 갱신 안내 구현",
+      "source_file": "wiki/sources/my-courses-detail-and-unsubscription.md",
+      "ingested_at": "2026-06-28T19:33:00.000Z",
+      "pages_created": [
+        "sources/my-courses-detail-and-unsubscription.md",
+        "concepts/MyCoursesDetailView.md",
+        "concepts/CourseSubscriptionCancellation.md",
+        "concepts/CourseUpdatePromptSystem.md",
+        "concepts/AdminUploadErrorRecovery.md",
+        "concepts/BundlerRepositoryGuide.md"
+      ]
+    },
+    {
+      "slug": "2026-06-30-course-package-improvements",
+      "title": "강좌 패키지 및 단과 강좌 등록 통합, 노출 필터링 및 복습/미리보기 편의 개선",
+      "source_file": "app/admin/courses/upload/page.tsx",
+      "ingested_at": "2026-06-30T12:26:00Z",
+      "pages_created": [
+        "sources/2026-06-30-course-package-improvements.md",
+        "concepts/UnifiedUploadPortal.md",
+        "concepts/PackagedCourseFiltering.md",
+        "concepts/CascadePackageDeletion.md",
+        "concepts/UnifiedCourseSearchLayout.md",
+        "concepts/TriStateMyCoursesTabs.md",
+        "concepts/ReviewModeCheckpointBypass.md"
+      ]
+    },
+    {
+      "slug": "admin-course-upload-improvements",
+      "title": "PennyPress: Admin 강좌 등록 warning 팝업, 삭제 blocking progress 구현 및 대용량 업로드 Gateway Timeout 해결",
+      "source_file": "wiki/sources/admin-course-upload-improvements.md",
+      "ingested_at": "2026-06-30T22:05:00Z",
+      "pages_created": [
+        "sources/admin-course-upload-improvements.md",
+        "concepts/ConcurrencyUploadLimit.md",
+        "concepts/WarningAlertSystem.md",
+        "concepts/BlockingDeleteOverlay.md"
+      ]
+    }
+  ]
+}
