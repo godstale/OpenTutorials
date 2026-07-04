@@ -1107,4 +1107,20 @@ Ran lint. See lint-report.md for details.
     - **헤더 바로가기 추가**: 강좌 업로드 페이지 상단 헤더 우측에 "구조 및 마이그레이션 가이드" 바로가기 버튼을 추가하여, 필요할 때 새 탭으로 가이드를 열어두고 참고할 수 있도록 개선했습니다.
   - **Concepts**: [[SeparateMigrationGuidePage]]
 
+- **[UI] 강좌 관리 화면의 "비공개 전환" 버튼 제거**
+  - **수정 파일**:
+    - [app/(user)/courses/manage/page.tsx](file:///C:/Workspace/Projects/OpenTutor/app/(user)/courses/manage/page.tsx)
+  - **작업 내용**:
+    - **비공개 전환 버튼 제거**: 강좌 관리 목록 우측에 표시되는 4개 버튼 중, 공개된 강좌를 비공개 상태로 변경하는 "비공개 전환" 버튼을 제거했습니다.
+    - **공개 전환 유지**: 아직 비공개 상태인 강좌를 공개할 수 있도록 "공개 전환" 버튼은 그대로 노출되도록 유지했습니다.
+  - **Concepts**: [[CourseManagementUIPrivacyToggle]]
+
+- **[FEAT] 미리보기 모드에서의 체크포인트 활성화 및 강제 스킵 허용**
+  - **수정 파일**:
+    - [app/(user)/learn/[slug]/client.tsx](file:///C:/Workspace/Projects/OpenTutor/app/(user)/learn/[slug]/client.tsx)
+  - **작업 내용**:
+    - **미리보기 체크포인트 활성화**: `isPreview`인 경우에도 `hasCheckpoint`가 활성화되도록 수정하여, 미리보기 모드에서도 체크포인트 단계를 밟을 수 있게 구현했습니다.
+    - **강제 스킵 허용**: 미리보기 모드(`isPreview === true`)일 때는 패키지나 강좌의 `force_checkpoint` 활성화 여부와 무관하게 항상 `canSkipCheckpoint`가 `true`가 되므로, 체크포인트 QnA를 건너뛸 수 있는 버튼("QnA 건너뛰기")이 항상 나타나도록 유지했습니다.
+  - **Concepts**: [[PreviewModeCheckpointProcessing]]
+
 

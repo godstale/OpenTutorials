@@ -487,7 +487,7 @@ export default function LearnPageClient({
   const alreadyPassed = 
     (currentCardFilename ? passedCheckpoints.has(currentCardFilename) : false) ||
     currentCardIndex < maxUnlockedIndex;
-  const hasCheckpoint = !!(checkpoint && !alreadyPassed && !isPreview);
+  const hasCheckpoint = !!(checkpoint && !alreadyPassed);
 
   const handleSelectCard = (idx: number) => {
     if (isCheckpointMode) {

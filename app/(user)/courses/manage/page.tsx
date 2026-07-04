@@ -465,14 +465,16 @@ export default function AdminCoursesPage() {
                       <Eye className="w-3.5 h-3.5" />
                       미리보기
                     </Button>
-                    <Button
-                      variant={course.published ? 'outline' : 'default'}
-                      size="sm"
-                      onClick={() => togglePublishedCourse(course)}
-                      className={!course.published ? 'bg-emerald-600 hover:bg-emerald-700 text-white font-semibold w-full text-xs' : 'border-zinc-300 w-full text-xs'}
-                    >
-                      {course.published ? '비공개 전환' : '공개 전환'}
-                    </Button>
+                    {!course.published && (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => togglePublishedCourse(course)}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold w-full text-xs"
+                      >
+                        공개 전환
+                      </Button>
+                    )}
                     <Button
                       variant="destructive"
                       size="sm"
