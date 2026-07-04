@@ -30,6 +30,29 @@ Ran lint. See lint-report.md for details.
 
 <!-- Append-only. 최신 항목을 위에 추가. -->
 
+## 2026-07-04
+
+- **[BUGFIX/UI/UX] 기본 강좌 삭제 잔재 해결, 강좌 관리 아이콘 변경 및 사이드바 활성화 버그 수정, 나의 강좌 섹션 단일화**
+  - **수정/생성 파일**:
+    - `lib/db/local-db-server.ts` — `DEFAULT_DB`에서 `course-1`, `course-2`, `package-1` 관련 초기화 데이터를 제거하여 최초 구동 시 기본 수강 강좌가 등록되지 않도록 함.
+    - `db.json` — `user_package_subscriptions` 및 `user_progress` 등에서 삭제된 `package-1`의 레거시 잔재 데이터를 정리하여 나의 강좌 페이지에서 빈 카드가 표시되거나 비정상 수강 갯수가 카운트되는 오류 해결.
+    - `components/layout/UserSidebar.tsx` — 강좌 관리 메뉴의 아이콘을 `Settings`에서 `Wrench`로 변경하고, "강좌 검색"의 `isActive` 활성화 경로 체크 로직에 `/courses/manage` 제외 처리를 적용하여 두 메뉴가 동시에 녹색으로 활성화되는 중복 표시 결함 수정.
+    - `app/(user)/my-courses/page.tsx` — [나의 강좌] 페이지에서 "종합 코스", "개별 강좌"의 구분을 없애고 모든 패키지 및 개별 강좌 카드가 하나의 Grid 목록으로 일관되게 나열되도록 리팩토링.
+
+- **[RULE] 코드 변경 및 작업 내역 Wiki 등록 의무화 지침 추가**
+  - **수정/생성 파일**:
+    - `GEMINI.md` — AI 튜터 가이드 규칙에 작업 내역 Wiki 등록 의무 지침 추가
+    - `CLAUDE.md` — 가이드 동기화를 위해 작업 내역 Wiki 등록 의무 지침 추가
+    - `AGENTS.md` — 가이드 동기화를 위해 작업 내역 Wiki 등록 의무 지침 추가
+  - **작업 내용**:
+    - 사용자 요청에 따라 코드 변경이나 파일 추가/수정 등 모든 작업에 대해 `wiki/`에 내역을 등록하도록 강제하는 "작업 내역 Wiki 등록 의무" 항목을 주요 규칙에 명문화함.
+
+- **[ETC] 불필요한 폴더 및 파일에 대한 .gitignore 설정 보완**
+  - **수정/생성 파일**:
+    - `.gitignore` — 불필요한 로컬 저장소 및 개발 환경 캐시 패턴 추가
+  - **작업 내용**:
+    - 로컬 업로드 강좌 저장 경로(`public/courses/`), 로컬 가상환경 및 캐시 파일(`__pycache__/`, `.venv/` 등), 그리고 IDE 개인 설정 폴더(`.idea/`, `.history/`) 및 로컬 런타임 데이터베이스(`db.json`) 관련 Git 제외 설정을 보완하여 불필요한 변경 추적을 차단함.
+
 ## 2026-07-01
 
 - **[FEATURE/INGEST] 어드민 강좌 등록 오류(고아 강좌) 검사 및 정리 기능 구현**
@@ -1048,3 +1071,40 @@ Ran lint. See lint-report.md for details.
     - **브라우저 사전 검증 (JSZip)**: 업로드 시작 전 브라우저상에서 `jszip`을 사용해 번들 ZIP의 압축을 파싱하고, 매니페스트 구조 유효성, 하위 강좌 ZIP 실제 매핑 여부, 하위 강좌의 `config.json` 및 `wiki.md` 존재 여부, 목차(TOC)와 카드 MD 파일 목록의 1:1 일치 여부 등을 사전 검사하여 검증 통과 시에만 [강좌 등록]을 활성화함.
     - **서버 API 리팩토링**: 단일 번들을 수신받아 서버 단에서 해제 및 업로드(Supabase Storage 및 PostgreSQL 트랜잭션 처리)를 일관되게 수행하도록 업로드 API를 리팩토링함.
   - **Concepts**: [[UnifiedCourseBundle]], [[BrowserSideZipValidation]]
+
+## 2026-07-04
+
+- **[FIX] 강좌 수강 중 오류 로그 해결, 학습 화면 레이아웃 폭 확장 및 API 디버깅 로그 가독성 개선**
+  - **수정 파일**:
+    - [lib/supabase/mock-client.ts](file:///C:/Workspace/Projects/OpenTutor/lib/supabase/mock-client.ts)
+    - [lib/db/local-db-server.ts](file:///C:/Workspace/Projects/OpenTutor/lib/db/local-db-server.ts)
+    - [app/(user)/learn/[slug]/client.tsx](file:///C:/Workspace/Projects/OpenTutor/app/(user)/learn/[slug]/client.tsx)
+    - [app/api/courses/progress/route.ts](file:///C:/Workspace/Projects/OpenTutor/app/api/courses/progress/route.ts)
+  - **작업 내용**:
+    - **TypeError: fileData.text is not a function 해결**: 로컬 Supabase mock client의 `download` API가 서버사이드(Node.js) 환경에서도 `Blob` 객체를 정상적으로 반환하도록 수정하여 `.text()` 호출 시의 타입 에러를 해결했습니다.
+    - **createSignedUrl 누락 해결**: mock client의 storage 객체에 `createSignedUrl` API 모킹 버전을 추가하여 리소스 API에서 오류 없이 정상 작동하도록 구현했습니다.
+    - **supabase.rpc 누락 및 메세지 Pruning 구현**: mock client에 `rpc` 메서드를 추가하고, `local-db-server.ts` 내에 `rpc` 액션 라우팅을 작성했습니다. 이를 통해 외부 에이전트 연동 시 호출되는 `prune_external_agent_messages` rpc에 대응하여 로컬 DB(`db.json`) 내부의 메시지들을 최신 100개로 자동 Pruning 하도록 로직을 작성했습니다.
+    - **학습 화면 콘텐츠 폭 확장**: 학습 플레이어 화면(`app/(user)/learn/[slug]/client.tsx`) 중앙 콘텐츠의 고정 가로폭 제약(`max-w-3xl`)을 `max-w-full`로 수정하여 사용 가능한 최대폭을 차지하도록 개선했습니다.
+    - **진도 관리 API 콘솔 로그 최적화**: `/api/courses/progress` API의 GET/POST 요청 시 DB의 전체 레코드를 통째로 console.log에 출력하여 로그가 비대해지던 문제를 개선하여, 데이터의 개수(GET) 및 관련 과목 ID(POST) 등의 핵심 요약/디버깅 정보만 남기도록 정제했습니다.
+  - **Concepts**: [[MockSupabaseBlobResponse]], [[MockSupabaseCreateSignedUrl]], [[MockRPCPruning]], [[LearnPlayerFullWidthLayout]], [[APIConsoleLogOptimization]]
+
+## 2026-07-04
+
+- **[UI] 강좌 업로드 화면 레이아웃 순서 변경**
+  - **수정 파일**:
+    - [app/(user)/courses/manage/upload/page.tsx](file:///C:/Workspace/Projects/OpenTutor/app/(user)/courses/manage/upload/page.tsx)
+  - **작업 내용**:
+    - **카드 배치 순서 변경**: "새 강좌 등록" 화면 좌측 컬럼의 "통합 번들 ZIP 업로드" 카드와 "강좌 번들 자동 생성기" 안내 카드의 순서를 변경하여 사용자가 핵심 기능인 업로드 영역을 먼저 볼 수 있도록 개선했습니다.
+  - **Concepts**: [[CourseUploadUILayout]]
+
+- **[UI] 강좌 업로드 화면 내 마이그레이션 가이드 페이지 분리**
+  - **수정 파일**:
+    - [app/(user)/courses/manage/upload/page.tsx](file:///C:/Workspace/Projects/OpenTutor/app/(user)/courses/manage/upload/page.tsx)
+  - **생성 파일**:
+    - [app/(user)/courses/manage/upload/guide/page.tsx](file:///C:/Workspace/Projects/OpenTutor/app/(user)/courses/manage/upload/guide/page.tsx)
+  - **작업 내용**:
+    - **가이드 화면 분리**: 업로드 화면 하단의 거대한 마이그레이션 설명 박스를 `/courses/manage/upload/guide`라는 서브 페이지로 완전히 분리했습니다.
+    - **헤더 바로가기 추가**: 강좌 업로드 페이지 상단 헤더 우측에 "구조 및 마이그레이션 가이드" 바로가기 버튼을 추가하여, 필요할 때 새 탭으로 가이드를 열어두고 참고할 수 있도록 개선했습니다.
+  - **Concepts**: [[SeparateMigrationGuidePage]]
+
+

@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    console.log('[Progress API] GET returning progress entries count:', data?.length || 0, data);
+    console.log('[Progress API] GET returning progress entries count:', data?.length || 0);
     return NextResponse.json(data || []);
   } catch (error: any) {
     console.error('Progress GET error:', error);
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    console.log('[Progress API] POST progress upsert successful:', data);
+    console.log('[Progress API] POST progress upsert successful for course:', course_id);
     return NextResponse.json({ success: true, progress: data });
   } catch (error: any) {
     console.error('Progress POST error:', error);

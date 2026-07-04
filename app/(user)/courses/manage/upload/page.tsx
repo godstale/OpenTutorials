@@ -519,58 +519,35 @@ function UploadForm() {
       )}
 
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" onClick={() => router.push('/courses/manage')} className="border-zinc-300">
-          <ArrowLeft className="w-4 h-4" />
-        </Button>
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-            강좌 통합 번들 업로드
-          </h2>
-          <p className="text-muted-foreground mt-2">
-            단 하나의 통합 번들 ZIP 파일로 매니페스트와 하위 강좌 파일들을 일괄 검증 및 등록합니다.
-          </p>
+      <div className="flex items-start justify-between flex-wrap gap-4">
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="icon" onClick={() => router.push('/courses/manage')} className="border-zinc-300">
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+              강좌 번들 파일 업로드
+            </h2>
+            <p className="text-muted-foreground mt-2">
+              ZIP 파일안의 매니페스트와 강좌 파일들을 일괄 검증 및 등록합니다.
+            </p>
+          </div>
         </div>
+        <Button 
+          variant="outline" 
+          onClick={() => window.open('/courses/manage/upload/guide', '_blank')}
+          className="border-zinc-300 hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
+        >
+          <Info className="w-4 h-4 mr-2 text-indigo-600 dark:text-indigo-400" />
+          구조 및 마이그레이션 가이드
+          <ExternalLink className="w-3.5 h-3.5 ml-1.5 text-muted-foreground" />
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* Left/Middle Columns: Helper card & Upload Panel */}
+        {/* Left/Middle Columns: Upload Panel & Helper card */}
         <div className="lg:col-span-2 flex flex-col gap-6">
-          
-          {/* GitHub Generator AI Agent Helper Card */}
-          <Card className="border border-indigo-100 dark:border-indigo-950 bg-gradient-to-r from-indigo-50/40 via-white to-background dark:from-indigo-950/10 dark:via-zinc-900 dark:to-background overflow-hidden relative shadow-sm">
-            <div className="absolute right-3 top-3 opacity-5 pointer-events-none">
-              <Github className="w-24 h-24" />
-            </div>
-            <CardContent className="p-6">
-              <div className="flex gap-4 items-start">
-                <div className="p-3 bg-indigo-500/10 text-indigo-600 rounded-xl shrink-0 dark:text-indigo-400">
-                  <Github className="w-6 h-6" />
-                </div>
-                <div className="space-y-2">
-                  <h4 className="font-bold text-sm text-zinc-950 dark:text-zinc-50 flex items-center gap-1.5">
-                    통합 번들 자동 생성기 (Course Generator)
-                  </h4>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    AI Agent 또는 스크립트를 사용하면 번들 규격에 맞는 ZIP 파일 패키징을 손쉽게 자동화할 수 있습니다. 
-                    아래 공식 GitHub 리포지토리에서 템플릿과 빌드 스크립트를 다운로드하여 시작하세요.
-                  </p>
-                  <div className="pt-1.5 flex gap-3">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => window.open('https://github.com/godstale/pennypress-course-generator', '_blank')}
-                      className="text-xs h-8 border-indigo-200 hover:bg-indigo-50/50 hover:border-indigo-300 dark:border-indigo-950 dark:hover:bg-indigo-950/20"
-                    >
-                      GitHub 리포지토리 바로가기
-                      <ExternalLink className="w-3.5 h-3.5 ml-1.5 text-muted-foreground" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Single Upload Area */}
           <Card className="flex flex-col border border-zinc-200 dark:border-zinc-800 shadow-sm flex-1">
@@ -669,6 +646,40 @@ function UploadForm() {
                   )}
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* GitHub Generator AI Agent Helper Card */}
+          <Card className="border border-indigo-100 dark:border-indigo-950 bg-gradient-to-r from-indigo-50/40 via-white to-background dark:from-indigo-950/10 dark:via-zinc-900 dark:to-background overflow-hidden relative shadow-sm">
+            <div className="absolute right-3 top-3 opacity-5 pointer-events-none">
+              <Github className="w-24 h-24" />
+            </div>
+            <CardContent className="p-6">
+              <div className="flex gap-4 items-start">
+                <div className="p-3 bg-indigo-500/10 text-indigo-600 rounded-xl shrink-0 dark:text-indigo-400">
+                  <Github className="w-6 h-6" />
+                </div>
+                <div className="space-y-2">
+                  <h4 className="font-bold text-sm text-zinc-950 dark:text-zinc-50 flex items-center gap-1.5">
+                    강좌 번들 자동 생성기 (Open Tutorials Bundler)
+                  </h4>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    AI Agent 를 사용하면 번들 규격에 맞는 ZIP 파일 패키징을 손쉽게 자동화할 수 있습니다. 
+                    아래 공식 GitHub 리포지토리에서 템플릿과 빌드 스크립트를 다운로드하여 강좌를 제작하세요.
+                  </p>
+                  <div className="pt-1.5 flex gap-3">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => window.open('https://github.com/godstale/pennypress-course-generator', '_blank')}
+                      className="text-xs h-8 border-indigo-200 hover:bg-indigo-50/50 hover:border-indigo-300 dark:border-indigo-950 dark:hover:bg-indigo-950/20"
+                    >
+                      GitHub 리포지토리 바로가기
+                      <ExternalLink className="w-3.5 h-3.5 ml-1.5 text-muted-foreground" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -787,75 +798,6 @@ function UploadForm() {
           )}
         </Button>
       </div>
-
-      {/* Manual Instructions (Migration Guide) */}
-      <Card className="border border-zinc-200 dark:border-zinc-800 shadow-sm">
-        <CardHeader className="pb-3 border-b">
-          <CardTitle className="text-sm font-bold flex items-center gap-2 text-zinc-800 dark:text-zinc-200">
-            <Info className="w-4.5 h-4.5 text-indigo-600 dark:text-indigo-400" />
-            통합 번들 ZIP 파일 구조 및 마이그레이션 안내 (course-bundle-migration-guide.md)
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-5 text-xs text-muted-foreground leading-relaxed space-y-4">
-          <div className="space-y-2">
-            <p className="font-bold text-zinc-950 dark:text-zinc-50">1. 파일 트리 구조</p>
-            <p>업로드할 ZIP 파일의 루트와 하위 경로는 반드시 아래와 같은 형태로 정해진 파일들을 포함해야 합니다.</p>
-            <pre className="p-3 bg-zinc-900 text-zinc-200 dark:bg-black rounded-lg text-[11px] font-mono whitespace-pre overflow-x-auto leading-relaxed border">
-{`[통합 번들 ZIP 파일]
-├── package-manifest.json           # 통합 강좌 및 패키지 메타데이터 (필수)
-├── thumbnail.png                   # 통합 강좌 대표 썸네일 이미지 (선택, package-manifest.json에 매핑)
-└── courses/                         # 하위 강좌 ZIP 디렉토리 (필수)
-    ├── marketing-basic-1.zip       # 하위 강좌 1 (slug와 ZIP 파일명이 정확히 일치)
-    └── marketing-strategy-2.zip    # 하위 강좌 2 (slug와 ZIP 파일명이 정확히 일치)`}
-            </pre>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-            <div className="space-y-2">
-              <p className="font-bold text-zinc-950 dark:text-zinc-50">2. package-manifest.json 샘플</p>
-              <pre className="p-3 bg-zinc-900 text-zinc-200 dark:bg-black rounded-lg text-[11px] font-mono whitespace-pre overflow-x-auto leading-relaxed border max-h-[220px]">
-{`{
-  "title": "마케팅 에이전트 마스터",
-  "slug": "marketing-integrated-course",
-  "description": "통합 마케팅 강좌입니다.",
-  "thumbnail": "./thumbnail.png",
-  "published": true,
-  "sequential_play": false,
-  "force_checkpoint": false,
-  "version": "1.0.0",
-  "changelog": "최초 릴리즈",
-  "courses": [
-    { "slug": "marketing-basic-1" },
-    { "slug": "marketing-strategy-2" }
-  ]
-}`}
-              </pre>
-            </div>
-            
-            <div className="space-y-2 flex flex-col">
-              <p className="font-bold text-zinc-950 dark:text-zinc-50">3. 하위 강좌 ZIP 구조 명세</p>
-              <p>각 하위 강좌 ZIP 파일(예: <code>marketing-basic-1.zip</code>) 내부에는 반드시 아래 파일들이 루트에 있어야 합니다.</p>
-              <pre className="p-3 bg-zinc-900 text-zinc-200 dark:bg-black rounded-lg text-[11px] font-mono whitespace-pre overflow-x-auto leading-relaxed border flex-1">
-{`[하위 강좌 ZIP 파일]
-├── config.json                     # 하위 강좌 메타 및 목차(TOC) (필수)
-├── wiki.md                         # AI 튜터 지식베이스용 문서 (필수)
-└── cards/                          # 강의 마크다운 카드 목록 (필수)
-    ├── 01_intro.md
-    └── 02_practice.md`}
-              </pre>
-            </div>
-          </div>
-
-          <div className="p-4 bg-zinc-50 dark:bg-zinc-900/50 rounded-lg border text-[11px] space-y-1.5">
-            <p className="font-bold text-zinc-800 dark:text-zinc-200">🔍 필수 유효성 검증 규칙:</p>
-            <ul className="list-disc pl-4 space-y-1">
-              <li><code>config.json</code>의 <code>cards</code> 배열에 있는 모든 파일은 실제로 <code>cards/</code> 디렉토리 안에 <code>.md</code> 또는 <code>.mdx</code>로 존재해야 합니다.</li>
-              <li>TOC 목차(<code>toc</code>) 내 최하단 강의 노드의 <code>filename</code>들은 <code>cards</code> 목록과 1:1로 정확하게 일치해야 합니다.</li>
-              <li>TOC 노드 제목이 파일명과 완전히 같거나, 설명이 <code>"강좌 상세 카드를 확인하세요."</code>와 같은 기본 설명인 경우 검증이 실패합니다.</li>
-            </ul>
-          </div>
-        </CardContent>
-      </Card>
 
     </div>
   );

@@ -57,3 +57,22 @@ Thumbs.db
 # Etc
 docs/screenshot
 
+# Local Database
+/db.json
+
+# Local Uploaded Courses (Storage)
+/public/courses/
+
+# Python Cache & Virtual Environments
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+ENV/
+
+# IDE settings
+.idea/
+.history/
+
