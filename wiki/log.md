@@ -1134,5 +1134,12 @@ Ran lint. See lint-report.md for details.
     - **공통 Alert 레이아웃 정렬 수정**: Tailwind v4의 미지원 CSS 변수 `--spacing`으로 인해 grid columns 크기 계산이 깨져, Alert 내부의 타이틀과 설명이 가운데 정렬로 보이거나 아이콘 간격이 텍스트 길이에 따라 변하는 문제를 `grid-cols-[16px_1fr]`로 고정하여 수정했습니다.
   - **Concepts**: [[SettingsUIRefinementAndAlertLayoutFix]]
 
+- **[FEAT] 초기 로컬 DB 템플릿의 기본 더미 에이전트 데이터 제거**
+  - **수정 파일**:
+    - [lib/db/local-db-server.ts](file:///C:/Workspace/Projects/OpenTutor/lib/db/local-db-server.ts)
+  - **작업 내용**:
+    - **기본 에이전트 씨드 제거**: 최초에 `db.json`이 생성될 때 등록되던 실제 동작하지 않는 더미 에이전트 데이터("기본 에이전트", ID: `agent-1`)를 삭제했습니다. 이로써 `user_external_agents` 목록은 기본적으로 빈 배열(`[]`)로 시작하게 됩니다.
+  - **Concepts**: [[RemoveDefaultDummyAgentSeed]]
+
 
 
