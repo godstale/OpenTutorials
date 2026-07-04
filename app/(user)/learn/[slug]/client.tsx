@@ -487,7 +487,7 @@ export default function LearnPageClient({
   const alreadyPassed = 
     (currentCardFilename ? passedCheckpoints.has(currentCardFilename) : false) ||
     currentCardIndex < maxUnlockedIndex;
-  const hasCheckpoint = !!(checkpoint && !alreadyPassed && !isPreview);
+  const hasCheckpoint = !!(checkpoint && !alreadyPassed);
 
   const handleSelectCard = (idx: number) => {
     if (isCheckpointMode) {
@@ -1106,7 +1106,7 @@ Student Question: `;
         </header>
 
         <ScrollArea className="flex-1 p-6 overflow-y-auto">
-          <div className="max-w-3xl mx-auto pb-6">
+          <div className="max-w-full mx-auto pb-6">
             <Card className="p-8 relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-1 bg-primary"></div>
               <h2 className="text-2xl font-bold mb-4">

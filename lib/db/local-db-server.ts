@@ -21,157 +21,13 @@ export interface SerializedQuery {
 
 // Default initial state matching the old Supabase tables
 const DEFAULT_DB = {
-  courses: [
-    {
-      id: 'course-1',
-      slug: 'intro-to-ai-agents',
-      title: 'AI 에이전트 입문',
-      description: 'AI 에이전트의 기본 개념과 동작 원리를 배우고, 간단한 에이전트를 구성해 봅니다.',
-      thumbnail: 'icon:book',
-      published: true,
-      disabled: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: 'course-2',
-      slug: 'advanced-prompt-engineering',
-      title: '고급 프롬프트 엔지니어링',
-      description: 'LLM의 성능을 극대화하기 위한 체계적인 프롬프트 작성 기법을 학습합니다.',
-      thumbnail: 'icon:zap',
-      published: true,
-      disabled: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }
-  ],
-  course_cards: [
-    {
-      id: 'card-1-1',
-      course_id: 'course-1',
-      title: '에이전트 개요',
-      filename: '01-intro.mdx',
-      content: '# AI 에이전트 개요\n\nAI 에이전트는 자율적으로 목표를 설정하고 도구를 사용하며 문제를 해결하는 시스템입니다.',
-      order_index: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: 'card-1-2',
-      course_id: 'course-1',
-      title: '역사 및 동향',
-      filename: '02-history.mdx',
-      content: '# AI 에이전트의 역사\n\n최근 LLM(대규모 언어 모델)의 발전으로 자연어 지시를 이해하는 에이전트의 개발이 비약적으로 성장했습니다.',
-      order_index: 1,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: 'card-1-3',
-      course_id: 'course-1',
-      title: '기본 아키텍처',
-      filename: '03-architecture.mdx',
-      content: '# 에이전트 아키텍처\n\n핵심 구성 요소로는 **메모리(Memory)**, **계획(Planning)**, **도구(Tools)**가 있습니다.',
-      order_index: 2,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: 'card-1-4',
-      course_id: 'course-1',
-      title: '실습: 나만의 에이전트',
-      filename: '04-hands-on.mdx',
-      content: '# 실습하기\n\n로컬 AI Worker 또는 외부 API를 연동하여 자율 에이전트 실습을 시작해보세요.',
-      order_index: 3,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: 'card-2-1',
-      course_id: 'course-2',
-      title: '프롬프트의 4대 원칙',
-      filename: '01-principles.mdx',
-      content: '# 프롬프트 설계의 4대 요소\n\n1. 지시(Instruction)\n2. 컨텍스트(Context)\n3. 입력 데이터(Input Data)\n4. 출력 형식(Output Indicator)',
-      order_index: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: 'card-2-2',
-      course_id: 'course-2',
-      title: 'Few-Shot & CoT',
-      filename: '02-few-shot.mdx',
-      content: '# Few-Shot 및 Chain-of-Thought\n\n몇 가지 예시(Few-Shot)와 단계별 추론 과정(CoT)을 유도하면 복잡한 작업에서도 뛰어난 성능을 보입니다.',
-      order_index: 1,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }
-  ],
-  course_wiki: [
-    {
-      id: 'wiki-1',
-      course_id: 'course-1',
-      content: 'AI 에이전트에 대한 기본 백과사전 콘텐츠입니다.',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: 'wiki-2',
-      course_id: 'course-2',
-      content: '프롬프트 엔지니어링 용어 정리 및 설계 가이드북입니다.',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }
-  ],
-  course_packages: [
-    {
-      id: 'package-1',
-      slug: 'tutor-starter-pack',
-      title: 'AI 에이전트 & 프롬프트 스타터 팩',
-      description: '초보자를 위해 AI 에이전트의 원리와 프롬프트 엔지니어링 기술을 함께 묶어놓은 입문 패키지입니다.',
-      thumbnail: 'icon:package',
-      published: true,
-      version: '1.0.0',
-      changelog: '최초 릴리즈',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }
-  ],
-  course_package_items: [
-    {
-      id: 'pkg-item-1',
-      package_id: 'package-1',
-      course_id: 'course-1',
-      order_index: 0,
-      created_at: new Date().toISOString()
-    },
-    {
-      id: 'pkg-item-2',
-      package_id: 'package-1',
-      course_id: 'course-2',
-      order_index: 1,
-      created_at: new Date().toISOString()
-    }
-  ],
-  user_package_subscriptions: [
-    {
-      id: 'sub-1',
-      user_id: 'local-user-id',
-      package_id: 'package-1',
-      created_at: new Date().toISOString()
-    }
-  ],
-  user_progress: [
-    {
-      id: 'progress-1',
-      user_id: 'local-user-id',
-      course_id: 'course-1',
-      last_card: 0,
-      max_card: 0,
-      completed: false,
-      updated_at: new Date().toISOString()
-    }
-  ],
+  courses: [],
+  course_cards: [],
+  course_wiki: [],
+  course_packages: [],
+  course_package_items: [],
+  user_package_subscriptions: [],
+  user_progress: [],
   user_external_agents: [
     {
       id: 'agent-1',
@@ -242,6 +98,40 @@ export function executeLocalQuery(query: SerializedQuery, action: string, data?:
       return { data: { path: filePath }, error: null };
     } catch (e: any) {
       console.error('Failed to upload file to mock storage:', e);
+      return { data: null, error: { message: e.message } };
+    }
+  }
+
+  if (action === 'rpc') {
+    try {
+      const { fn, args } = data;
+      if (fn === 'prune_external_agent_messages') {
+        const { p_agent_id } = args;
+        const db = readDB();
+        if (db.user_external_agent_messages) {
+          // Filter messages for this agent
+          const agentMsgs = db.user_external_agent_messages.filter(
+            (m: any) => m.agent_id === p_agent_id
+          );
+          // Sort by created_at desc (or simply keep the last 100)
+          agentMsgs.sort(
+            (a: any, b: any) =>
+              new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+          );
+          
+          const keepIds = new Set(agentMsgs.slice(0, 100).map((m: any) => m.id));
+          
+          // Update user_external_agent_messages
+          db.user_external_agent_messages = db.user_external_agent_messages.filter(
+            (m: any) => m.agent_id !== p_agent_id || keepIds.has(m.id)
+          );
+          writeDB(db);
+        }
+        return { data: null, error: null };
+      }
+      return { data: null, error: { message: `Unsupported RPC function: ${fn}` } };
+    } catch (e: any) {
+      console.error('Failed to execute RPC query:', e);
       return { data: null, error: { message: e.message } };
     }
   }
@@ -420,6 +310,42 @@ export function executeLocalQuery(query: SerializedQuery, action: string, data?:
 
     writeDB(db);
     return { data: Array.isArray(data) ? createdItems : createdItems[0], error: null };
+
+  } else if (action === 'upsert') {
+    const upsertData = Array.isArray(data) ? data : [data];
+    const upsertedItems: any[] = [];
+    
+    for (const d of upsertData) {
+      let existingIndex = -1;
+      if (d.id) {
+        existingIndex = db[table].findIndex((x: any) => x.id === d.id);
+      } else if (d.slug) {
+        existingIndex = db[table].findIndex((x: any) => x.slug === d.slug);
+      }
+
+      if (existingIndex !== -1) {
+        // Update existing record
+        db[table][existingIndex] = {
+          ...db[table][existingIndex],
+          ...d,
+          updated_at: new Date().toISOString()
+        };
+        upsertedItems.push(db[table][existingIndex]);
+      } else {
+        // Insert new record
+        const newItem = {
+          id: d.id || uuidv4(),
+          ...d,
+          created_at: d.created_at || new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        db[table].push(newItem);
+        upsertedItems.push(newItem);
+      }
+    }
+
+    writeDB(db);
+    return { data: Array.isArray(data) ? upsertedItems : upsertedItems[0], error: null };
 
   } else if (action === 'update') {
     // Update all matching records

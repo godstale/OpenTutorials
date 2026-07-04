@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard, Settings, Bot, ChevronRight, GraduationCap, BookOpen
+  LayoutDashboard, Settings, Bot, ChevronRight, GraduationCap, BookOpen, Wrench
 } from 'lucide-react';
 
 import {
@@ -135,7 +135,7 @@ export function UserSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  isActive={pathname === ROUTES.COURSES || (pathname ? pathname.startsWith(ROUTES.COURSES + '/') : false)}
+                  isActive={pathname === ROUTES.COURSES || (pathname ? (pathname.startsWith(ROUTES.COURSES + '/') && !pathname.startsWith(ROUTES.COURSES_MANAGE)) : false)}
                   tooltip="강좌 검색"
                 >
                   <Link href={ROUTES.COURSES}>
@@ -167,7 +167,7 @@ export function UserSidebar() {
                   tooltip="강좌 관리"
                 >
                   <Link href={ROUTES.COURSES_MANAGE}>
-                    <Settings className="size-4" />
+                    <Wrench className="size-4" />
                     <span>강좌 관리</span>
                   </Link>
                 </SidebarMenuButton>

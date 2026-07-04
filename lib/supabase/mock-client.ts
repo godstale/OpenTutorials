@@ -12,6 +12,8 @@ export class MockQueryBuilder {
   private isMaybeSingle: boolean = false;
   private limitCount: number | null = null;
   private runQuery: (query: any, action: string, data?: any) => Promise<any>;
+  private action: string = 'select';
+  private actionData: any = undefined;
 
   constructor(table: string, runQuery: any) {
     this.table = table;
@@ -57,21 +59,32 @@ export class MockQueryBuilder {
     return this;
   }
 
-  async insert(data: any) {
-    return this.execute('insert', data);
+  insert(data: any) {
+    this.action = 'insert';
+    this.actionData = data;
+    return this;
   }
 
-  async update(data: any) {
-    return this.execute('update', data);
+  update(data: any) {
+    this.action = 'update';
+    this.actionData = data;
+    return this;
   }
 
-  async delete() {
-    return this.execute('delete');
+  upsert(data: any, options?: any) {
+    this.action = 'upsert';
+    this.actionData = data;
+    return this;
+  }
+
+  delete() {
+    this.action = 'delete';
+    return this;
   }
 
   async then(onfulfilled?: (value: any) => any, onrejected?: (reason: any) => any) {
     try {
-      const result = await this.execute('select');
+      const result = await this.execute(this.action, this.actionData);
       if (onfulfilled) return onfulfilled(result);
       return result;
     } catch (e) {
@@ -155,7 +168,9 @@ export class MockSupabaseClient {
 
           const base64 = result.data.base64;
           if (typeof window === 'undefined') {
-            return { data: Buffer.from(base64, 'base64'), error: null };
+            const buf = Buffer.from(base64, 'base64');
+            const blob = new Blob([buf]);
+            return { data: blob, error: null };
           } else {
             const byteCharacters = atob(base64);
             const byteNumbers = new Array(byteCharacters.length);
@@ -199,6 +214,9 @@ export class MockSupabaseClient {
         },
         getPublicUrl: (path: string) => {
           return { data: { publicUrl: `/courses/${path}` } };
+        },
+        createSignedUrl: async (path: string, expiresIn: number) => {
+          return { data: { signedUrl: `/courses/${path}` }, error: null };
         }
       };
     }
@@ -206,6 +224,10 @@ export class MockSupabaseClient {
 
   from(table: string) {
     return new MockQueryBuilder(table, this.runQuery.bind(this));
+  }
+
+  async rpc(fn: string, args?: any) {
+    return this.runQuery({ table: '' }, 'rpc', { fn, args });
   }
 
   private async runQuery(query: any, action: string, data?: any) {
