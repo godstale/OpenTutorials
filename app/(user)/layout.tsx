@@ -33,7 +33,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
         )}>
           <div className={cn(
             "max-w-7xl mx-auto px-10 py-8",
-            isLearnPage && "max-w-none p-0 flex-1 flex flex-col min-h-0"
+            isLearnPage && "max-w-none mx-0 p-0 flex-1 flex flex-col min-h-0"
           )}>
             {children}
           </div>

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
-import { ChevronLeft, ChevronRight, Send, Bot, User, Bookmark, Share2, Copy, Check, Loader2, Lock, BookOpen, ChevronDown, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Send, Bot, User, Captions, X, Copy, Check, Loader2, Lock, BookOpen, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { MDXRemote, type MDXRemoteSerializeResult } from 'next-mdx-remote';
 import { Course, TocNode, CoursePackage } from '@/lib/types';
 import { createClient } from '@/lib/supabase/client';
@@ -421,6 +421,12 @@ function LearnTocNodeView({
   );
 }
 
+function formatSubtitleTime(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
 function cleanStreamingText(text: string): string {
   const partialIndex = text.indexOf('<!--');
   if (partialIndex !== -1) {
@@ -461,6 +467,7 @@ export default function LearnPageClient({
   // Video card playback state
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
+  const [isSubtitlePopupOpen, setIsSubtitlePopupOpen] = useState(false);
   const playerRef = useRef<HTMLVideoElement | null>(null);
   const lastPlayedCardIndex = useRef<number | null>(null);
   const playerConfig = useMemo(() => ({
@@ -607,6 +614,7 @@ Please ask the student the question now. Only ask the question itself, do not re
   // autoplay-block error, which requires a prior user interaction.
   useEffect(() => {
     setCurrentTime(0);
+    setIsSubtitlePopupOpen(false);
     if (lastPlayedCardIndex.current === null) {
       lastPlayedCardIndex.current = currentCardIndex;
       setIsPlaying(false);
@@ -1139,7 +1147,7 @@ Student Question: `;
   return (
     <div className="no-layout-padding flex h-full w-full overflow-hidden">
       {/* Course TOC Panel */}
-      <div className="w-64 border-r bg-background flex flex-col h-full shrink-0 min-h-0">
+      <div className="w-64 border-r bg-background flex flex-col h-full shrink-0 min-h-0 relative">
         <div className="p-4 border-b shrink-0 flex items-center justify-between">
           <h3 className="font-bold text-sm text-foreground flex items-center gap-2">
             <BookOpen className="w-4 h-4 text-primary" /> 강좌 목차
@@ -1221,6 +1229,51 @@ Student Question: `;
             )}
           </div>
         </ScrollArea>
+
+        {isSubtitlePopupOpen && activeCard?.type === 'video' && (
+          <div className="absolute inset-0 z-20 bg-background flex flex-col">
+            <div className="p-4 border-b shrink-0 flex items-center justify-between">
+              <h3 className="font-bold text-sm text-foreground flex items-center gap-2">
+                <Captions className="w-4 h-4 text-primary" /> 자막 탐색
+              </h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => setIsSubtitlePopupOpen(false)}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <ScrollArea className="flex-1 min-h-0">
+              <div className="divide-y">
+                {activeCardSubtitles.map((sub, idx) => {
+                  const isActiveSubtitle = currentTime >= sub.start && currentTime <= sub.end;
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        if (playerRef.current) {
+                          playerRef.current.currentTime = sub.start;
+                        }
+                        setCurrentTime(sub.start);
+                        setIsPlaying(true);
+                      }}
+                      className={cn(
+                        "w-full text-left px-4 py-2.5 text-xs transition-colors",
+                        isActiveSubtitle ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted text-foreground"
+                      )}
+                    >
+                      <span className={cn("font-mono mr-2", !isActiveSubtitle && "text-muted-foreground")}>[{formatSubtitleTime(sub.start)}]</span>
+                      {sub.text}
+                    </button>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+          </div>
+        )}
       </div>
 
       {/* Main Content Area */}
@@ -1229,7 +1282,7 @@ Student Question: `;
           <div className="flex items-center gap-4">
             <span className="text-sm bg-primary/10 text-primary px-2 py-1 rounded">Card {currentCardIndex + 1}</span>
             <h1 className="text-xl font-bold flex items-center gap-2">
-              {course.title}
+              {cards[currentCardIndex]?.title || `학습 콘텐츠 (카드 ${currentCardIndex + 1})`}
               {isPreview && (
                 <Badge variant="destructive" className="bg-rose-500 hover:bg-rose-600 text-white font-semibold text-xs py-0.5 px-2 animate-pulse">
                   미리보기 모드
@@ -1238,8 +1291,15 @@ Student Question: `;
             </h1>
           </div>
           <div className="flex gap-2">
-            <Button variant="ghost" size="icon"><Bookmark className="w-4 h-4" /></Button>
-            <Button variant="ghost" size="icon"><Share2 className="w-4 h-4" /></Button>
+            {activeCard?.type === 'video' && activeCardSubtitles.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsSubtitlePopupOpen(true)}
+              >
+                <Captions className="w-4 h-4 mr-2" /> 자막 탐색
+              </Button>
+            )}
           </div>
         </header>
 
@@ -1247,9 +1307,6 @@ Student Question: `;
           <div className="max-w-full mx-auto pb-6">
             <Card className="p-8 relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-1 bg-primary"></div>
-              <h2 className="text-2xl font-bold mb-4">
-                {cards[currentCardIndex]?.title || `학습 콘텐츠 (카드 ${currentCardIndex + 1})`}
-              </h2>
               <div className="prose dark:prose-invert max-w-none text-muted-foreground space-y-4">
                 {activeCard?.type === 'video' ? (
                   activeCard.videoInfo?.video_id ? (
@@ -1269,32 +1326,6 @@ Student Question: `;
                           config={playerConfig}
                         />
                       </div>
-                      {activeCardSubtitles.length > 0 && (
-                        <div className="max-h-64 overflow-y-auto rounded-lg border divide-y">
-                          {activeCardSubtitles.map((sub, idx) => {
-                            const isActiveSubtitle = currentTime >= sub.start && currentTime <= sub.end;
-                            return (
-                              <button
-                                key={idx}
-                                type="button"
-                                onClick={() => {
-                                  if (playerRef.current) {
-                                    playerRef.current.currentTime = sub.start;
-                                  }
-                                  setCurrentTime(sub.start);
-                                  setIsPlaying(true);
-                                }}
-                                className={cn(
-                                  "w-full text-left px-3 py-2 text-sm transition-colors",
-                                  isActiveSubtitle ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted text-foreground"
-                                )}
-                              >
-                                {sub.text}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
                     </div>
                   ) : (
                     <div className="whitespace-pre-wrap text-destructive">동영상 정보를 불러올 수 없습니다.</div>
@@ -1465,15 +1496,15 @@ Student Question: `;
               <Send className="w-4 h-4" />
             </Button>
           </div>
-          <p className="mt-2 text-center text-[10px] text-muted-foreground">
             {agentStatus === 'none' ? (
-              <span className="cursor-pointer text-primary hover:underline" onClick={() => router.push('/settings')}>
-                에이전트가 연동되지 않았습니다. 설정으로 이동하기
-              </span>
+              <p className="mt-2 text-center text-[10px] text-muted-foreground">
+                <span className="cursor-pointer text-primary hover:underline" onClick={() => router.push('/settings')}>
+                  에이전트가 연동되지 않았습니다. 설정으로 이동하기
+                </span>
+              </p>
             ) : (
-              "UserExternalAgent API와 연동되어 답변을 생성합니다."
+              ""
             )}
-          </p>
         </div>
       </aside>
 
