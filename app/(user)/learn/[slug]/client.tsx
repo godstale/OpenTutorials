@@ -624,7 +624,8 @@ Please ask the student the question now. Only ask the question itself, do not re
     }
   }, [currentCardIndex, cards]);
 
-  // MDX custom components to intercept image rendering and resolve relative paths to Supabase Storage
+  // MDX custom components to intercept image rendering and resolve relative paths to the local
+  // static course assets served from public/courses/[slug]/images/ (see lib/supabase/mock-client.ts).
   const mdxComponents = {
     img: (props: React.ImgHTMLAttributes<HTMLImageElement>) => {
       const { src, alt, ...rest } = props;
@@ -632,8 +633,7 @@ Please ask the student the question now. Only ask the question itself, do not re
         const imagesMatch = src.match(/(?:\.\.\/|\.\.\\|\/|\\|^)images[\/\\](.+)$/i);
         if (imagesMatch) {
           const filename = imagesMatch[1];
-          const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://fbaxselsdfceyygdvpnj.supabase.co';
-          const publicUrl = `${supabaseUrl}/storage/v1/object/public/courses/${encodeURIComponent(slug)}/images/${encodeURIComponent(filename)}`;
+          const publicUrl = `/courses/${encodeURIComponent(slug)}/images/${encodeURIComponent(filename)}`;
           return (
             // eslint-disable-next-line @next/next/no-img-element
             <img
