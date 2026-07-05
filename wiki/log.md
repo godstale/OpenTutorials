@@ -32,6 +32,17 @@ Ran lint. See lint-report.md for details.
 
 ## 2026-07-05
 
+- **[MAINTENANCE] 배포 준비를 위한 사용하지 않는 리소스 아카이빙 및 문서/매뉴얼 작성**
+  - **수정/생성 파일**:
+    - `README.md` — PennyPress 기반의 설명을 모두 걷어내고 Open Tutorials의 설치, 실행, 강좌 업로드, AI 튜터 연동, 강좌 작성용 AI 에이전트(Bundler) 활용을 설명하는 최신 문서로 개편했습니다.
+    - `docs/architecture/README.md` (신규) — 온디바이스 로컬 애플리케이션 플랫폼(Open Tutorials)의 프론트엔드, 로컬 DB(`db.json` 및 mock-client), 로컬 스토리지(`public/courses/`), AI 튜터 연동 등의 아키텍처 구조를 설명하는 문서를 생성했습니다.
+    - `docs/manual/README.md` (신규) — 사용자를 위한 앱 설치/실행 및 강좌 등록/학습 방법과 제작자를 위한 강좌 번들 ZIP 구성 명세, AI 에이전트(Bundler) 활용법을 포함하는 종합 매뉴얼을 생성했습니다.
+    - `.gitignore` — `docs/` 디렉토리 하위의 `architecture/`와 `manual/` 폴더를 제외한 모든 임시/아카이브 하위 폴더들을 무시하도록 룰을 재설정했습니다.
+    - `docs/archive/` (신규) — 기존에 사용하던 배포 불필요 디렉토리인 `agent-worker`, `supabase`, `graph`를 아카이브 목적으로 내부 이동시켰습니다.
+  - **작업 내용**:
+    - Open Tutorials 오픈소스 출시 및 배포를 앞두고 프로젝트 전반의 기술 스펙을 최신화하고 불필요한 유산을 정리하였습니다.
+    - 매뉴얼에 강좌 제작을 돕는 OpenTutorials-Bundler AI 에이전트 저장소 주소를 연동하여 제작자가 쉽게 로컬 콘텐츠 패키지를 빌드할 수 있도록 유도하였습니다.
+
 - **[FEATURE] 하네스 에이전트 등록/설정 화면 내 활성 모델 비노출 및 연결 검증 최적화**
   - **수정/생성 파일**:
     - `components/features/AgentSettingsTab.tsx` — 하네스 에이전트인 경우 지원 모델 조회 카드에서 새로고침(refresh) 버튼 및 감지 모델 목록/선택 UI 대신 프로그램에 설정된 LLM 사용 안내 메시지 박스를 표시하도록 변경했습니다. 또한 에이전트 정보 수정/보기 화면에서 '활성 모델' 필드를 숨기고, 연결상태 확인 시 복잡한 LLM 모델 목록 조회/검증 단계를 거치지 않고 연결 성공을 반환하도록 개선했습니다.
@@ -1321,3 +1332,20 @@ Ran lint. See lint-report.md for details.
     - **카드 높이 일치 및 버튼 하단 정렬**: 카드의 실제 텍스트 길이에 관계없이 카드의 전체 높이가 균등하게 일치하고 버튼 영역이 하단에 정렬되도록 `flex flex-col justify-between h-full` 스타일링을 적용했습니다.
     - **스켈레톤 화면 동기화**: 대시보드 로딩 중 보여지는 스켈레톤 화면(`DashboardSkeleton`)에서도 동일하게 두 카드를 가로 2열 배치하도록 레이아웃을 일치시켰습니다.
   - **Concepts**: [[DashboardSideBySideCards]], [[CardHeightEqualization]], [[SkeletonLayoutSync]]
+
+- **[DOCS/FEAT] 강좌 번들 프로토콜 문서 추가 및 필수 3대 필드(프로토콜 버전, 대상 연령대, 카테고리) 검증 및 저장 구현**
+  - **생성 파일**:
+    - [docs/bundler/protocol.md](file:///C:/Workspace/Projects/OpenTutor/docs/bundler/protocol.md)
+    - [docs/bundler/ai-agent-instructions.md](file:///C:/Workspace/Projects/OpenTutor/docs/bundler/ai-agent-instructions.md)
+    - [docs/bundler/creator-interview-guide.md](file:///C:/Workspace/Projects/OpenTutor/docs/bundler/creator-interview-guide.md)
+  - **수정 파일**:
+    - [app/(user)/courses/manage/upload/page.tsx](file:///C:/Workspace/Projects/OpenTutor/app/(user)/courses/manage/upload/page.tsx)
+    - [app/(user)/courses/manage/upload/guide/page.tsx](file:///C:/Workspace/Projects/OpenTutor/app/(user)/courses/manage/upload/guide/page.tsx)
+    - [app/api/admin/courses/upload/route.ts](file:///C:/Workspace/Projects/OpenTutor/app/api/admin/courses/upload/route.ts)
+  - **작업 내용**:
+    - **번들러 공유 문서 생성**: 외부 강좌 생성용 프로젝트와 프로토콜 명세 공유를 위해 `docs/bundler/` 폴더 하위에 번들링 공식 프로토콜 스펙(`protocol.md`), AI Agent 생성 가이드라인(`ai-agent-instructions.md`), 콘텐츠 제작자 인터뷰 가이드(`creator-interview-guide.md`)를 신설했습니다.
+    - **필수 메타데이터 추가 및 검증 규칙 강화**: `package-manifest.json`에 `bundler_protocol_version`, `target_age`, `category` 3대 필드를 추가/수정하는 프로토콜(v1.0.0)을 정립했습니다. 또한 강좌 ZIP 검증 단계(`manifest-fields`)에 해당 필드가 올바른 문자열 형식으로 채워졌는지 확인하는 엄격한 유효성 검증을 반영했습니다.
+    - **검증 결과 UI 노출**: 검증 성공 시 화면 하단의 매니페스트 분석 정보 카드에 프로토콜 버전, 대상 연령대, 카테고리가 가시적으로 표시되도록 UI를 개선했습니다.
+    - **가이드 페이지 및 API 동기화**: 마이그레이션 가이드 페이지(`/courses/manage/upload/guide`)의 `package-manifest.json` 예시와 핵심 검증 목록을 업데이트하여 신규 필드를 포함시켰습니다. 서버사이드 업로드 API(`app/api/admin/courses/upload/route.ts`) 내 `course_packages` 데이터 upsert 로직에도 이 3대 필드를 추출하여 DB(`db.json`)에 완벽히 반영하도록 통합 및 Fallback 구조를 동기화했습니다.
+  - **Concepts**: [[CourseBundlerProtocolv1.0.0]], [[ManifestFieldsValidationUpdate]], [[CourseUploadMetadataUI]], [[ServerUpsertFieldsSync]]
+

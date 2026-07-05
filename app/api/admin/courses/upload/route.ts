@@ -90,7 +90,16 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: `매니페스트 JSON 파싱 에러: ${err.message}` }, { status: 400 });
       }
 
-      const { title, slug: rawSlug, description, thumbnail: manifestThumbnail, published } = manifestData;
+      const { 
+        title, 
+        slug: rawSlug, 
+        description, 
+        thumbnail: manifestThumbnail, 
+        published,
+        bundler_protocol_version,
+        target_age,
+        category
+      } = manifestData;
       if (!title) {
         return NextResponse.json({ error: '패키지 매니페스트에 title이 누락되었습니다.' }, { status: 400 });
       }
@@ -142,6 +151,9 @@ export async function POST(request: NextRequest) {
             force_checkpoint: manifestData.force_checkpoint ?? false,
             version: manifestData.version ?? '1.0.0',
             changelog: manifestData.changelog ?? '최초 릴리즈',
+            bundler_protocol_version: bundler_protocol_version ?? '1.0.0',
+            target_age: target_age ?? '전연령',
+            category: category ?? '기타',
             updated_at: new Date().toISOString()
           }, { onConflict: 'slug' })
           .select()
@@ -168,6 +180,9 @@ export async function POST(request: NextRequest) {
           published: published ?? true,
           sequential_play: manifestData.sequential_play ?? false,
           force_checkpoint: manifestData.force_checkpoint ?? false,
+          bundler_protocol_version: bundler_protocol_version ?? '1.0.0',
+          target_age: target_age ?? '전연령',
+          category: category ?? '기타',
           updated_at: new Date().toISOString()
         };
         
@@ -197,6 +212,9 @@ export async function POST(request: NextRequest) {
           description,
           thumbnail: finalPackageThumbnail,
           published: published ?? true,
+          bundler_protocol_version: bundler_protocol_version ?? '1.0.0',
+          target_age: target_age ?? '전연령',
+          category: category ?? '기타',
           updated_at: new Date().toISOString()
         };
         

@@ -117,6 +117,9 @@ function UploadForm() {
     slug: string;
     coursesCount: number;
     courses: string[];
+    bundlerProtocolVersion?: string;
+    targetAge?: string;
+    category?: string;
   } | null>(null);
 
   // Global processing states
@@ -231,12 +234,24 @@ function UploadForm() {
       if (!manifest.courses || !Array.isArray(manifest.courses) || manifest.courses.length === 0) {
         throw { stepId: 'manifest-fields', message: 'package-manifest.json에 courses 배열이 누락되었거나 비어있습니다.' };
       }
+      if (!manifest.bundler_protocol_version || typeof manifest.bundler_protocol_version !== 'string' || !manifest.bundler_protocol_version.trim()) {
+        throw { stepId: 'manifest-fields', message: 'package-manifest.json에 bundler_protocol_version (프로토콜 버전) 필드가 누락되었거나 유효하지 않습니다.' };
+      }
+      if (!manifest.target_age || typeof manifest.target_age !== 'string' || !manifest.target_age.trim()) {
+        throw { stepId: 'manifest-fields', message: 'package-manifest.json에 target_age (대상 연령대) 필드가 누락되었거나 유효하지 않습니다.' };
+      }
+      if (!manifest.category || typeof manifest.category !== 'string' || !manifest.category.trim()) {
+        throw { stepId: 'manifest-fields', message: 'package-manifest.json에 category (카테고리) 필드가 누락되었거나 유효하지 않습니다.' };
+      }
       
       setManifestInfo({
         title: manifest.title,
         slug: manifest.slug || '',
         coursesCount: manifest.courses.length,
         courses: manifest.courses.map((c: any) => c.title || c.slug || '이름 없음'),
+        bundlerProtocolVersion: manifest.bundler_protocol_version,
+        targetAge: manifest.target_age,
+        category: manifest.category,
       });
       updateStep('manifest-fields', 'success');
 
@@ -646,6 +661,24 @@ function UploadForm() {
                           <span className="font-semibold text-zinc-500 shrink-0">패키지 슬러그:</span>
                           <span className="font-mono text-zinc-700 dark:text-zinc-300">{manifestInfo.slug}</span>
                         </div>
+                        {manifestInfo.bundlerProtocolVersion && (
+                          <div className="flex gap-2">
+                            <span className="font-semibold text-zinc-500 shrink-0">프로토콜 버전:</span>
+                            <span className="font-mono text-zinc-700 dark:text-zinc-300">{manifestInfo.bundlerProtocolVersion}</span>
+                          </div>
+                        )}
+                        {manifestInfo.targetAge && (
+                          <div className="flex gap-2">
+                            <span className="font-semibold text-zinc-500 shrink-0">대상 연령대:</span>
+                            <span className="text-zinc-700 dark:text-zinc-300">{manifestInfo.targetAge}</span>
+                          </div>
+                        )}
+                        {manifestInfo.category && (
+                          <div className="flex gap-2">
+                            <span className="font-semibold text-zinc-500 shrink-0">카테고리:</span>
+                            <span className="text-zinc-700 dark:text-zinc-300">{manifestInfo.category}</span>
+                          </div>
+                        )}
                         <div className="flex gap-2 items-start">
                           <span className="font-semibold text-zinc-500 shrink-0">포함 하위 강좌 ({manifestInfo.coursesCount}개):</span>
                           <div className="flex flex-wrap gap-1.5">
