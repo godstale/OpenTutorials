@@ -226,38 +226,22 @@
       "agent_id": null
     },
     {
-      "id": "video-test-course-id",
-      "slug": "video-test-course",
-      "title": "동영상 및 자막 연동 테스트 강좌",
-      "description": "동영상 재생 및 자막 동기화 기능을 테스트합니다.",
-      "thumbnail": "icon:video",
+      "id": "c7d711d9-a43e-4054-a643-60babf8228cf",
+      "slug": "neutral-network-and-llm",
+      "title": "신경망과 LLM 개론",
+      "description": "3Blue1Brown의 시각적인 설명 영상을 바탕으로, 인공 신경망의 기본 원리부터 트랜스포머 기반의 대규모 언어 모델(LLM) 핵심 메커니즘까지 마스터하는 입문 강좌입니다.",
+      "thumbnail": "icon:book",
       "tags": [
-        "테스트",
-        "비디오",
-        "자막",
-        "유튜브"
-      ],
-      "published": true,
-      "created_at": "2026-07-05T10:04:26.796Z",
-      "updated_at": "2026-07-05T10:04:26.797Z",
-      "agent_id": null
-    },
-    {
-      "id": "glm52-video-course-id",
-      "slug": "glm52-video-course",
-      "title": "GLM-5.2 분석 강좌",
-      "description": "최근 핫한 오픈 가중치 LLM 모델인 GLM-5.2의 스펙과 Claude Code, Codex와의 연동법을 알아봅니다.",
-      "thumbnail": "icon:video",
-      "tags": [
-        "GLM-5.2",
+        "신경망",
         "LLM",
-        "AI",
-        "유튜브"
+        "딥러닝",
+        "트랜스포머",
+        "인공지능"
       ],
       "published": true,
-      "created_at": "2026-07-05T10:10:05.898Z",
-      "updated_at": "2026-07-05T10:10:05.898Z",
-      "agent_id": null
+      "created_at": "2026-07-05T13:34:22.586Z",
+      "updated_at": "2026-07-05T13:34:22.641Z",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627"
     }
   ],
   "course_cards": [],
@@ -279,19 +263,21 @@
       "agent_id": "b24155af-379b-4d87-a071-692461f2e01b"
     },
     {
-      "id": "glm52-video-package-id",
-      "slug": "glm52-video-package",
-      "title": "GLM-5.2 기술 및 실무 분석",
-      "description": "GLM-5.2 모델 분석 및 Claude Code 연동 실무 강좌 패키지입니다.",
-      "thumbnail": "icon:video",
+      "id": "a7f0a8eb-cd88-408b-b20e-da7f82101528",
+      "slug": "neutral-network-and-llm",
+      "title": "신경망과 LLM 개론",
+      "description": "3Blue1Brown의 시각적인 설명 영상을 바탕으로, 인공 신경망의 기본 원리부터 트랜스포머 기반의 대규모 언어 모델(LLM) 핵심 메커니즘까지 마스터하는 입문 강좌입니다.",
+      "thumbnail": "icon:brain",
       "published": true,
       "sequential_play": false,
       "force_checkpoint": false,
       "version": "1.0.0",
       "changelog": "최초 릴리즈",
-      "created_at": "2026-07-05T10:10:05.901Z",
-      "updated_at": "2026-07-05T10:10:57.363Z",
-      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627"
+      "bundler_protocol_version": "1.0.0",
+      "target_age": "전연령",
+      "category": "Programming",
+      "updated_at": "2026-07-05T13:34:22.534Z",
+      "created_at": "2026-07-05T13:34:22.534Z"
     }
   ],
   "course_package_items": [
@@ -400,12 +386,12 @@
       "updated_at": "2026-07-04T11:06:36.573Z"
     },
     {
-      "id": "glm52-package-item-id",
-      "package_id": "glm52-video-package-id",
-      "course_id": "glm52-video-course-id",
+      "id": "d3349abf-18ab-4262-8531-ab861beeae81",
+      "package_id": "a7f0a8eb-cd88-408b-b20e-da7f82101528",
+      "course_id": "c7d711d9-a43e-4054-a643-60babf8228cf",
       "order_index": 1,
-      "created_at": "2026-07-05T10:10:05.901Z",
-      "updated_at": "2026-07-05T10:10:05.901Z"
+      "created_at": "2026-07-05T13:34:22.602Z",
+      "updated_at": "2026-07-05T13:34:22.602Z"
     }
   ],
   "user_package_subscriptions": [
@@ -417,11 +403,11 @@
       "updated_at": "2026-07-04T11:19:52.312Z"
     },
     {
-      "id": "glm52-subscription-id",
+      "id": "f57b5a06-544b-48c1-98d1-5a05b337d813",
       "user_id": "local-user-id",
-      "package_id": "glm52-video-package-id",
-      "created_at": "2026-07-05T10:10:05.901Z",
-      "updated_at": "2026-07-05T10:10:05.901Z"
+      "package_id": "a7f0a8eb-cd88-408b-b20e-da7f82101528",
+      "created_at": "2026-07-05T13:34:22.631Z",
+      "updated_at": "2026-07-05T13:34:22.631Z"
     }
   ],
   "user_progress": [
@@ -993,356 +979,6 @@
       "created_at": "2026-07-05T08:40:00.246Z"
     },
     {
-      "id": "02432c45-014b-4498-9bef-434caa358bff",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:11:02.667Z",
-      "created_at": "2026-07-05T10:11:02.667Z"
-    },
-    {
-      "id": "31722893-cc2b-47b8-abb8-6881a4554a2d",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:11:02.671Z",
-      "created_at": "2026-07-05T10:11:02.671Z"
-    },
-    {
-      "id": "203f2038-4fe7-492f-af95-71cb307a981f",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:15:50.939Z",
-      "created_at": "2026-07-05T10:15:50.939Z"
-    },
-    {
-      "id": "1eec7061-fb76-43f4-8cea-61ffc9c17809",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:15:51.017Z",
-      "created_at": "2026-07-05T10:15:51.017Z"
-    },
-    {
-      "id": "8174d19f-1ce7-4153-a47b-e1adc7c09b5b",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:15:51.030Z",
-      "created_at": "2026-07-05T10:15:51.029Z"
-    },
-    {
-      "id": "46bc8ef6-8c8d-49a7-ab78-1bf25eeca959",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:15:51.173Z",
-      "created_at": "2026-07-05T10:15:51.173Z"
-    },
-    {
-      "id": "c8350dbf-ec66-4892-8326-c7457f352f34",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:15:57.474Z",
-      "created_at": "2026-07-05T10:15:57.474Z"
-    },
-    {
-      "id": "bf45976e-bc39-4359-a256-c8a9fef5fb81",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:16:04.147Z",
-      "created_at": "2026-07-05T10:16:04.147Z"
-    },
-    {
-      "id": "fd833f59-78a1-4ff6-8df7-cf715cbb02dd",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:16:28.739Z",
-      "created_at": "2026-07-05T10:16:28.739Z"
-    },
-    {
-      "id": "af585b13-7f1a-4f0e-8708-1c4048583f2e",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:33:30.739Z",
-      "created_at": "2026-07-05T10:33:30.739Z"
-    },
-    {
-      "id": "7ce9cc6d-9128-4d34-8cec-130d1b198a7c",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:33:34.053Z",
-      "created_at": "2026-07-05T10:33:34.053Z"
-    },
-    {
-      "id": "d37c9270-6912-456f-ae24-9300a7806a4b",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:33:34.058Z",
-      "created_at": "2026-07-05T10:33:34.058Z"
-    },
-    {
-      "id": "3adf95bf-3478-4371-add4-0a02a0c5b4e5",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:33:34.144Z",
-      "created_at": "2026-07-05T10:33:34.144Z"
-    },
-    {
-      "id": "d5d433a9-fde9-422e-bba6-6ead1bc015b8",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:33:34.265Z",
-      "created_at": "2026-07-05T10:33:34.265Z"
-    },
-    {
-      "id": "cb7c188c-70a5-4114-bcee-e65e6acbd40d",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:34:05.166Z",
-      "created_at": "2026-07-05T10:34:05.166Z"
-    },
-    {
-      "id": "5c5c51e6-e3db-4014-a7ba-090ed85dda8a",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:34:31.653Z",
-      "created_at": "2026-07-05T10:34:31.653Z"
-    },
-    {
-      "id": "74ad6fdf-29ff-4069-b9b4-935d3ce2dd99",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:36:16.659Z",
-      "created_at": "2026-07-05T10:36:16.659Z"
-    },
-    {
-      "id": "bf134a93-1e93-489b-a0e1-80a96feee120",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:36:16.662Z",
-      "created_at": "2026-07-05T10:36:16.662Z"
-    },
-    {
-      "id": "31cd911f-6153-4871-9d40-d3f26eb3320e",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:36:16.731Z",
-      "created_at": "2026-07-05T10:36:16.731Z"
-    },
-    {
-      "id": "e4044e48-8607-4f27-9a76-f801f327e0c5",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:36:16.866Z",
-      "created_at": "2026-07-05T10:36:16.866Z"
-    },
-    {
-      "id": "1a419c66-1990-4553-8a46-62540f446af8",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:36:50.063Z",
-      "created_at": "2026-07-05T10:36:50.063Z"
-    },
-    {
-      "id": "f30067c4-1522-40ee-b21c-104bb5efd821",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:37:54.422Z",
-      "created_at": "2026-07-05T10:37:54.422Z"
-    },
-    {
-      "id": "98e572c9-72c0-4d2e-b7b3-9e0722de4f29",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:37:54.427Z",
-      "created_at": "2026-07-05T10:37:54.427Z"
-    },
-    {
-      "id": "ed97987f-84bd-4b01-be17-5d849e8c32b9",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:37:54.530Z",
-      "created_at": "2026-07-05T10:37:54.530Z"
-    },
-    {
-      "id": "42999e7c-e98f-4b15-84d8-104a86c60a1e",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:37:54.699Z",
-      "created_at": "2026-07-05T10:37:54.699Z"
-    },
-    {
-      "id": "f73cde9d-f402-43ea-aaff-a099f5970a80",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:38:16.298Z",
-      "created_at": "2026-07-05T10:38:16.298Z"
-    },
-    {
-      "id": "a6eab4dc-be6b-4da3-9ea9-f3def87c8f91",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:47:18.902Z",
-      "created_at": "2026-07-05T10:47:18.902Z"
-    },
-    {
-      "id": "a80d7d37-1e5d-42f9-a080-d98e9e0c0202",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:47:24.568Z",
-      "created_at": "2026-07-05T10:47:24.568Z"
-    },
-    {
-      "id": "970f1b3e-3a7e-4ef4-9570-645716b0a69e",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:47:24.572Z",
-      "created_at": "2026-07-05T10:47:24.572Z"
-    },
-    {
-      "id": "670cd557-1637-46c3-a083-6a3c55ca263a",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:47:24.809Z",
-      "created_at": "2026-07-05T10:47:24.809Z"
-    },
-    {
-      "id": "78bd30cb-ff16-48d3-80b7-593bfb88c221",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:47:27.896Z",
-      "created_at": "2026-07-05T10:47:27.896Z"
-    },
-    {
-      "id": "774364ac-0ca1-4f71-b2b1-75c677fc7424",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:47:27.976Z",
-      "created_at": "2026-07-05T10:47:27.976Z"
-    },
-    {
-      "id": "2eb2c943-5293-4bdc-bbf0-ef2b363eba07",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:47:28.193Z",
-      "created_at": "2026-07-05T10:47:28.193Z"
-    },
-    {
-      "id": "fa2a08db-37df-4889-9cf5-2d324d88e101",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:49:08.578Z",
-      "created_at": "2026-07-05T10:49:08.578Z"
-    },
-    {
-      "id": "f8189e5a-dc0d-499e-90ab-b292fcbbd007",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:51:10.528Z",
-      "created_at": "2026-07-05T10:51:10.528Z"
-    },
-    {
       "id": "7712c395-1bdc-4e34-a798-07ff48a4d436",
       "user_id": "local-user-id",
       "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
@@ -1351,36 +987,6 @@
       "completed": false,
       "updated_at": "2026-07-05T10:52:41.314Z",
       "created_at": "2026-07-05T10:52:41.314Z"
-    },
-    {
-      "id": "62f5d36c-52b9-4308-803c-cdecf03b1cf5",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:56:08.593Z",
-      "created_at": "2026-07-05T10:56:08.593Z"
-    },
-    {
-      "id": "34ce6ad5-7a24-407b-a258-752a17c2302b",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:56:31.947Z",
-      "created_at": "2026-07-05T10:56:31.947Z"
-    },
-    {
-      "id": "618ac7a4-0f26-4873-8409-a3ec104b171d",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T10:56:31.958Z",
-      "created_at": "2026-07-05T10:56:31.958Z"
     },
     {
       "id": "5664328d-2ae8-4048-af54-2c73cd24ddbb",
@@ -1493,216 +1099,6 @@
       "created_at": "2026-07-05T11:08:35.734Z"
     },
     {
-      "id": "444af95c-b773-4771-9761-358b02cbcdd7",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T11:09:12.758Z",
-      "created_at": "2026-07-05T11:09:12.758Z"
-    },
-    {
-      "id": "9b5644e3-b6ca-4daf-bcbb-4f36b62fdab6",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T11:10:48.155Z",
-      "created_at": "2026-07-05T11:10:48.155Z"
-    },
-    {
-      "id": "e536a252-8d0c-4d7f-8b2c-08928dad80c5",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T11:11:32.145Z",
-      "created_at": "2026-07-05T11:11:32.145Z"
-    },
-    {
-      "id": "1b1c17cc-c9a9-41d0-b4d0-40bbd996667e",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T11:19:30.063Z",
-      "created_at": "2026-07-05T11:19:30.062Z"
-    },
-    {
-      "id": "193d89d1-4492-421c-96cd-e22499f546a1",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T11:19:35.532Z",
-      "created_at": "2026-07-05T11:19:35.532Z"
-    },
-    {
-      "id": "e5822311-ff40-4940-a7cf-e366c801e238",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T11:19:35.538Z",
-      "created_at": "2026-07-05T11:19:35.538Z"
-    },
-    {
-      "id": "8a9695da-2479-4c5f-827e-abbf6acd4e70",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T11:19:35.551Z",
-      "created_at": "2026-07-05T11:19:35.551Z"
-    },
-    {
-      "id": "6e298031-7bd4-443e-998a-b93027871d11",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T11:19:35.776Z",
-      "created_at": "2026-07-05T11:19:35.776Z"
-    },
-    {
-      "id": "da4c4894-8b35-4628-80de-bfc0d00711b7",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T11:19:41.804Z",
-      "created_at": "2026-07-05T11:19:41.804Z"
-    },
-    {
-      "id": "dcf7f3ad-032f-46bd-8f86-a9e9646248f6",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T11:19:41.819Z",
-      "created_at": "2026-07-05T11:19:41.819Z"
-    },
-    {
-      "id": "708243f4-24a2-4b38-9a20-d21ae307297e",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T11:19:41.931Z",
-      "created_at": "2026-07-05T11:19:41.931Z"
-    },
-    {
-      "id": "9c7d5bb4-8dfe-463b-9e06-fdc307c48afb",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T11:19:42.048Z",
-      "created_at": "2026-07-05T11:19:42.048Z"
-    },
-    {
-      "id": "2c3b09f7-b40b-4a25-8055-d784b7075488",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T11:20:12.337Z",
-      "created_at": "2026-07-05T11:20:12.337Z"
-    },
-    {
-      "id": "d3d25f0b-6b0b-47a0-90dd-d45905c516c8",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T11:20:12.343Z",
-      "created_at": "2026-07-05T11:20:12.343Z"
-    },
-    {
-      "id": "0b033681-03f9-4837-9c02-76faa45a71b3",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T11:20:12.541Z",
-      "created_at": "2026-07-05T11:20:12.541Z"
-    },
-    {
-      "id": "c6269fde-6495-48fd-a0cb-1235baece104",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T11:20:22.422Z",
-      "created_at": "2026-07-05T11:20:22.422Z"
-    },
-    {
-      "id": "bf9e758b-defe-4dca-aa97-91bf4da2e86d",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T11:20:22.472Z",
-      "created_at": "2026-07-05T11:20:22.472Z"
-    },
-    {
-      "id": "329e2081-ba86-4bd4-8f56-2c2918f23b54",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T11:20:22.562Z",
-      "created_at": "2026-07-05T11:20:22.562Z"
-    },
-    {
-      "id": "d6428ccd-57d3-4c02-a846-1e77254d1c48",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T11:21:18.050Z",
-      "created_at": "2026-07-05T11:21:18.050Z"
-    },
-    {
-      "id": "8692c3ff-e78d-4c7f-8625-84e30073a515",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T11:21:26.223Z",
-      "created_at": "2026-07-05T11:21:26.223Z"
-    },
-    {
-      "id": "4166b687-32e9-4cf7-8285-6255f7c06c43",
-      "user_id": "local-user-id",
-      "course_id": "glm52-video-course-id",
-      "last_card": 1,
-      "max_card": 1,
-      "completed": true,
-      "updated_at": "2026-07-05T11:21:42.748Z",
-      "created_at": "2026-07-05T11:21:42.748Z"
-    },
-    {
       "id": "4145bb45-cfc4-48e4-b13e-bc0626c97f13",
       "user_id": "local-user-id",
       "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
@@ -1711,6 +1107,465 @@
       "completed": false,
       "updated_at": "2026-07-05T11:22:39.781Z",
       "created_at": "2026-07-05T11:22:39.781Z"
+    },
+    {
+      "id": "eb4bd0ab-1e4c-4de5-8ad0-eeb4663fd451",
+      "user_id": "local-user-id",
+      "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T11:31:40.157Z",
+      "created_at": "2026-07-05T11:31:40.157Z"
+    },
+    {
+      "id": "f0a27c6c-c07f-4c50-aabc-c3ab701ca804",
+      "user_id": "local-user-id",
+      "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T11:33:17.490Z",
+      "created_at": "2026-07-05T11:33:17.490Z"
+    },
+    {
+      "id": "b5de1940-1a2f-47d1-9440-ddfff7bef575",
+      "user_id": "local-user-id",
+      "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T11:34:25.581Z",
+      "created_at": "2026-07-05T11:34:25.581Z"
+    },
+    {
+      "id": "059a854f-b450-4ea5-86af-bc67fd70c2ea",
+      "user_id": "local-user-id",
+      "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T11:35:39.031Z",
+      "created_at": "2026-07-05T11:35:39.031Z"
+    },
+    {
+      "id": "b55d3417-b24a-49ed-8456-0a0398a03c43",
+      "user_id": "local-user-id",
+      "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T11:35:39.189Z",
+      "created_at": "2026-07-05T11:35:39.189Z"
+    },
+    {
+      "id": "a430ca54-003f-4f21-862f-600ec247d6b5",
+      "user_id": "local-user-id",
+      "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T11:35:39.501Z",
+      "created_at": "2026-07-05T11:35:39.501Z"
+    },
+    {
+      "id": "f402ef29-4bbb-4173-8a1f-60b7576d3f88",
+      "user_id": "local-user-id",
+      "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T11:37:09.625Z",
+      "created_at": "2026-07-05T11:37:09.625Z"
+    },
+    {
+      "id": "62b5653e-f93f-4333-a003-ce58f37be9b0",
+      "user_id": "local-user-id",
+      "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T11:37:09.647Z",
+      "created_at": "2026-07-05T11:37:09.647Z"
+    },
+    {
+      "id": "872df06b-83e4-4af1-898f-d3c78b85130d",
+      "user_id": "local-user-id",
+      "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T11:37:09.993Z",
+      "created_at": "2026-07-05T11:37:09.993Z"
+    },
+    {
+      "id": "0ae95f31-6e14-416d-8456-3d49c93cdc7b",
+      "user_id": "local-user-id",
+      "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T11:37:21.823Z",
+      "created_at": "2026-07-05T11:37:21.823Z"
+    },
+    {
+      "id": "e15de87a-016c-4a4e-98d0-7a740c26a8dd",
+      "user_id": "local-user-id",
+      "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T11:37:21.901Z",
+      "created_at": "2026-07-05T11:37:21.901Z"
+    },
+    {
+      "id": "04fdf6a4-615b-4c2d-b3b9-769ed3eb64f6",
+      "user_id": "local-user-id",
+      "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T11:37:22.118Z",
+      "created_at": "2026-07-05T11:37:22.118Z"
+    },
+    {
+      "id": "7210d8a8-4f53-41bf-ae68-d9ad941c53ce",
+      "user_id": "local-user-id",
+      "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T11:46:30.650Z",
+      "created_at": "2026-07-05T11:46:30.650Z"
+    },
+    {
+      "id": "1999c39d-8489-4e1a-aef5-14791af54a13",
+      "user_id": "local-user-id",
+      "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T11:46:48.608Z",
+      "created_at": "2026-07-05T11:46:48.608Z"
+    },
+    {
+      "id": "77cfd56b-3808-43c9-8b46-dfbd27bb0fb8",
+      "user_id": "local-user-id",
+      "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T11:58:00.670Z",
+      "created_at": "2026-07-05T11:58:00.670Z"
+    },
+    {
+      "id": "689b2c10-a1e8-49f1-b140-162c5c72a889",
+      "user_id": "local-user-id",
+      "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T12:10:21.928Z",
+      "created_at": "2026-07-05T12:10:21.928Z"
+    },
+    {
+      "id": "98f7281f-1243-43db-ad58-11fd7fbb2419",
+      "user_id": "local-user-id",
+      "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T12:10:45.599Z",
+      "created_at": "2026-07-05T12:10:45.599Z"
+    },
+    {
+      "id": "ba9bff0d-9ef8-41db-a85c-5b07aacb6e42",
+      "user_id": "local-user-id",
+      "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T12:10:52.102Z",
+      "created_at": "2026-07-05T12:10:52.102Z"
+    },
+    {
+      "id": "9cd5a218-f54d-42e5-8909-22d6edcdebbb",
+      "user_id": "local-user-id",
+      "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T12:11:18.905Z",
+      "created_at": "2026-07-05T12:11:18.905Z"
+    },
+    {
+      "id": "7f30d02e-25f2-4ad1-be04-8d6945a5dfb5",
+      "user_id": "local-user-id",
+      "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T12:14:21.528Z",
+      "created_at": "2026-07-05T12:14:21.528Z"
+    },
+    {
+      "id": "9835402b-1bc5-4b09-8771-bee4f6662d4f",
+      "user_id": "local-user-id",
+      "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T12:19:11.364Z",
+      "created_at": "2026-07-05T12:19:11.364Z"
+    },
+    {
+      "id": "fe9eaa28-448f-4c77-baf4-068874da8a5b",
+      "user_id": "local-user-id",
+      "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T12:19:20.686Z",
+      "created_at": "2026-07-05T12:19:20.686Z"
+    },
+    {
+      "id": "80a90270-bb88-4740-afcd-224fa99852d3",
+      "user_id": "local-user-id",
+      "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T12:19:24.954Z",
+      "created_at": "2026-07-05T12:19:24.954Z"
+    },
+    {
+      "id": "b53890aa-f4a4-40fc-b646-10b207f291ee",
+      "user_id": "local-user-id",
+      "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T12:19:29.760Z",
+      "created_at": "2026-07-05T12:19:29.760Z"
+    },
+    {
+      "id": "3dfec5ce-3da4-40c6-a420-5a1407ff9b5c",
+      "user_id": "local-user-id",
+      "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T12:19:47.680Z",
+      "created_at": "2026-07-05T12:19:47.680Z"
+    },
+    {
+      "id": "ac89c181-e3c5-4818-b64d-c0b8d3bd2410",
+      "user_id": "local-user-id",
+      "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T12:19:51.224Z",
+      "created_at": "2026-07-05T12:19:51.224Z"
+    },
+    {
+      "id": "56dfeab2-5471-4564-a8eb-772d6830d5db",
+      "user_id": "local-user-id",
+      "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T12:20:05.707Z",
+      "created_at": "2026-07-05T12:20:05.707Z"
+    },
+    {
+      "id": "6e71c433-3782-4566-a93b-2abf7cf9e968",
+      "user_id": "local-user-id",
+      "course_id": "c7d711d9-a43e-4054-a643-60babf8228cf",
+      "last_card": 0,
+      "completed": false,
+      "updated_at": "2026-07-05T13:34:22.636Z",
+      "created_at": "2026-07-05T13:34:22.636Z"
+    },
+    {
+      "id": "20a614af-bb17-4a96-b089-4c0c0813407d",
+      "user_id": "local-user-id",
+      "course_id": "c7d711d9-a43e-4054-a643-60babf8228cf",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T13:34:29.176Z",
+      "created_at": "2026-07-05T13:34:29.176Z"
+    },
+    {
+      "id": "0bc15318-6245-4f1e-b290-7a1cae701555",
+      "user_id": "local-user-id",
+      "course_id": "c7d711d9-a43e-4054-a643-60babf8228cf",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T13:34:29.182Z",
+      "created_at": "2026-07-05T13:34:29.182Z"
+    },
+    {
+      "id": "c2ac1f84-6b0e-4e4c-852d-f3ad4793e375",
+      "user_id": "local-user-id",
+      "course_id": "c7d711d9-a43e-4054-a643-60babf8228cf",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T13:34:29.261Z",
+      "created_at": "2026-07-05T13:34:29.261Z"
+    },
+    {
+      "id": "4338433e-52b9-4001-9939-eb5c512fc907",
+      "user_id": "local-user-id",
+      "course_id": "c7d711d9-a43e-4054-a643-60babf8228cf",
+      "last_card": 2,
+      "max_card": 2,
+      "completed": false,
+      "updated_at": "2026-07-05T13:34:32.441Z",
+      "created_at": "2026-07-05T13:34:32.441Z"
+    },
+    {
+      "id": "882e6773-bf68-4528-bed3-455a1ef10f68",
+      "user_id": "local-user-id",
+      "course_id": "c7d711d9-a43e-4054-a643-60babf8228cf",
+      "last_card": 3,
+      "max_card": 3,
+      "completed": true,
+      "updated_at": "2026-07-05T13:34:34.725Z",
+      "created_at": "2026-07-05T13:34:34.725Z"
+    },
+    {
+      "id": "663688e0-5029-4106-8700-ce18b7b6e888",
+      "user_id": "local-user-id",
+      "course_id": "c7d711d9-a43e-4054-a643-60babf8228cf",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T13:34:38.201Z",
+      "created_at": "2026-07-05T13:34:38.201Z"
+    },
+    {
+      "id": "6557f37e-48e4-408f-b4ab-864c1123d32e",
+      "user_id": "local-user-id",
+      "course_id": "c7d711d9-a43e-4054-a643-60babf8228cf",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T13:34:38.274Z",
+      "created_at": "2026-07-05T13:34:38.274Z"
+    },
+    {
+      "id": "e0360955-1a01-4bef-990f-1d84d2876204",
+      "user_id": "local-user-id",
+      "course_id": "c7d711d9-a43e-4054-a643-60babf8228cf",
+      "last_card": 2,
+      "max_card": 2,
+      "completed": false,
+      "updated_at": "2026-07-05T13:34:41.763Z",
+      "created_at": "2026-07-05T13:34:41.763Z"
+    },
+    {
+      "id": "0494ec6c-0a1c-417a-b29d-6a754dd77dc4",
+      "user_id": "local-user-id",
+      "course_id": "c7d711d9-a43e-4054-a643-60babf8228cf",
+      "last_card": 3,
+      "max_card": 3,
+      "completed": true,
+      "updated_at": "2026-07-05T13:34:43.587Z",
+      "created_at": "2026-07-05T13:34:43.587Z"
+    },
+    {
+      "id": "7e34bd8e-be0b-40a7-8349-8b8fe03ac2b0",
+      "user_id": "local-user-id",
+      "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T13:38:36.619Z",
+      "created_at": "2026-07-05T13:38:36.619Z"
+    },
+    {
+      "id": "cfd117ff-940c-471a-becd-57a29dd93a41",
+      "user_id": "local-user-id",
+      "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T13:38:36.647Z",
+      "created_at": "2026-07-05T13:38:36.647Z"
+    },
+    {
+      "id": "a327aa97-a8ce-4f6e-b24b-bbad17e43dec",
+      "user_id": "local-user-id",
+      "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T13:38:37.001Z",
+      "created_at": "2026-07-05T13:38:37.001Z"
+    },
+    {
+      "id": "f6a22094-5b20-4387-b5c6-197da2ec901e",
+      "user_id": "local-user-id",
+      "course_id": "c7d711d9-a43e-4054-a643-60babf8228cf",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T13:40:42.349Z",
+      "created_at": "2026-07-05T13:40:42.349Z"
+    },
+    {
+      "id": "6d519b97-16a3-4f6c-8f29-fb72179e5908",
+      "user_id": "local-user-id",
+      "course_id": "c7d711d9-a43e-4054-a643-60babf8228cf",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T13:40:42.358Z",
+      "created_at": "2026-07-05T13:40:42.358Z"
+    },
+    {
+      "id": "c2ffc250-ba5a-4ce8-ba69-d48c60cfe0ba",
+      "user_id": "local-user-id",
+      "course_id": "c7d711d9-a43e-4054-a643-60babf8228cf",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T13:40:42.526Z",
+      "created_at": "2026-07-05T13:40:42.526Z"
+    },
+    {
+      "id": "e94a0a13-4c2c-4ade-a9c2-e9cd44f8176c",
+      "user_id": "local-user-id",
+      "course_id": "c7d711d9-a43e-4054-a643-60babf8228cf",
+      "last_card": 2,
+      "max_card": 2,
+      "completed": false,
+      "updated_at": "2026-07-05T13:40:45.187Z",
+      "created_at": "2026-07-05T13:40:45.187Z"
+    },
+    {
+      "id": "d111fa1e-3ff4-4767-96c3-495f89a8111a",
+      "user_id": "local-user-id",
+      "course_id": "c7d711d9-a43e-4054-a643-60babf8228cf",
+      "last_card": 3,
+      "max_card": 3,
+      "completed": true,
+      "updated_at": "2026-07-05T13:40:45.981Z",
+      "created_at": "2026-07-05T13:40:45.981Z"
+    },
+    {
+      "id": "223b33c6-0f9b-4d7e-88ca-021a81641645",
+      "user_id": "local-user-id",
+      "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T14:12:25.084Z",
+      "created_at": "2026-07-05T14:12:25.084Z"
     }
   ],
   "user_external_agents": [
@@ -1759,7 +1614,7 @@
       "user_id": "local-user-id",
       "status": "online",
       "created_at": "2026-07-05T08:37:49.875Z",
-      "updated_at": "2026-07-05T09:41:53.638Z"
+      "updated_at": "2026-07-05T14:01:14.061Z"
     }
   ],
   "user_external_agent_messages": [
@@ -2498,6 +2353,302 @@
       "content": "\n\n강좌 학습 자료 상태를 확인했습니다.\n\n**경로:** `/home/ubuntu/workspaces/courses/iot-communication-ch01/resource.md`\n**크기:** 21,491 bytes (349줄)\n**내용:** \"사물이 대화하는 방법, 통신 방법 알아보기\" — Arduino IoT 통신 6가지 방식(USB, 이더넷, 적외선, RF, 블루투스, WiFi)을 다루는 강좌 자료\n**상태:** 다운로드 및 분석 완료\n\n해당 강좌는 이미 전용 폴더에 성공적으로 저장되어 있으며, 내용 분석도 완료된 상태입니다. 언제든지 학습 질문에 답변할 준비가 되어 있습니다.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} -->",
       "created_at": "2026-07-05T11:22:56.821Z",
       "updated_at": "2026-07-05T11:22:56.821Z"
+    },
+    {
+      "id": "bc1c3708-1197-49d1-83f0-eec15f87ba9d",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "user",
+      "content": "[시스템 점검] 현재 강좌 \"사물이 대화하는 방법, 통신 방법 알아보기\"의 학습 자료가 성공적으로 다운로드되고 분석되었는지 확인해 주세요. \n다운로드 주소: http://localhost:3000/api/courses/iot-communication-ch01/resource\n사용자가 여러 강좌를 동시에 수강할 수 있으므로, 반드시 이 강좌를 위한 개별 폴더(예: workspaces/courses/iot-communication-ch01 또는 이에 상응하는 고유 경로)를 생성하여 그 안에서 다운로드 및 분석 작업을 수행해 주셔야 합니다.\n만약 아직 강좌 파일을 다운로드하고 분석하는 작업이 완료되지 않았다면, 다른 학습 질문에 답하기 전에 이 작업을 가장 우선하여 완료하고 그 결과를 알려주세요.\n\n상태 확인 후, 답변의 마지막에 반드시 다음 형식의 히든 메시지를 포함해 주세요:\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} --> (다운로드 완료 시) 또는\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} --> (미완료 시)}",
+      "created_at": "2026-07-05T11:31:40.841Z",
+      "updated_at": "2026-07-05T11:31:40.841Z"
+    },
+    {
+      "id": "91593e80-a32e-439b-8b09-c2a543f020b3",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "assistant",
+      "content": "\n\n네, 확인 완료했습니다. 상태를 보고합니다:\n\n강좌 \"사물이 대화하는 방법, 통신 방법 알아보기\"의 학습 자료가 **이미 성공적으로 다운로드 및 분석 완료**되었습니다.\n\n경로: `/home/ubuntu/workspaces/courses/iot-communication-ch01/resource.md`\n파일 크기: 21,491바이트 (349줄)\n상태: 정상적으로 저장되어 있으며, 이전 대화에서 이미 분석까지 마친 상태입니다.\n\n이 강좌는 IoT 통신 기술의 기초를 다루며, 주요 통신 방식(USB, 이더넷, 적외선, RF, 블루투스, WiFi)과 휴대용 음주 측정기 프로젝트에 대한 내용을 포함하고 있습니다. 언제든지 학습 질문을 시작하셔도 됩니다.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} -->",
+      "created_at": "2026-07-05T11:31:51.632Z",
+      "updated_at": "2026-07-05T11:31:51.632Z"
+    },
+    {
+      "id": "51009dd1-45aa-43ab-9d73-3b10be8ff5d2",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "user",
+      "content": "[시스템 점검] 현재 강좌 \"사물이 대화하는 방법, 통신 방법 알아보기\"의 학습 자료가 성공적으로 다운로드되고 분석되었는지 확인해 주세요. \n다운로드 주소: http://localhost:3000/api/courses/iot-communication-ch01/resource\n사용자가 여러 강좌를 동시에 수강할 수 있으므로, 반드시 이 강좌를 위한 개별 폴더(예: workspaces/courses/iot-communication-ch01 또는 이에 상응하는 고유 경로)를 생성하여 그 안에서 다운로드 및 분석 작업을 수행해 주셔야 합니다.\n만약 아직 강좌 파일을 다운로드하고 분석하는 작업이 완료되지 않았다면, 다른 학습 질문에 답하기 전에 이 작업을 가장 우선하여 완료하고 그 결과를 알려주세요.\n\n상태 확인 후, 답변의 마지막에 반드시 다음 형식의 히든 메시지를 포함해 주세요:\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} --> (다운로드 완료 시) 또는\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} --> (미완료 시)}",
+      "created_at": "2026-07-05T11:33:18.139Z",
+      "updated_at": "2026-07-05T11:33:18.139Z"
+    },
+    {
+      "id": "061c90a8-6487-4b4f-a7e2-02942b36e9cc",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "assistant",
+      "content": "\n\n네, 강좌 학습 자료 상태를 확인했습니다.\n\n강좌 폴더: `/home/ubuntu/workspaces/courses/iot-communication-ch01/`\n파일: `resource.md` (349줄, 약 21KB)\n\n이미 성공적으로 다운로드되어 있습니다. 이 강좌는 아두이노 IoT 장치 개발에 필요한 6가지 핵심 통신 방법(USB, 이더넷, 적외선, RF, 블루투스, WiFi)의 원리와 장단점을 다루는 내용입니다. 추가 분석이나 다운로드가 필요하지 않은 상태입니다.\n\n학습 관련 질문이 있으시면 언제든지 말씀해 주세요.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} -->",
+      "created_at": "2026-07-05T11:33:30.721Z",
+      "updated_at": "2026-07-05T11:33:30.721Z"
+    },
+    {
+      "id": "2d334014-001e-4492-ada4-1decad04e6bd",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "user",
+      "content": "[시스템 점검] 현재 강좌 \"GLM-5.2 분석 강좌\"의 학습 자료가 성공적으로 다운로드되고 분석되었는지 확인해 주세요. \n다운로드 주소: http://localhost:3000/api/courses/glm52-video-course/resource\n사용자가 여러 강좌를 동시에 수강할 수 있으므로, 반드시 이 강좌를 위한 개별 폴더(예: workspaces/courses/glm52-video-course 또는 이에 상응하는 고유 경로)를 생성하여 그 안에서 다운로드 및 분석 작업을 수행해 주셔야 합니다.\n만약 아직 강좌 파일을 다운로드하고 분석하는 작업이 완료되지 않았다면, 다른 학습 질문에 답하기 전에 이 작업을 가장 우선하여 완료하고 그 결과를 알려주세요.\n\n상태 확인 후, 답변의 마지막에 반드시 다음 형식의 히든 메시지를 포함해 주세요:\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} --> (다운로드 완료 시) 또는\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} --> (미완료 시)}",
+      "created_at": "2026-07-05T11:34:25.450Z",
+      "updated_at": "2026-07-05T11:34:25.450Z"
+    },
+    {
+      "id": "6f8ce085-fd5e-4fea-b83f-3060d742c07e",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "assistant",
+      "content": "\n\n다운로드 상태를 확인했습니다.\n\n현재 상황:\n- 강좌 폴더: /home/ubuntu/workspaces/courses/glm52-video-course/ (존재)\n- 다운로드 서버(localhost:3000): 연결 불가 (curl http_code=000)\n- 포트 3000에서 실행 중인 서비스 없음\n- resource.md 파일은 아직 실제 강좌 자료가 다운로드되지 않은 상태(플레이스홀더)\n\n강좌 콘텐츠를 제공하는 API 서버가 포트 3000에서 실행되고 있지 않아 다운로드할 수 없습니다. Hermes API Server(8642)와 Dashboard(9120)만 실행 중입니다. 강좌 자료 API 서버가 포트 3000에서 가동되면 다시 시도하겠습니다.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} -->",
+      "created_at": "2026-07-05T11:34:41.306Z",
+      "updated_at": "2026-07-05T11:34:41.306Z"
+    },
+    {
+      "id": "a292348e-743e-40c7-8e03-6f51782e205f",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "user",
+      "content": "[시스템 점검] 현재 강좌 \"사물이 대화하는 방법, 통신 방법 알아보기\"의 학습 자료가 성공적으로 다운로드되고 분석되었는지 확인해 주세요. \n다운로드 주소: http://localhost:3000/api/courses/iot-communication-ch01/resource\n사용자가 여러 강좌를 동시에 수강할 수 있으므로, 반드시 이 강좌를 위한 개별 폴더(예: workspaces/courses/iot-communication-ch01 또는 이에 상응하는 고유 경로)를 생성하여 그 안에서 다운로드 및 분석 작업을 수행해 주셔야 합니다.\n만약 아직 강좌 파일을 다운로드하고 분석하는 작업이 완료되지 않았다면, 다른 학습 질문에 답하기 전에 이 작업을 가장 우선하여 완료하고 그 결과를 알려주세요.\n\n상태 확인 후, 답변의 마지막에 반드시 다음 형식의 히든 메시지를 포함해 주세요:\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} --> (다운로드 완료 시) 또는\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} --> (미완료 시)}",
+      "created_at": "2026-07-05T11:35:39.376Z",
+      "updated_at": "2026-07-05T11:35:39.376Z"
+    },
+    {
+      "id": "141c7a72-5f60-41bd-856c-73181c254826",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "user",
+      "content": "[시스템 점검] 현재 강좌 \"GLM-5.2 분석 강좌\"의 학습 자료가 성공적으로 다운로드되고 분석되었는지 확인해 주세요. \n다운로드 주소: http://localhost:3000/api/courses/glm52-video-course/resource\n사용자가 여러 강좌를 동시에 수강할 수 있으므로, 반드시 이 강좌를 위한 개별 폴더(예: workspaces/courses/glm52-video-course 또는 이에 상응하는 고유 경로)를 생성하여 그 안에서 다운로드 및 분석 작업을 수행해 주셔야 합니다.\n만약 아직 강좌 파일을 다운로드하고 분석하는 작업이 완료되지 않았다면, 다른 학습 질문에 답하기 전에 이 작업을 가장 우선하여 완료하고 그 결과를 알려주세요.\n\n상태 확인 후, 답변의 마지막에 반드시 다음 형식의 히든 메시지를 포함해 주세요:\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} --> (다운로드 완료 시) 또는\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} --> (미완료 시)}",
+      "created_at": "2026-07-05T11:35:39.436Z",
+      "updated_at": "2026-07-05T11:35:39.436Z"
+    },
+    {
+      "id": "30c7ddeb-0220-4f04-a6f8-b6ebed540b5a",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "assistant",
+      "content": "\n\n네, 시스템 점검 결과를 보고드립니다.\n\n강좌 \"사물이 대화하는 방법, 통신 방법 알아보기\"의 학습 자료는 이미 성공적으로 다운로드 및 분석이 완료된 상태입니다.\n\n폴더 위치: /home/ubuntu/workspaces/courses/iot-communication-ch01/\n파일명: resource.md\n크기: 349줄, 21,491바이트\n다운로드 출처: http://localhost:3000/api/courses/iot-communication-ch01/resource\n\n이미 이전 세션에서 해당 자료를 읽어 분석을 마쳤으며, 현재 강좌 내용을 바탕으로 학습 질문에 답변할 준비가 완료되어 있습니다. 사용자가 질문을 주시면 강좌 자료를 참고하여 안내해 드리겠습니다.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} -->",
+      "created_at": "2026-07-05T11:35:49.181Z",
+      "updated_at": "2026-07-05T11:35:49.181Z"
+    },
+    {
+      "id": "8dc1b15e-be07-4e37-aa91-01c9f58f94b1",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "assistant",
+      "content": "\n\nplaceholder 파일만 있고 실제 내용이 다운로드되지 않았습니다. 로컬호스트 3000 API 서버에 접속해서 실제 자료를 다운로드하겠습니다.\n\nGLM-5.2 분석 강좌의 학습 자료 다운로드 상태를 확인했습니다.\n\n강좌 폴더: /home/ubuntu/workspaces/courses/glm52-video-course/ (존재함)\n\n결과: 아직 다운로드되지 않았습니다.\n\n원인: API 서버 http://localhost:3000 가 현재 실행 중이지 않아 접속할 수 없습니다. (curl exit code 7 - Failed to connect to host). 3000번 포트에서 수신 중인 프로세스가 없습니다.\n\n필요 조치: localhost:3000 에서 API 서버를 구동해 주시면, 즉시 curl로 학습 자료를 다운로드하여 분석을 완료하겠습니다. 서버가 준비되면 말씀해 주세요.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} -->",
+      "created_at": "2026-07-05T11:35:57.023Z",
+      "updated_at": "2026-07-05T11:35:57.023Z"
+    },
+    {
+      "id": "d270940f-4574-4afc-ab77-af42f8bff946",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "user",
+      "content": "[시스템 점검] 현재 강좌 \"사물이 대화하는 방법, 통신 방법 알아보기\"의 학습 자료가 성공적으로 다운로드되고 분석되었는지 확인해 주세요. \n다운로드 주소: http://localhost:3000/api/courses/iot-communication-ch01/resource\n사용자가 여러 강좌를 동시에 수강할 수 있으므로, 반드시 이 강좌를 위한 개별 폴더(예: workspaces/courses/iot-communication-ch01 또는 이에 상응하는 고유 경로)를 생성하여 그 안에서 다운로드 및 분석 작업을 수행해 주셔야 합니다.\n만약 아직 강좌 파일을 다운로드하고 분석하는 작업이 완료되지 않았다면, 다른 학습 질문에 답하기 전에 이 작업을 가장 우선하여 완료하고 그 결과를 알려주세요.\n\n상태 확인 후, 답변의 마지막에 반드시 다음 형식의 히든 메시지를 포함해 주세요:\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} --> (다운로드 완료 시) 또는\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} --> (미완료 시)}",
+      "created_at": "2026-07-05T11:37:09.885Z",
+      "updated_at": "2026-07-05T11:37:09.885Z"
+    },
+    {
+      "id": "06d16965-6864-47f1-bc13-946adb0f4181",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "user",
+      "content": "[시스템 점검] 현재 강좌 \"GLM-5.2 분석 강좌\"의 학습 자료가 성공적으로 다운로드되고 분석되었는지 확인해 주세요. \n다운로드 주소: http://localhost:3000/api/courses/glm52-video-course/resource\n사용자가 여러 강좌를 동시에 수강할 수 있으므로, 반드시 이 강좌를 위한 개별 폴더(예: workspaces/courses/glm52-video-course 또는 이에 상응하는 고유 경로)를 생성하여 그 안에서 다운로드 및 분석 작업을 수행해 주셔야 합니다.\n만약 아직 강좌 파일을 다운로드하고 분석하는 작업이 완료되지 않았다면, 다른 학습 질문에 답하기 전에 이 작업을 가장 우선하여 완료하고 그 결과를 알려주세요.\n\n상태 확인 후, 답변의 마지막에 반드시 다음 형식의 히든 메시지를 포함해 주세요:\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} --> (다운로드 완료 시) 또는\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} --> (미완료 시)}",
+      "created_at": "2026-07-05T11:37:09.916Z",
+      "updated_at": "2026-07-05T11:37:09.916Z"
+    },
+    {
+      "id": "94a911a4-984a-4c55-9d6d-2b0d7ad468b2",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "user",
+      "content": "[시스템 점검] 현재 강좌 \"GLM-5.2 분석 강좌\"의 학습 자료가 성공적으로 다운로드되고 분석되었는지 확인해 주세요. \n다운로드 주소: http://localhost:3000/api/courses/glm52-video-course/resource\n사용자가 여러 강좌를 동시에 수강할 수 있으므로, 반드시 이 강좌를 위한 개별 폴더(예: workspaces/courses/glm52-video-course 또는 이에 상응하는 고유 경로)를 생성하여 그 안에서 다운로드 및 분석 작업을 수행해 주셔야 합니다.\n만약 아직 강좌 파일을 다운로드하고 분석하는 작업이 완료되지 않았다면, 다른 학습 질문에 답하기 전에 이 작업을 가장 우선하여 완료하고 그 결과를 알려주세요.\n\n상태 확인 후, 답변의 마지막에 반드시 다음 형식의 히든 메시지를 포함해 주세요:\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} --> (다운로드 완료 시) 또는\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} --> (미완료 시)}",
+      "created_at": "2026-07-05T11:37:22.090Z",
+      "updated_at": "2026-07-05T11:37:22.090Z"
+    },
+    {
+      "id": "d9184add-1cea-4475-9bd7-c9be53a2e98c",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "user",
+      "content": "[시스템 점검] 현재 강좌 \"사물이 대화하는 방법, 통신 방법 알아보기\"의 학습 자료가 성공적으로 다운로드되고 분석되었는지 확인해 주세요. \n다운로드 주소: http://localhost:3000/api/courses/iot-communication-ch01/resource\n사용자가 여러 강좌를 동시에 수강할 수 있으므로, 반드시 이 강좌를 위한 개별 폴더(예: workspaces/courses/iot-communication-ch01 또는 이에 상응하는 고유 경로)를 생성하여 그 안에서 다운로드 및 분석 작업을 수행해 주셔야 합니다.\n만약 아직 강좌 파일을 다운로드하고 분석하는 작업이 완료되지 않았다면, 다른 학습 질문에 답하기 전에 이 작업을 가장 우선하여 완료하고 그 결과를 알려주세요.\n\n상태 확인 후, 답변의 마지막에 반드시 다음 형식의 히든 메시지를 포함해 주세요:\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} --> (다운로드 완료 시) 또는\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} --> (미완료 시)}",
+      "created_at": "2026-07-05T11:37:22.154Z",
+      "updated_at": "2026-07-05T11:37:22.154Z"
+    },
+    {
+      "id": "b3a1c0e9-bb42-47a5-9716-fb645f760a25",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "assistant",
+      "content": "\n\n아직 강좌 폴더와 파일이 존재하지 않습니다. 지금 생성하고 다운로드하겠습니다.\n\n로컬 서버(localhost:3000)에 연결할 수 없습니다. 서버 상태를 확인해 보겠습니다.\n\n상태 확인 결과를 보고드립니다.\n\n강좌 전용 폴더(`/home/ubuntu/workspaces/courses/iot-communication-ch01/`)는 생성했습니다. 그러나 학습 자료 다운로드는 실패했습니다.\n\n원인: http://localhost:3000 에서 실행 중인 서비스가 없습니다. 현재 활성 상태인 서비스는 다음과 같습니다:\n- Hermes API Server (포트 8642)\n- Hermes Dashboard (포트 9120, localhost)\n\n포트 3000에서 강좌 자료를 제공하는 서버가 실행 중이지 않아 연결할 수 없었습니다 (curl 에러 코드 7: Failed to connect). Node.js나 Docker 컨테이너도 해당 포트에서 동작 중인 것이 없습니다.\n\n학습 자료 다운로드를 완료하려면, 포트 3000에서 강좌 자료 API 서버를 먼저 실행해 주셔야 합니다. 서버가 준비되면 다시 요청해 주시면 다운로드하여 분석하겠습니다.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} -->",
+      "created_at": "2026-07-05T11:37:30.613Z",
+      "updated_at": "2026-07-05T11:37:30.613Z"
+    },
+    {
+      "id": "9a9d4818-e2b7-4e15-9feb-a714d6c64c64",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "assistant",
+      "content": "\n\n학습 자료 상태를 확인했습니다.\n\n결과: **이미 다운로드 및 분석 완료**\n\n- 저장 경로: `/home/ubuntu/workspaces/courses/iot-communication-ch01/resource.md`\n- 파일 크기: 약 21KB\n- 다운로드 일시: 6월 30일\n- 상태: 정상, 완전한 내용 포함\n\n이 강좌 자료는 이전에 이미 성공적으로 다운로드되어 분석까지 마친 상태입니다. 따라서 추가 다운로드 작업 없이 바로 학습 질문에 답변할 준비가 되어 있습니다.\n\n언제든지 궁금하신 내용을 물어봐 주세요.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} -->",
+      "created_at": "2026-07-05T11:37:31.368Z",
+      "updated_at": "2026-07-05T11:37:31.368Z"
+    },
+    {
+      "id": "ac2e0ae8-0b59-460c-b8fb-7b274c578837",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "assistant",
+      "content": "\n\n아직 \"GLM-5.2 분석 강좌\"를 위한 자료 폴더가 생성되지 않았습니다. 지금 바로 다운로드 작업을 시작하겠습니다.\n\n수업 자료 API 서버(localhost:3000)가 현재 실행 중이지 않아 다운로드를 할 수 없습니다. 이전 세션에서 자료가 다운로드된 기록이 있는지도 확인해 보겠습니다.\n\n현재 상태를 종합적으로 알려드립니다.\n\nGLM-5.2 분석 강좌의 학습 자료 다운로드 상태:\n\n- 대상 경로: /home/ubuntu/workspaces/courses/glm52-video-course/resource.md\n- 생성된 디렉토리: /home/ubuntu/workspaces/courses/glm52-video-course/ (빈 폴더)\n- 다운로드 시도 결과: 실패 -- localhost:3000 서버에 연결할 수 없음 (Connection refused)\n- 이전 세션 기록: 없음 (해당 강좌에 대한 사전 작업 이력 없음)\n\n다운로드가 불가능한 이유: localhost:3000에서 수업 자료를 제공하는 API 서버가 실행되고 있지 않습니다. curl로 연결을 시도했으나 \"Connection refused\" 오류가 발생했습니다.\n\n이 문제를 해결하려면 다음 중 하나가 필요합니다:\n1. API 서버(localhost:3000)를 먼저 실행해 주세요.\n2. 혹시 다른 URL이나 경로에서 해당 강좌 자료를 가져올 수 있다면 알려주세요.\n\n서버가 실행되면 다시 다운로드하겠습니다.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} -->",
+      "created_at": "2026-07-05T11:37:33.461Z",
+      "updated_at": "2026-07-05T11:37:33.461Z"
+    },
+    {
+      "id": "bd2c27a0-8a8a-4aad-a309-b7acfcc9ae45",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "assistant",
+      "content": "강좌 자료가 이미 다운로드되어 있는지 확인하겠습니다.\n\nglm52-video-course 폴더가 아직 존재하지 않습니다. 지금 바로 다운로드하여 분석을 진행하겠습니다.\n\nPort 3000 서버에 접속할 수 없습니다. 연결이 거부되었습니다. 다른 방법으로 자료에 접근할 수 있는지 확인해 보겠습니다.\n\n현재 상태를 보고드립니다.\n\n**상황: 다운로드 실패**\n\nGLM-5.2 분석 강좌의 학습 자료를 다운로드할 수 없었습니다. 이유는 다음과 같습니다:\n\n1. 강좌 전용 폴더(`/home/ubuntu/workspaces/courses/glm52-video-course/`)는 생성했습니다.\n2. 하지만 자료를 제공하는 API 서버(`http://localhost:3000`)가 현재 실행 중이지 않습니다.\n   - Port 3000에 리스너가 없음 (연결 거부, exit code 7)\n   - 관련 프로세스도 확인되지 않음\n3. 기존 세션에서도 이 강좌에 대한 다운로드 이력이 발견되지 않았습니다.\n\n**필요한 조치:** API 서버(port 3000)를 먼저 실행해 주셔야 다운로드가 가능합니다. 서버가 어떤 방식으로 실행되어야 하는지 (예: docker 컨테이너, node 서버, python 서버 등) 알려주시면, 그 이후에 다운로드 및 분석을 바로 진행하겠습니다.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} -->",
+      "created_at": "2026-07-05T11:37:47.797Z",
+      "updated_at": "2026-07-05T11:37:47.797Z"
+    },
+    {
+      "id": "550662f0-cc6f-4c96-a2c1-4d47617ea00c",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "user",
+      "content": "[시스템 점검] 현재 강좌 \"GLM-5.2 분석 강좌\"의 학습 자료가 성공적으로 다운로드되고 분석되었는지 확인해 주세요. \n다운로드 주소: http://localhost:3000/api/courses/glm52-video-course/resource\n사용자가 여러 강좌를 동시에 수강할 수 있으므로, 반드시 이 강좌를 위한 개별 폴더(예: workspaces/courses/glm52-video-course 또는 이에 상응하는 고유 경로)를 생성하여 그 안에서 다운로드 및 분석 작업을 수행해 주셔야 합니다.\n만약 아직 강좌 파일을 다운로드하고 분석하는 작업이 완료되지 않았다면, 다른 학습 질문에 답하기 전에 이 작업을 가장 우선하여 완료하고 그 결과를 알려주세요.\n\n상태 확인 후, 답변의 마지막에 반드시 다음 형식의 히든 메시지를 포함해 주세요:\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} --> (다운로드 완료 시) 또는\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} --> (미완료 시)}",
+      "created_at": "2026-07-05T11:46:31.412Z",
+      "updated_at": "2026-07-05T11:46:31.412Z"
+    },
+    {
+      "id": "4ab53196-1b3c-4dd1-91fe-bc64ff14a454",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "user",
+      "content": "[시스템 점검] 현재 강좌 \"사물이 대화하는 방법, 통신 방법 알아보기\"의 학습 자료가 성공적으로 다운로드되고 분석되었는지 확인해 주세요. \n다운로드 주소: http://localhost:3000/api/courses/iot-communication-ch01/resource\n사용자가 여러 강좌를 동시에 수강할 수 있으므로, 반드시 이 강좌를 위한 개별 폴더(예: workspaces/courses/iot-communication-ch01 또는 이에 상응하는 고유 경로)를 생성하여 그 안에서 다운로드 및 분석 작업을 수행해 주셔야 합니다.\n만약 아직 강좌 파일을 다운로드하고 분석하는 작업이 완료되지 않았다면, 다른 학습 질문에 답하기 전에 이 작업을 가장 우선하여 완료하고 그 결과를 알려주세요.\n\n상태 확인 후, 답변의 마지막에 반드시 다음 형식의 히든 메시지를 포함해 주세요:\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} --> (다운로드 완료 시) 또는\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} --> (미완료 시)}",
+      "created_at": "2026-07-05T11:46:31.423Z",
+      "updated_at": "2026-07-05T11:46:31.423Z"
+    },
+    {
+      "id": "79304d9b-3026-4031-8efc-b84b64e19e25",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "assistant",
+      "content": "\n\n디렉토리가 이미 존재합니다. 파일 내용을 확인해 보겠습니다.\n\n파일이 이미 존재하지만 내용이 현재 세션에서 이전에 읽힌 것과 중복되어 직접 반환되지 않았습니다. 새로 읽어서 확인하겠습니다.\n\n✅ **강좌 자료 다운로드 및 분석 완료**\n\n상태를 확인한 결과:\n\n- **강좌**: \"사물이 대화하는 방법, 통신 방법 알아보기\" (iot-communication-ch01)\n- **저장 경로**: `/home/ubuntu/workspaces/courses/iot-communication-ch01/resource.md`\n- **파일 크기**: 약 21KB\n- **상태**: ✅ **이미 다운로드 완료 및 분석됨**\n- **설명**: 아두이노 IoT 장치 개발에 필요한 6가지 핵심 통신 방법(USB, 이더넷, 적외선, RF, 블루투스, WiFi)의 원리와 장단점을 다루는 챕터 1의 학습 자료입니다.\n\n파일 내용을 확인한 결과, 정상적으로 저장되어 있고 분석이 완료된 상태입니다. 언제든지 학습 질문에 답변할 준비가 되어 있습니다.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} -->",
+      "created_at": "2026-07-05T11:46:44.128Z",
+      "updated_at": "2026-07-05T11:46:44.128Z"
+    },
+    {
+      "id": "f6fc5789-88ab-4a03-a860-e09dbbca786d",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "assistant",
+      "content": "\n\n디렉토리가 이미 존재합니다. 내용물을 확인해 보겠습니다.\n\nstatus.md에 이전에 다운로드가 실패했다고 기록되어 있습니다. resource.md의 실제 내용도 확인해 보겠습니다.\n\n아직 자료가 다운로드되지 않았습니다. 이전 시도에서 localhost:3000 API 서버가 실행 중이지 않아 실패했습니다. 지금 다시 시도해 보겠습니다.\n\n안녕하세요. \"GLM-5.2 분석 강좌\"의 학습 자료 상태를 확인했습니다.\n\n**현재 상태: 다운로드 실패 (3차 시도)**\n\n강좌 전용 폴더는 이미 생성되어 있습니다:\n- `/home/ubuntu/workspaces/courses/glm52-video-course/`\n\n그러나 학습 자료를 실제로 다운로드하지 못했습니다. 이유는 다음과 같습니다:\n\nAPI 서버 `http://localhost:3000` 가 현재 실행 중이지 않습니다 (connection refused). 3000번 포트에서 수신 중인 프로세스가 전혀 없습니다.\n\n- `resource.md` 파일은 존재하지만 7줄짜리 placeholder이며, 실제 강좌 내용이 아닙니다.\n- `status.md` 파일에 모든 시도 기록이保存되어 있습니다.\n\n**다운로드를 완료하려면 다음이 필요합니다:**\n1. 로컬호스트 3000번 포트에서 API 서버를 구동해 주세요.\n2. 서버가 가동되면 다시 요청 주시면 즉시 다운로드 및 분석을 진행하겠습니다.\n3. 또는 직접 다음 명령어로 다운로드하실 수도 있습니다:\n   ```\n   curl -o ~/workspaces/courses/glm52-video-course/resource.md \\\n        http://localhost:3000/api/courses/glm52-video-course/resource\n   ```\n\n서버가 준비되면 알려주세요. 그때 바로 다운로드하여 분석을 완료하고 학습 안내를 시작하겠습니다.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} -->",
+      "created_at": "2026-07-05T11:46:57.577Z",
+      "updated_at": "2026-07-05T11:46:57.577Z"
+    },
+    {
+      "id": "5180c3a4-d221-4dcf-8ed0-210cc0e1c442",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "user",
+      "content": "[시스템 점검] 현재 강좌 \"GLM-5.2 분석 강좌\"의 학습 자료가 성공적으로 다운로드되고 분석되었는지 확인해 주세요. \n다운로드 주소: http://localhost:3000/api/courses/glm52-video-course/resource\n사용자가 여러 강좌를 동시에 수강할 수 있으므로, 반드시 이 강좌를 위한 개별 폴더(예: workspaces/courses/glm52-video-course 또는 이에 상응하는 고유 경로)를 생성하여 그 안에서 다운로드 및 분석 작업을 수행해 주셔야 합니다.\n만약 아직 강좌 파일을 다운로드하고 분석하는 작업이 완료되지 않았다면, 다른 학습 질문에 답하기 전에 이 작업을 가장 우선하여 완료하고 그 결과를 알려주세요.\n\n상태 확인 후, 답변의 마지막에 반드시 다음 형식의 히든 메시지를 포함해 주세요:\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} --> (다운로드 완료 시) 또는\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} --> (미완료 시)}",
+      "created_at": "2026-07-05T11:55:50.257Z",
+      "updated_at": "2026-07-05T11:55:50.257Z"
+    },
+    {
+      "id": "275a8f16-d306-4e7c-997b-6ba57e651b6c",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "assistant",
+      "content": "네, 확인해 보겠습니다. 먼저 강좌 전용 폴더와 리소스 파일이 있는지 확인하겠습니다.\n\nglm52-video-course 폴더와 파일이 아직 없습니다. 지금 생성하고 다운로드하겠습니다.\n\n서버에 연결할 수 없습니다(exit code 7). 자세한 내용을 확인해 보겠습니다.\n\nlocalhost:3000 서버에 연결할 수 없습니다 — 해당 포트에서 실행 중인 서비스가 없습니다. 강좌 자료 다운로드 API에 접근할 수 없는 상태입니다.\n\n시도한 작업:\n1. 강좌 전용 폴더 생성: `/home/ubuntu/workspaces/courses/glm52-video-course/` (완료)\n2. `curl http://localhost:3000/api/courses/glm52-video-course/resource` → Connection refused (실패)\n\nlocalhost:3000에서 API 서버가 실행 중이지 않습니다. 강좌 자료를 다운로드하려면 해당 서버를 먼저 실행하거나, 다른 방법으로 자료를 가져올 수 있는 방법이 필요합니다.\n\n혹시 API 서버를 따로 실행해야 한다면 알려주세요. 아니면 다른 경로나 파일로 강좌 자료를 제공받을 수 있을까요?\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} -->",
+      "created_at": "2026-07-05T11:56:05.114Z",
+      "updated_at": "2026-07-05T11:56:05.114Z"
+    },
+    {
+      "id": "5f86db56-d1cd-428d-8a4a-5e5433be0ecf",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "user",
+      "content": "[시스템 점검] 현재 강좌 \"GLM-5.2 분석 강좌\"의 학습 자료가 성공적으로 다운로드되고 분석되었는지 확인해 주세요. \n다운로드 주소: http://localhost:3000/api/courses/glm52-video-course/resource\n사용자가 여러 강좌를 동시에 수강할 수 있으므로, 반드시 이 강좌를 위한 개별 폴더(예: workspaces/courses/glm52-video-course 또는 이에 상응하는 고유 경로)를 생성하여 그 안에서 다운로드 및 분석 작업을 수행해 주셔야 합니다.\n만약 아직 강좌 파일을 다운로드하고 분석하는 작업이 완료되지 않았다면, 다른 학습 질문에 답하기 전에 이 작업을 가장 우선하여 완료하고 그 결과를 알려주세요.\n\n상태 확인 후, 답변의 마지막에 반드시 다음 형식의 히든 메시지를 포함해 주세요:\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} --> (다운로드 완료 시) 또는\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} --> (미완료 시)}",
+      "created_at": "2026-07-05T11:58:07.328Z",
+      "updated_at": "2026-07-05T11:58:07.328Z"
+    },
+    {
+      "id": "347f5552-b42d-4c87-9d20-a0d08d5b01d3",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "assistant",
+      "content": "\n\nAPI 서버가 여전히 중단된 것으로 보입니다. 직접 한 번 더 확인해 보겠습니다.\n\nGLM-5.2 분석 강좌의 학습 자료 다운로드 상태를 확인한 결과를 보고드립니다.\n\n**현재 상태: 다운로드 미완료**\n\n자세한 내역:\n- 강좌 전용 폴더: `~/workspaces/courses/glm52-video-course/` 는 이미 생성되어 있습니다.\n- 하지만 `resource.md` 파일에는 실제 강좌 내용이 아닌 \"다운로드되지 않음\" 안내 메시지만 들어 있습니다.\n- **원인**: API 서버 `http://localhost:3000`가 현재 실행 중이지 않습니다 (connection refused). 3000번 포트에서 수신 중인 프로세스가 없습니다.\n\n**다음 중 하나의 조치가 필요합니다**:\n1. 로컬호스트 3000번 포트에서 API 서버를 먼저 구동해 주세요.\n2. 서버가 가동되면 이 대화에서 다시 요청해 주시면 즉시 다운로드하겠습니다.\n3. 또는 대체 가능한 다른 주소나 파일 경로가 있다면 알려주세요.\n\n서버가 준비되는 대로 `curl -o ~/workspaces/courses/glm52-video-course/resource.md http://localhost:3000/api/courses/glm52-video-course/resource` 명령으로 다운로드하겠습니다.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} -->",
+      "created_at": "2026-07-05T11:58:21.187Z",
+      "updated_at": "2026-07-05T11:58:21.187Z"
+    },
+    {
+      "id": "495e6070-42af-4c91-bb6e-0ddea39b2675",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "user",
+      "content": "[시스템 점검] 현재 강좌 \"신경망과 LLM 개론\"의 학습 자료가 새롭게 업데이트되었습니다. \n기존 다운로드 폴더(예: workspaces/courses/neutral-network-and-llm) 내의 기존 강좌 파일들을 모두 삭제하고, 업데이트된 아래 주소에서 새 강좌 파일을 다운로드하여 새로 분석해 주세요.\n새 다운로드 주소: http://localhost:3000/api/courses/neutral-network-and-llm/resource\n사용자가 여러 강좌를 동시에 수강할 수 있으므로, 반드시 이 강좌를 위한 개별 폴더(예: workspaces/courses/neutral-network-and-llm 또는 이에 상응하는 고유 경로)를 생성하여 그 안에서 다운로드 및 분석 작업을 수행해 주셔야 합니다.\n만약 아직 강좌 파일을 다운로드하고 분석하는 작업이 완료되지 않았다면, 다른 학습 질문에 답하기 전에 이 작업을 가장 우선하여 완료하고 그 결과를 알려주세요.\n\n상태 확인 후, 답변의 마지막에 반드시 다음 형식의 히든 메시지를 포함해 주세요:\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} --> (다운로드 완료 시) 또는\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} --> (미완료 시)}",
+      "created_at": "2026-07-05T13:24:05.561Z",
+      "updated_at": "2026-07-05T13:24:05.561Z"
+    },
+    {
+      "id": "e2494119-6a53-453b-8b5e-faadba0bd26d",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "assistant",
+      "content": "네, 업데이트된 강좌 자료를 새로 다운로드하겠습니다. 먼저 기존 폴더를 확인하고 삭제한 후 새로 다운로드하겠습니다.\n\n폴더가 아직 없네요. 새로 생성하고 다운로드하겠습니다.\n\n다운로드에 실패했습니다 (exit code 7 — 연결 거부). 로컬 서버가 실행 중인지 확인해보겠습니다.\n\n포트 3000에서 API 서버가 실행 중이지 않습니다. 연결이 거부되었습니다 (Connection refused). 포트 3000에서 수신 중인 프로세스가 없습니다.\n\n강좌 자료를 제공하는 API 서버(http://localhost:3000)가 현재 가동되고 있지 않아 다운로드할 수 없습니다. 이 서버가 실행 중이어야 자료를 받아올 수 있습니다.\n\n서버를 먼저 실행하시거나, 혹은 다른 경로로 자료를 받을 수 있는 방법이 있다면 알려주시기 바랍니다.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} -->",
+      "created_at": "2026-07-05T13:24:19.785Z",
+      "updated_at": "2026-07-05T13:24:19.785Z"
+    },
+    {
+      "id": "28b26d53-6293-46be-bb28-4690a69f75b7",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "user",
+      "content": "[System Checkpoint QnA Instruction]\nThe student has just completed the card \"2.2 트랜스포머와 어텐션 메커니즘\".\nYou must now test the student's understanding by asking a question based on this instruction:\n\"트랜스포머 모델의 '어텐션(Attention)' 메커니즘이 다의어를 맥락에 맞게 인코딩하는 방식에 대해 질문하세요. 또한 이를 통해 기존 순차 모델에 비해 어떤 연산 상의 이점(병렬 처리)을 갖게 되었는지 설명하도록 학습자를 안내하세요.\"\n\nPlease ask the student the question now. Only ask the question itself, do not reveal the answer or evaluation criteria yet. Make your tone friendly and encouraging.",
+      "created_at": "2026-07-05T13:25:50.447Z",
+      "updated_at": "2026-07-05T13:25:50.447Z"
+    },
+    {
+      "id": "b8feb4a9-39a7-443a-847e-12ae6f43cc13",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "assistant",
+      "content": "\n\n오늘 배운 **2.2 트랜스포머와 어텐션 메커니즘** 내용을 바탕으로, 간단히 확인 질문 하나 드릴게요!\n\n트랜스포머 모델의 **어텐션(Attention)** 메커니즘은 'bank'처럼 여러 의미를 가진 **다의어**가 문장 안에서 어떤 의미로 쓰였는지 판단할 때 어떤 방식으로 작동하나요? 그리고, 이런 어텐션 방식을 통해 기존의 RNN이나 LSTM 같은 순차(Sequential) 모델과 비교했을 때 **병렬 처리** 측면에서 어떤 연산상의 이점을 얻게 되었는지도 함께 설명해 주세요.\n\n간단하게 생각나는 대로 말씀해 주셔도 괜찮습니다! \n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} -->",
+      "created_at": "2026-07-05T13:26:02.613Z",
+      "updated_at": "2026-07-05T13:26:02.613Z"
+    },
+    {
+      "id": "afbebc5a-16c3-4017-9a5d-b39e9b4f9c85",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "user",
+      "content": "[시스템 점검] 현재 강좌 \"신경망과 LLM 개론\"의 학습 자료가 새롭게 업데이트되었습니다. \n기존 다운로드 폴더(예: workspaces/courses/neutral-network-and-llm) 내의 기존 강좌 파일들을 모두 삭제하고, 업데이트된 아래 주소에서 새 강좌 파일을 다운로드하여 새로 분석해 주세요.\n새 다운로드 주소: http://localhost:3000/api/courses/neutral-network-and-llm/resource\n사용자가 여러 강좌를 동시에 수강할 수 있으므로, 반드시 이 강좌를 위한 개별 폴더(예: workspaces/courses/neutral-network-and-llm 또는 이에 상응하는 고유 경로)를 생성하여 그 안에서 다운로드 및 분석 작업을 수행해 주셔야 합니다.\n만약 아직 강좌 파일을 다운로드하고 분석하는 작업이 완료되지 않았다면, 다른 학습 질문에 답하기 전에 이 작업을 가장 우선하여 완료하고 그 결과를 알려주세요.\n\n상태 확인 후, 답변의 마지막에 반드시 다음 형식의 히든 메시지를 포함해 주세요:\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} --> (다운로드 완료 시) 또는\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} --> (미완료 시)}",
+      "created_at": "2026-07-05T13:34:29.292Z",
+      "updated_at": "2026-07-05T13:34:29.292Z"
+    },
+    {
+      "id": "553882ab-b5d9-4718-b8c2-b716973cd843",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "user",
+      "content": "[시스템 점검] 현재 강좌 \"신경망과 LLM 개론\"의 학습 자료가 새롭게 업데이트되었습니다. \n기존 다운로드 폴더(예: workspaces/courses/neutral-network-and-llm) 내의 기존 강좌 파일들을 모두 삭제하고, 업데이트된 아래 주소에서 새 강좌 파일을 다운로드하여 새로 분석해 주세요.\n새 다운로드 주소: http://localhost:3000/api/courses/neutral-network-and-llm/resource\n사용자가 여러 강좌를 동시에 수강할 수 있으므로, 반드시 이 강좌를 위한 개별 폴더(예: workspaces/courses/neutral-network-and-llm 또는 이에 상응하는 고유 경로)를 생성하여 그 안에서 다운로드 및 분석 작업을 수행해 주셔야 합니다.\n만약 아직 강좌 파일을 다운로드하고 분석하는 작업이 완료되지 않았다면, 다른 학습 질문에 답하기 전에 이 작업을 가장 우선하여 완료하고 그 결과를 알려주세요.\n\n상태 확인 후, 답변의 마지막에 반드시 다음 형식의 히든 메시지를 포함해 주세요:\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} --> (다운로드 완료 시) 또는\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} --> (미완료 시)}",
+      "created_at": "2026-07-05T13:34:38.292Z",
+      "updated_at": "2026-07-05T13:34:38.292Z"
+    },
+    {
+      "id": "abc06594-ed5a-47c7-a1f0-e01fd5dc119e",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "assistant",
+      "content": "\n\nAPI 서버(포트 3000)가 현재 실행 중이지 않습니다. 혹시 이 강좌 자료를 제공하는 로컬 서버를 직접 실행해야 하는지, 또는 다른 방법으로 자료를 받을 수 있는지 확인해 보겠습니다.\n\n안녕하세요. 현재 강좌 \"신경망과 LLM 개론\"의 학습 자료 다운로드를 시도했으나 문제가 발생했습니다.\n\n상황:\n- 강좌 전용 폴더 `/home/ubuntu/workspaces/courses/neutral-network-and-llm/` 는 생성 완료했습니다.\n- 기존 파일은 없었으므로(빈 디렉토리) 별도 삭제 작업은 필요하지 않았습니다.\n- 다운로드 주소 `http://localhost:3000/api/courses/neutral-network-and-llm/resource` 에 접속을 시도했으나, **포트 3000에서 실행 중인 서버가 없어 연결이 거부되었습니다** (Connection refused).\n\n즉, 강좌 자료를 제공하는 API 서버(localhost:3000)가 현재 실행되고 있지 않아 새 파일을 다운로드할 수 없는 상태입니다.\n\n이 문제를 해결하려면 다음 중 하나가 필요합니다:\n1. 해당 API 서버를 직접 실행한 후 다시 다운로드를 시도하거나\n2. 강좌 자료의 다른 제공 경로가 있는지 확인하거나\n\n서버가 준비되면 다시 시도해 드리겠습니다.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} -->",
+      "created_at": "2026-07-05T13:35:05.074Z",
+      "updated_at": "2026-07-05T13:35:05.074Z"
+    },
+    {
+      "id": "d155714f-6cb5-4b8e-ae4c-9600e7301418",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "user",
+      "content": "[시스템 점검] 현재 강좌 \"사물이 대화하는 방법, 통신 방법 알아보기\"의 학습 자료가 성공적으로 다운로드되고 분석되었는지 확인해 주세요. \n다운로드 주소: http://localhost:3000/api/courses/iot-communication-ch01/resource\n사용자가 여러 강좌를 동시에 수강할 수 있으므로, 반드시 이 강좌를 위한 개별 폴더(예: workspaces/courses/iot-communication-ch01 또는 이에 상응하는 고유 경로)를 생성하여 그 안에서 다운로드 및 분석 작업을 수행해 주셔야 합니다.\n만약 아직 강좌 파일을 다운로드하고 분석하는 작업이 완료되지 않았다면, 다른 학습 질문에 답하기 전에 이 작업을 가장 우선하여 완료하고 그 결과를 알려주세요.\n\n상태 확인 후, 답변의 마지막에 반드시 다음 형식의 히든 메시지를 포함해 주세요:\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} --> (다운로드 완료 시) 또는\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} --> (미완료 시)}",
+      "created_at": "2026-07-05T13:38:36.946Z",
+      "updated_at": "2026-07-05T13:38:36.946Z"
+    },
+    {
+      "id": "cfc73feb-9398-4854-ad88-388541a234c3",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "assistant",
+      "content": "\n\n네, 확인했습니다. 강좌 \"사물이 대화하는 방법, 통신 방법 알아보기\"의 학습 자료는 이미 성공적으로 다운로드되어 분석된 상태입니다.\n\n- 경로: `/home/ubuntu/workspaces/courses/iot-communication-ch01/resource.md`\n- 파일 크기: 약 21KB (21,491 바이트)\n- 상태: 다운로드 및 저장 완료\n\n이전 세션에서 이미 강좌 자료를 내려받아 개별 폴더에 저장해 두었으므로, 추가 다운로드 작업 없이 바로 학습 안내가 가능합니다. 궁금하신 내용이나 학습하고 싶은 주제가 있으시면 언제든지 질문해 주세요.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} -->",
+      "created_at": "2026-07-05T13:38:43.020Z",
+      "updated_at": "2026-07-05T13:38:43.020Z"
+    },
+    {
+      "id": "16621833-aa46-42bd-8bb3-aca796fc49ea",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "user",
+      "content": "[시스템 점검] 현재 강좌 \"신경망과 LLM 개론\"의 학습 자료가 새롭게 업데이트되었습니다. \n기존 다운로드 폴더(예: workspaces/courses/neutral-network-and-llm) 내의 기존 강좌 파일들을 모두 삭제하고, 업데이트된 아래 주소에서 새 강좌 파일을 다운로드하여 새로 분석해 주세요.\n새 다운로드 주소: http://localhost:3000/api/courses/neutral-network-and-llm/resource\n사용자가 여러 강좌를 동시에 수강할 수 있으므로, 반드시 이 강좌를 위한 개별 폴더(예: workspaces/courses/neutral-network-and-llm 또는 이에 상응하는 고유 경로)를 생성하여 그 안에서 다운로드 및 분석 작업을 수행해 주셔야 합니다.\n만약 아직 강좌 파일을 다운로드하고 분석하는 작업이 완료되지 않았다면, 다른 학습 질문에 답하기 전에 이 작업을 가장 우선하여 완료하고 그 결과를 알려주세요.\n\n상태 확인 후, 답변의 마지막에 반드시 다음 형식의 히든 메시지를 포함해 주세요:\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} --> (다운로드 완료 시) 또는\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} --> (미완료 시)}",
+      "created_at": "2026-07-05T13:40:42.506Z",
+      "updated_at": "2026-07-05T13:40:42.506Z"
+    },
+    {
+      "id": "201cdd10-3852-4ec7-8693-0a232b6d0229",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "assistant",
+      "content": "\n\n디렉토리가 존재하지만 비어 있습니다. 이전 파일이 없으므로 바로 새 파일을 다운로드하겠습니다.\n\n기존 파일이 없으므로 삭제 단계는 건너뛰고, 바로 새 자료를 다운로드하겠습니다.\n\n로컬 서버(localhost:3000)에 연결할 수 없습니다. 서버가 실행 중인지 확인해 보겠습니다.\n\n상태 확인 결과를 보고드립니다.\n\n강좌 전용 폴더 `/home/ubuntu/workspaces/courses/neutral-network-and-llm/`는 생성되어 있지만, `resource.md` 파일이 없습니다 (한 번도 다운로드된 적 없음).\n\n다운로드를 시도했지만 http://localhost:3000 서버에 연결할 수 없습니다 (connection refused). 3000번 포트에서 수신 중인 프로세스가 없으며, 다른 포트(8080, 8000, 5000 등)에서도 HTTP 서버가 실행 중이지 않습니다.\n\n이 문제는 이전 세션에서도 동일하게 발생했으며, 3000번 포트의 API 서버가 한 번도 가동된 적이 없는 것으로 보입니다.\n\n**필요한 조치**: 강좌 콘텐츠 API 서버(http://localhost:3000)를 먼저 구동해 주셔야 다운로드가 가능합니다. 또는 대체 다운로드 경로가 있다면 알려주세요.\n\n서버가 준비되면 즉시 다운로드 및 분석을 진행하겠습니다.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} -->",
+      "created_at": "2026-07-05T13:41:27.865Z",
+      "updated_at": "2026-07-05T13:41:27.865Z"
     }
   ],
   "macros": []
