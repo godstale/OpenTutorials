@@ -18,7 +18,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">설정</h1>
-        <p className="text-muted-foreground mt-2">계정 및 서비스 설정을 관리하세요.</p>
+        <p className="text-muted-foreground mt-2">서비스 설정을 관리하세요.</p>
       </div>
 
       <div className="flex gap-8 items-start">

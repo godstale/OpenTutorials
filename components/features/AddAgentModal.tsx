@@ -96,13 +96,19 @@ export default function AddAgentModal({ isOpen, onClose, onSuccess }: AddAgentMo
       });
       const data = await res.json();
       if (data.success) {
-        const modelsList = Array.isArray(data.models) ? data.models : [];
-        const filteredModels = agentType === 'harness'
-          ? modelsList.filter((m: { id: string; hidden?: boolean }) => !m.hidden)
-          : modelsList;
-        const modelIds = filteredModels.map((m: { id: string }) => m.id);
+        if (agentType === 'harness') {
+          setSelectedModel('hermes-agent');
+          setTestResult({
+            success: true,
+            message: '연결 성공! (하네스 에이전트)',
+          });
+          return;
+        }
 
-        if (agentType === 'llm' && modelIds.length === 0) {
+        const modelsList = Array.isArray(data.models) ? data.models : [];
+        const modelIds = modelsList.map((m: { id: string }) => m.id);
+
+        if (modelIds.length === 0) {
           setTestResult({
             success: false,
             message: '연결은 성공했으나 LLM 모델을 찾지 못했습니다. LLM 에이전트는 모델이 반드시 존재해야 합니다.',
@@ -111,20 +117,14 @@ export default function AddAgentModal({ isOpen, onClose, onSuccess }: AddAgentMo
         }
 
         setDetectedModels(modelIds);
-        const initialModel = (agentType === 'harness' && data.current_model)
-          ? data.current_model
-          : (modelIds.length > 0 ? modelIds[0] : '');
+        const initialModel = modelIds[0] || '';
         if (initialModel) {
           setSelectedModel(initialModel);
-        } else {
-          setSelectedModel(agentType === 'harness' ? 'hermes-agent' : '');
         }
-        const modelNames = modelIds.join(', ') || (agentType === 'harness' ? '없음' : '모델 감지 안됨');
+        const modelNames = modelIds.join(', ') || '모델 감지 안됨';
         setTestResult({
           success: true,
-          message: agentType === 'harness'
-            ? `연결 성공! (하네스 에이전트)`
-            : `연결 성공! 감지된 모델: ${modelNames}`,
+          message: `연결 성공! 감지된 모델: ${modelNames}`,
         });
       } else {
         setTestResult({
@@ -409,30 +409,26 @@ export default function AddAgentModal({ isOpen, onClose, onSuccess }: AddAgentMo
               )}
             </div>
 
-            <div className="space-y-2 rounded-lg border border-border/85 bg-zinc-50/50 dark:bg-zinc-900/50 p-3 mt-1">
-              <div className="space-y-1.5">
-                <Label htmlFor="selectedModel" className="text-xs font-bold">
-                  활성 모델 {agentType === 'llm' ? '*' : '(선택 사항)'}
-                </Label>
-                <Input
-                  id="selectedModel"
-                  readOnly
-                  disabled
-                  placeholder={
-                    agentType === 'harness'
-                      ? '하네스 에이전트는 모델을 지정하지 않아도 됩니다.'
-                      : '연결상태 확인 버튼을 클릭하면 자동으로 모델을 조회하여 입력합니다.'
-                  }
-                  value={selectedModel}
-                  className="bg-zinc-100 dark:bg-zinc-900/50 h-9 text-sm text-muted-foreground"
-                />
-                <p className="text-[10px] text-muted-foreground">
-                  {agentType === 'harness'
-                    ? '하네스 에이전트의 경우 기본 모델(hermes-agent)이 사용되므로 입력이 없어도 무방합니다.'
-                    : '연결상태 확인 시 탐색된 LLM 모델명이 자동으로 입력됩니다.'}
-                </p>
+            {agentType === 'llm' && (
+              <div className="space-y-2 rounded-lg border border-border/85 bg-zinc-50/50 dark:bg-zinc-900/50 p-3 mt-1">
+                <div className="space-y-1.5">
+                  <Label htmlFor="selectedModel" className="text-xs font-bold">
+                    활성 모델 *
+                  </Label>
+                  <Input
+                    id="selectedModel"
+                    readOnly
+                    disabled
+                    placeholder="연결상태 확인 버튼을 클릭하면 자동으로 모델을 조회하여 입력합니다."
+                    value={selectedModel}
+                    className="bg-zinc-100 dark:bg-zinc-900/50 h-9 text-sm text-muted-foreground"
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    연결상태 확인 시 탐색된 LLM 모델명이 자동으로 입력됩니다.
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {saveError && (

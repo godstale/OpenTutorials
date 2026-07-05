@@ -90,55 +90,57 @@ async function DashboardContent() {
         <p className="text-muted-foreground mt-2">페니프레스 사용 현황을 한 눈에 확인하세요.</p>
       </div>
 
-      <Card className="bg-gradient-to-r from-primary/10 via-primary/5 to-background border-primary/20 mb-6">
-        <CardHeader className="pb-2">
-          <div className="flex items-center gap-2">
-            <Bot className="size-5 text-primary" />
-            <CardTitle className="text-lg">에이전트 관리</CardTitle>
-          </div>
-          <CardDescription>
-            사용자가 직접 외부 서버(PC, 클라우드 등)에 호스팅 중인 Hermes Agent를 등록하고 제어할 수 있습니다.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-0">
-          <div className="text-sm text-muted-foreground">
-            현재 등록된 에이전트: <span className="font-semibold text-foreground">{externalAgentsCount}개</span> (온라인: <span className="font-semibold text-emerald-500">{onlineCount}개</span>)
-          </div>
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" asChild>
-              <Link href={ROUTES.MY_AGENTS}>관리 페이지 이동</Link>
-            </Button>
-            <Button size="sm" asChild>
-              <Link href={`${ROUTES.MY_AGENTS}?add=true`}>신규 에이전트 등록</Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="grid gap-6 md:grid-cols-2 mb-6">
+        <Card className="bg-gradient-to-r from-primary/10 via-primary/5 to-background border-primary/20 flex flex-col justify-between h-full">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <Bot className="size-5 text-primary" />
+              <CardTitle className="text-lg">에이전트 관리</CardTitle>
+            </div>
+            <CardDescription>
+              사용자가 직접 외부 서버(PC, 클라우드 등)에 호스팅 중인 Hermes Agent를 등록하고 제어할 수 있습니다.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-0">
+            <div className="text-sm text-muted-foreground">
+              현재 등록된 에이전트: <span className="font-semibold text-foreground">{externalAgentsCount}개</span> (온라인: <span className="font-semibold text-emerald-500">{onlineCount}개</span>)
+            </div>
+            <div className="flex gap-2 shrink-0">
+              <Button size="sm" variant="outline" asChild>
+                <Link href={ROUTES.MY_AGENTS}>관리 페이지 이동</Link>
+              </Button>
+              <Button size="sm" asChild>
+                <Link href={`${ROUTES.MY_AGENTS}?add=true`}>신규 에이전트 등록</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
-      <Card className="bg-gradient-to-r from-blue-500/10 via-blue-500/5 to-background border-blue-500/20 mb-6">
-        <CardHeader className="pb-2">
-          <div className="flex items-center gap-2">
-            <GraduationCap className="size-5 text-blue-500" />
-            <CardTitle className="text-lg">AI 강좌</CardTitle>
-          </div>
-          <CardDescription>
-            AI 튜터를 이용한 인터랙티브 강좌와 함께 실습하며 에이전트 빌딩 기술을 체계적으로 마스터하세요.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-0">
-          <div className="text-sm text-muted-foreground">
-            다양한 강좌를 통해 나만의 에이전트를 구축해보세요.
-          </div>
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" asChild>
-              <Link href={ROUTES.MY_COURSES}>나의 강좌</Link>
-            </Button>
-            <Button size="sm" asChild>
-              <Link href={ROUTES.COURSES}>전체 강좌 보기</Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+        <Card className="bg-gradient-to-r from-blue-500/10 via-blue-500/5 to-background border-blue-500/20 flex flex-col justify-between h-full">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <GraduationCap className="size-5 text-blue-500" />
+              <CardTitle className="text-lg">AI 강좌</CardTitle>
+            </div>
+            <CardDescription>
+              AI 튜터를 이용한 인터랙티브 강좌와 함께 실습하며 에이전트 빌딩 기술을 체계적으로 마스터하세요.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-0">
+            <div className="text-sm text-muted-foreground">
+              다양한 강좌를 통해 나만의 에이전트를 구축해보세요.
+            </div>
+            <div className="flex gap-2 shrink-0">
+              <Button size="sm" variant="outline" asChild>
+                <Link href={ROUTES.MY_COURSES}>나의 강좌</Link>
+              </Button>
+              <Button size="sm" asChild>
+                <Link href={ROUTES.COURSES}>전체 강좌 보기</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
@@ -244,41 +246,43 @@ function DashboardSkeleton() {
         <Skeleton className="h-4 w-96 mt-2 bg-zinc-200 dark:bg-zinc-800" />
       </div>
 
-      {/* External agent card skeleton */}
-      <Card className="border-border/50">
-        <CardHeader className="pb-2">
-          <div className="flex items-center gap-2">
-            <Skeleton className="size-5 rounded-full bg-zinc-200 dark:bg-zinc-800" />
-            <Skeleton className="h-5 w-36 bg-zinc-200 dark:bg-zinc-800" />
-          </div>
-          <Skeleton className="h-4 w-3/4 mt-2 bg-zinc-200 dark:bg-zinc-800" />
-        </CardHeader>
-        <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-0">
-          <Skeleton className="h-4 w-48 bg-zinc-200 dark:bg-zinc-800" />
-          <div className="flex gap-2">
-            <Skeleton className="h-9 w-28 bg-zinc-200 dark:bg-zinc-800" />
-            <Skeleton className="h-9 w-28 bg-zinc-200 dark:bg-zinc-800" />
-          </div>
-        </CardContent>
-      </Card>
+      <div className="grid gap-6 md:grid-cols-2 mb-6">
+        {/* External agent card skeleton */}
+        <Card className="border-border/50 flex flex-col justify-between h-full">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <Skeleton className="size-5 rounded-full bg-zinc-200 dark:bg-zinc-800" />
+              <Skeleton className="h-5 w-36 bg-zinc-200 dark:bg-zinc-800" />
+            </div>
+            <Skeleton className="h-4 w-3/4 mt-2 bg-zinc-200 dark:bg-zinc-800" />
+          </CardHeader>
+          <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-0">
+            <Skeleton className="h-4 w-48 bg-zinc-200 dark:bg-zinc-800" />
+            <div className="flex gap-2">
+              <Skeleton className="h-9 w-28 bg-zinc-200 dark:bg-zinc-800" />
+              <Skeleton className="h-9 w-28 bg-zinc-200 dark:bg-zinc-800" />
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* AI courses card skeleton */}
-      <Card className="border-border/50">
-        <CardHeader className="pb-2">
-          <div className="flex items-center gap-2">
-            <Skeleton className="size-5 rounded-full bg-zinc-200 dark:bg-zinc-800" />
-            <Skeleton className="h-5 w-24 bg-zinc-200 dark:bg-zinc-800" />
-          </div>
-          <Skeleton className="h-4 w-2/3 mt-2 bg-zinc-200 dark:bg-zinc-800" />
-        </CardHeader>
-        <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-0">
-          <Skeleton className="h-4 w-60 bg-zinc-200 dark:bg-zinc-800" />
-          <div className="flex gap-2">
-            <Skeleton className="h-9 w-24 bg-zinc-200 dark:bg-zinc-800" />
-            <Skeleton className="h-9 w-28 bg-zinc-200 dark:bg-zinc-800" />
-          </div>
-        </CardContent>
-      </Card>
+        {/* AI courses card skeleton */}
+        <Card className="border-border/50 flex flex-col justify-between h-full">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <Skeleton className="size-5 rounded-full bg-zinc-200 dark:bg-zinc-800" />
+              <Skeleton className="h-5 w-24 bg-zinc-200 dark:bg-zinc-800" />
+            </div>
+            <Skeleton className="h-4 w-2/3 mt-2 bg-zinc-200 dark:bg-zinc-800" />
+          </CardHeader>
+          <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-0">
+            <Skeleton className="h-4 w-60 bg-zinc-200 dark:bg-zinc-800" />
+            <div className="flex gap-2">
+              <Skeleton className="h-9 w-24 bg-zinc-200 dark:bg-zinc-800" />
+              <Skeleton className="h-9 w-28 bg-zinc-200 dark:bg-zinc-800" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Stats cards grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

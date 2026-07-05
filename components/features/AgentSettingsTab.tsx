@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   LayoutGrid, Calendar, Clock, RefreshCw, 
-  CheckCircle2, XCircle, ShieldAlert, Settings, Edit3, Save, X, Eye, EyeOff, Loader2
+  CheckCircle2, XCircle, ShieldAlert, Settings, Edit3, Save, X, Eye, EyeOff, Loader2, Bot
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -87,13 +87,19 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
       });
       const data = await res.json();
       if (data.success) {
-        const modelsList = Array.isArray(data.models) ? data.models : [];
-        const filteredModels = agentType === 'harness'
-          ? modelsList.filter((m: { id: string; hidden?: boolean }) => !m.hidden)
-          : modelsList;
-        const modelIds = filteredModels.map((m: { id: string }) => m.id);
+        if (agentType === 'harness') {
+          setSelectedModel('hermes-agent');
+          setTestResult({
+            success: true,
+            message: '연결 성공! (하네스 에이전트)',
+          });
+          return;
+        }
 
-        if (agentType === 'llm' && modelIds.length === 0) {
+        const modelsList = Array.isArray(data.models) ? data.models : [];
+        const modelIds = modelsList.map((m: { id: string }) => m.id);
+
+        if (modelIds.length === 0) {
           setTestResult({
             success: false,
             message: '연결은 성공했으나 LLM 모델을 찾지 못했습니다. LLM 에이전트는 모델이 반드시 존재해야 합니다.',
@@ -103,23 +109,16 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
 
         setDetectedModels(modelIds);
         setModels(modelsList); // 연결 상태 확인 성공 시 감지된 모델 목록 동적 동기화
-        const initialModel = (agentType === 'harness' && data.current_model)
-          ? data.current_model
-          : (modelIds.length > 0 ? modelIds[0] : '');
+        const initialModel = modelIds[0] || '';
 
         if (initialModel) {
           setSelectedModel(initialModel);
-        } else {
-          setSelectedModel(agentType === 'harness' ? 'hermes-agent' : '');
         }
 
-        const modelNames = modelIds.join(', ') || '없음';
-        const currentModelName = initialModel || '미지정';
+        const modelNames = modelIds.join(', ') || '모델 감지 안됨';
         setTestResult({
           success: true,
-          message: agentType === 'harness'
-            ? `연결 성공! (하네스 에이전트) | 현재 사용 중: ${currentModelName} | 지원 모델 목록: ${modelNames}`
-            : `연결 성공! 감지된 모델: ${modelNames}`,
+          message: `연결 성공! 감지된 모델: ${modelNames}`,
         });
       } else {
         setTestResult({
@@ -192,8 +191,10 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
 
   // Fetch models automatically when component mounts
   useEffect(() => {
-    fetchModels(false);
-  }, [fetchModels]);
+    if (agent.agent_type !== 'harness') {
+      fetchModels(false);
+    }
+  }, [agent.agent_type, fetchModels]);
 
   const [isUpdatingModel, setIsUpdatingModel] = useState(false);
 
@@ -518,30 +519,26 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
                     )}
                   </div>
 
-                  <div className="space-y-2 rounded-lg border border-border/85 bg-zinc-50/50 dark:bg-zinc-900/50 p-3 mt-1">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="agent-model" className="text-xs font-bold">
-                        활성 모델 {agentType === 'llm' ? '*' : '(선택 사항)'}
-                      </Label>
-                      <Input 
-                        id="agent-model"
-                        readOnly
-                        disabled
-                        value={selectedModel}
-                        placeholder={
-                          agentType === 'harness'
-                            ? '하네스 에이전트는 모델을 지정하지 않아도 됩니다.'
-                            : '연결상태 확인 버튼을 클릭하면 자동으로 모델을 조회하여 입력합니다.'
-                        }
-                        className="bg-zinc-100 dark:bg-zinc-900/50 h-9 text-sm text-muted-foreground"
-                      />
-                      <p className="text-[10px] text-muted-foreground">
-                        {agentType === 'harness' 
-                          ? '하네스 에이전트의 경우 기본 모델이 사용되므로 입력이 없어도 무방합니다.' 
-                          : '연결상태 확인 시 탐색된 LLM 모델명이 자동으로 입력됩니다.'}
-                      </p>
+                  {agentType === 'llm' && (
+                    <div className="space-y-2 rounded-lg border border-border/85 bg-zinc-50/50 dark:bg-zinc-900/50 p-3 mt-1">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="agent-model" className="text-xs font-bold">
+                          활성 모델 *
+                        </Label>
+                        <Input 
+                          id="agent-model"
+                          readOnly
+                          disabled
+                          value={selectedModel}
+                          placeholder="연결상태 확인 버튼을 클릭하면 자동으로 모델을 조회하여 입력합니다."
+                          className="bg-zinc-100 dark:bg-zinc-900/50 h-9 text-sm text-muted-foreground"
+                        />
+                        <p className="text-[10px] text-muted-foreground">
+                          연결상태 확인 시 탐색된 LLM 모델명이 자동으로 입력됩니다.
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {saveError && (
@@ -572,12 +569,14 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
                     </Badge>
                   </div>
                 </div>
-                <div className="flex justify-between py-3">
-                  <span className="text-sm font-medium text-muted-foreground">활성 모델</span>
-                  <span className="text-sm font-mono font-semibold text-primary">
-                    {agent.selected_model || 'hermes-agent'}
-                  </span>
-                </div>
+                {agent.agent_type !== 'harness' && (
+                  <div className="flex justify-between py-3">
+                    <span className="text-sm font-medium text-muted-foreground">활성 모델</span>
+                    <span className="text-sm font-mono font-semibold text-primary">
+                      {agent.selected_model || 'hermes-agent'}
+                    </span>
+                  </div>
+                )}
                 <div className="flex flex-col sm:flex-row sm:justify-between py-3 gap-1">
                   <span className="text-sm font-medium text-muted-foreground shrink-0">API Endpoint URL</span>
                   <span className="text-sm font-mono text-foreground break-all sm:text-right">{agent.endpoint}</span>
@@ -640,20 +639,32 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
                 : '연결된 LLM 에이전트의 지원 LLM 목록입니다.'}
             </CardDescription>
           </div>
-          <Button 
-            size="icon" 
-            variant="outline" 
-            onClick={() => fetchModels(true)} 
-            disabled={isLoadingModels}
-            className="size-8 rounded-lg active:scale-95 transition-all"
-            title="모델 정보 갱신"
-          >
-            <RefreshCw className={`size-3.5 ${isLoadingModels ? 'animate-spin' : ''}`} />
-          </Button>
+          {agent.agent_type !== 'harness' && (
+            <Button 
+              size="icon" 
+              variant="outline" 
+              onClick={() => fetchModels(true)} 
+              disabled={isLoadingModels}
+              className="size-8 rounded-lg active:scale-95 transition-all"
+              title="모델 정보 갱신"
+            >
+              <RefreshCw className={`size-3.5 ${isLoadingModels ? 'animate-spin' : ''}`} />
+            </Button>
+          )}
         </CardHeader>
         
-        <CardContent className="px-6">
-          {isLoadingModels ? (
+        <CardContent className="px-6 pb-6">
+          {agent.agent_type === 'harness' ? (
+            <div className="rounded-xl border border-blue-200/60 dark:border-blue-900/40 bg-blue-50/30 dark:bg-blue-950/20 p-4 space-y-2 shadow-sm text-center">
+              <p className="text-xs text-blue-600 dark:text-blue-400 font-bold flex items-center justify-center gap-1.5">
+                <Bot className="size-4 text-blue-500" />
+                하네스 에이전트 안내
+              </p>
+              <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">
+                하네스 에이전트의 경우 해당 프로그램에 설정된 LLM 을 사용합니다.
+              </p>
+            </div>
+          ) : isLoadingModels ? (
             <div className="flex flex-col items-center justify-center py-12 space-y-2">
               <RefreshCw className="size-6 text-primary animate-spin" />
               <span className="text-xs text-muted-foreground animate-pulse">원격 서버 정보 조회 중...</span>

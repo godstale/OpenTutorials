@@ -32,6 +32,14 @@ Ran lint. See lint-report.md for details.
 
 ## 2026-07-05
 
+- **[FEATURE] 하네스 에이전트 등록/설정 화면 내 활성 모델 비노출 및 연결 검증 최적화**
+  - **수정/생성 파일**:
+    - `components/features/AgentSettingsTab.tsx` — 하네스 에이전트인 경우 지원 모델 조회 카드에서 새로고침(refresh) 버튼 및 감지 모델 목록/선택 UI 대신 프로그램에 설정된 LLM 사용 안내 메시지 박스를 표시하도록 변경했습니다. 또한 에이전트 정보 수정/보기 화면에서 '활성 모델' 필드를 숨기고, 연결상태 확인 시 복잡한 LLM 모델 목록 조회/검증 단계를 거치지 않고 연결 성공을 반환하도록 개선했습니다.
+    - `components/features/AddAgentModal.tsx` — 신규 에이전트 등록 화면에서도 하네스 에이전트인 경우 '활성 모델' 필드를 숨기고, 연결상태 확인 시 모델 조회를 생략한 채 연결 성공 처리가 완료되도록 변경했습니다.
+    - `wiki/sources/2026-07-05-harness-agent-model-view-improvement.md` (신규) — 작업의 상세 내용과 구조를 기록한 상세 위키 문서 생성.
+  - **작업 내용**:
+    - 하네스 에이전트 환경에서 불필요한 LLM 모델 입력/검증 단계를 완벽히 제거하여 사용자의 오인지를 방지하고 원격 서버와의 유연한 연결 수립을 도모했습니다.
+
 - **[FEATURE] 강좌 자동 수강 및 삭제 cascade 구현, 에이전트 상세 탭 개선 및 사용량 그래프 시각화**
   - **수정/생성 파일**:
     - `app/(user)/courses/manage/upload/page.tsx` — 새 강좌 등록 성공 직후, `/api/courses/subscribe` API를 자동으로 호출하여 등록자를 자동 수강 처리하도록 연동함.
@@ -1303,5 +1311,13 @@ Ran lint. See lint-report.md for details.
     - **채팅 API 폴백 지원**: 하네스 에이전트 연동 시 활성 모델이 DB 상에 비어있거나 누락되어도 채팅 API에서 `hermes-agent`로 자동 폴백되도록 백엔드 라우터를 개선했습니다.
   - **Concepts**: [[ActiveModelAutoPopulation]], [[ConnectionVerificationMandatory]], [[LLMAgentModelEnforcement]]
 
+## 2026-07-05
 
-
+- **[UI] 대시보드 화면 내 "에이전트 관리" 및 "AI 강좌" 카드 가로 나란히 배치**
+  - **수정 파일**:
+    - [app/(user)/dashboard/page.tsx](file:///C:/Workspace/Projects/OpenTutor/app/(user)/dashboard/page.tsx)
+  - **작업 내용**:
+    - **가로 그리드 배치**: 기존의 세로로 순차 노출되던 "에이전트 관리" 카드와 "AI 강좌" 카드를 `grid gap-6 md:grid-cols-2` 컨테이너로 묶어 데스크탑 뷰포트에서 가로로 나란히 정렬되도록 레이아웃을 개편했습니다.
+    - **카드 높이 일치 및 버튼 하단 정렬**: 카드의 실제 텍스트 길이에 관계없이 카드의 전체 높이가 균등하게 일치하고 버튼 영역이 하단에 정렬되도록 `flex flex-col justify-between h-full` 스타일링을 적용했습니다.
+    - **스켈레톤 화면 동기화**: 대시보드 로딩 중 보여지는 스켈레톤 화면(`DashboardSkeleton`)에서도 동일하게 두 카드를 가로 2열 배치하도록 레이아웃을 일치시켰습니다.
+  - **Concepts**: [[DashboardSideBySideCards]], [[CardHeightEqualization]], [[SkeletonLayoutSync]]
