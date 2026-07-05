@@ -1,11 +1,24 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import fs from 'fs';
+import path from 'path';
+import { normalizeAgentEndpoint } from '@/lib/utils/agent-endpoint';
+
+
+
+function estimateTokenSize(text: string): number {
+  if (!text) return 0;
+  const koreanCharCount = (text.match(/[\uac00-\ud7a3]/g) || []).length;
+  const otherCharCount = text.length - koreanCharCount;
+  return Math.ceil(koreanCharCount * 1.5 + otherCharCount * 0.5);
+}
 
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const startTime = Date.now();
     const { id } = await params;
     const { messages, original_user_message } = await req.json();
 
@@ -39,10 +52,33 @@ export async function POST(
         });
     }
 
-    // Force IPv4 loopback (127.0.0.1) instead of localhost to bypass Node.js IPv6 (::1) preference
-    const resolvedEndpoint = agent.endpoint.replace('//localhost', '//127.0.0.1');
-    const cleanEndpoint = resolvedEndpoint.replace(/\/$/, '');
-    const v1Url = cleanEndpoint.endsWith('/v1') ? cleanEndpoint : `${cleanEndpoint}/v1`;
+    // Load accumulated messages from the database for LLM agent type session maintenance
+    let requestMessages = messages;
+    if (agent.agent_type === 'llm') {
+      const { data: dbMessages } = await supabase
+        .from('user_external_agent_messages')
+        .select('*')
+        .eq('agent_id', id)
+        .order('created_at', { ascending: true });
+
+      const systemMsg = messages.find((m: { role: string; content: string }) => m.role === 'system');
+      const tempMessages = [];
+      if (systemMsg) {
+        tempMessages.push({ role: 'system', content: systemMsg.content });
+      }
+
+      if (dbMessages && dbMessages.length > 0) {
+        dbMessages.forEach((msg: { role: string; content: string }) => {
+          tempMessages.push({
+            role: msg.role === 'assistant' ? 'assistant' : 'user',
+            content: msg.content,
+          });
+        });
+        requestMessages = tempMessages;
+      }
+    }
+
+    const { v1Url } = normalizeAgentEndpoint(agent.endpoint);
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
@@ -50,15 +86,17 @@ export async function POST(
       headers['Authorization'] = `Bearer ${agent.api_key}`;
     }
 
-    // Use the model configured in the database, fallback to 'hermes-agent'
-    const targetModel = agent.selected_model || 'hermes-agent';
+    const targetModel = agent.selected_model || (agent.agent_type === 'harness' ? 'hermes-agent' : '');
+    if (!targetModel) {
+      return new Response('모델이 선택되지 않았습니다. 에이전트 상세 설정에서 모델을 설정해 주세요.', { status: 400 });
+    }
 
     const response = await fetch(`${v1Url}/chat/completions`, {
       method: 'POST',
       headers,
       body: JSON.stringify({
         model: targetModel,
-        messages,
+        messages: requestMessages,
         stream: true,
       }),
       signal: req.signal,
@@ -103,6 +141,43 @@ export async function POST(
                 
                 // Call RPC function to prune to latest 100 messages
                 await supabase.rpc('prune_external_agent_messages', { p_agent_id: id });
+
+                // 에이전트별 대화 기록 누적 저장 (파일)
+                try {
+                  const durationMs = Date.now() - startTime;
+                  const userContent = original_user_message || lastUserMessage?.content || '';
+                  const inputTokenSize = estimateTokenSize(userContent);
+                  const outputTokenSize = estimateTokenSize(assistantText);
+
+                  const chatLogDir = path.join(process.cwd(), 'public', 'agent-chats');
+                  if (!fs.existsSync(chatLogDir)) {
+                    fs.mkdirSync(chatLogDir, { recursive: true });
+                  }
+
+                  const chatLogPath = path.join(chatLogDir, `${id}.json`);
+                  let chatLogs = [];
+                  if (fs.existsSync(chatLogPath)) {
+                    try {
+                      const fileData = fs.readFileSync(chatLogPath, 'utf8');
+                      chatLogs = JSON.parse(fileData);
+                    } catch (e) {
+                      console.error('Failed to parse existing chat log file, starting fresh:', e);
+                    }
+                  }
+
+                  chatLogs.push({
+                    timestamp: new Date().toISOString(),
+                    duration_ms: durationMs,
+                    input_token_size: inputTokenSize,
+                    output_token_size: outputTokenSize,
+                    user_message: userContent,
+                    assistant_message: assistantText,
+                  });
+
+                  fs.writeFileSync(chatLogPath, JSON.stringify(chatLogs, null, 2), 'utf8');
+                } catch (fileErr) {
+                  console.error('Failed to write chat log to file:', fileErr);
+                }
               }
 
               controller.close();
@@ -154,3 +229,48 @@ export async function POST(
     return new Response(errMsg, { status: 500 });
   }
 }
+
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Verify agent ownership
+    const { data: agent, error } = await supabase
+      .from('user_external_agents')
+      .select('id')
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .single();
+
+    if (error || !agent) {
+      return NextResponse.json({ error: 'Agent not found or access denied' }, { status: 404 });
+    }
+
+    const chatLogDir = path.join(process.cwd(), 'public', 'agent-chats');
+    const chatLogPath = path.join(chatLogDir, `${id}.json`);
+
+    let chatLogs = [];
+    if (fs.existsSync(chatLogPath)) {
+      try {
+        const fileData = fs.readFileSync(chatLogPath, 'utf8');
+        chatLogs = JSON.parse(fileData);
+      } catch (e) {
+        console.error('Failed to parse chat log file:', e);
+      }
+    }
+
+    return NextResponse.json(chatLogs);
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : 'Unknown error';
+    return NextResponse.json({ error: errMsg }, { status: 500 });
+  }
+}
+

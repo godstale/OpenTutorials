@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
-  Bot, Plus, Server, Calendar, MessageSquare, ExternalLink, Trash2, 
+  Bot, Plus, Server, Calendar, MessageSquare, Trash2, 
   RefreshCw, Loader2, XCircle, AlertTriangle, MoreVertical 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,15 +15,18 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import AddAgentModal from '@/components/features/AddAgentModal';
-import AITutorProgressOverlay from '@/components/features/AITutorProgressOverlay';
 import { getExternalAgents, deleteExternalAgent, updateExternalAgent } from '@/lib/api/external-agents';
 import type { UserExternalAgent } from '@/lib/types';
+import { normalizeAgentEndpoint } from '@/lib/utils/agent-endpoint';
+import { createClient } from '@/lib/supabase/client';
+
 
 function MyAgentsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   
   const [agents, setAgents] = useState<UserExternalAgent[]>([]);
+  const [courses, setCourses] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -31,8 +34,7 @@ function MyAgentsContent() {
   const [agentToDelete, setAgentToDelete] = useState<UserExternalAgent | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [isConfiguringTutor, setIsConfiguringTutor] = useState<string | null>(null);
-  const [isTutorSetupProgressOpen, setIsTutorSetupProgressOpen] = useState(false);
+  const [hasInitialSynced, setHasInitialSynced] = useState(false);
 
   const loadAgents = useCallback(async (triggerSidebarRefresh = false) => {
     setIsLoading(true);
@@ -40,6 +42,11 @@ function MyAgentsContent() {
     try {
       const data = await getExternalAgents();
       setAgents(data);
+
+      const supabase = createClient();
+      const { data: coursesData } = await supabase.from('courses').select('id, title, agent_id');
+      setCourses(coursesData || []);
+
       if (triggerSidebarRefresh && typeof window !== 'undefined') {
         window.dispatchEvent(new Event('agents-updated'));
       }
@@ -51,74 +58,26 @@ function MyAgentsContent() {
     }
   }, []);
 
-  const handleToggleTutor = async (agent: UserExternalAgent) => {
-    const isCurrentlyTutor = agent.is_ai_tutor === true;
-    setIsConfiguringTutor(agent.id);
-    let showedProgress = false;
+  const handleSetDefaultTutor = async (agentId: string, currentVal: boolean) => {
     try {
-      if (isCurrentlyTutor) {
-        await updateExternalAgent(agent.id, { 
-          is_ai_tutor: false,
-          is_tutor_configured: false
-        });
-        await loadAgents(true);
-      } else {
-        showedProgress = true;
-        setIsTutorSetupProgressOpen(true);
-        const setupPrompt = `You are an autonomous AI agent. You have been registered as the official AI Tutor for the PennyPress SaaS platform. To function correctly, you must update your active profile's \`soul.md\` (or \`SOUL.md\`) configuration file to match the PennyPress AI Tutor persona.
-Please write/overwrite your \`soul.md\` (or \`SOUL.md\`) file with the following Markdown content:
-"""
-# PennyPress AI Tutor Persona
-You are a highly capable and friendly AI Tutor designed to help users master their registered courses on the PennyPress platform.
-Your primary role is to guide students, answer their course-specific questions, and verify their learning progress.
-
-Key guidelines:
-1. **Be supportive and clear**: Explain complex topics simply using visual descriptions or clear structures.
-2. **Context-aware instruction**: Guide the user based on the current card context and course materials downloaded in your workspace directory (e.g. \`courses/<slug>\`).
-3. **Background Communication (Hidden Message)**: You must communicate the course download/analysis status to the PennyPress front-end using:
-   \`<!-- HIDDEN_MESSAGE: {"action": "download_status", "downloaded": true} -->\`
-"""
-Please confirm the success of the update, starting with: "SUCCESS: Soul configuration updated."`;
-
-        const resolvedEndpoint = agent.endpoint.replace('//localhost', '//127.0.0.1');
-        const cleanEndpoint = resolvedEndpoint.replace(/\/$/, '');
-        const v1Url = cleanEndpoint.endsWith('/v1') ? cleanEndpoint : `${cleanEndpoint}/v1`;
-
-        const chatRes = await fetch('/api/external-agents/setup-tutor', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ endpoint: v1Url, api_key: agent.api_key || undefined, prompt: setupPrompt }),
-        });
-
-        const chatData = await chatRes.json();
-        const isTutorConfigured = chatData.success && chatData.isConfigured === true;
-
-        await updateExternalAgent(agent.id, {
-          is_ai_tutor: true,
-          is_tutor_configured: isTutorConfigured
-        });
-
-        if (!chatData.success) {
-          alert(`AI 튜터로 지정되었으나 지침(soul.md) 설정에 실패했습니다: ${chatData.error || '응답 오류'}`);
-        } else if (!isTutorConfigured) {
-          alert('AI 튜터로 지정되었으나 에이전트 지침(soul.md) 파일 수정 확인(SUCCESS) 문구를 받지 못했습니다. 에이전트가 지침 수정을 지원하지 않을 수 있습니다.');
-        }
-        await loadAgents(true);
-      }
+      await updateExternalAgent(agentId, { is_ai_tutor: !currentVal });
+      await loadAgents(true);
     } catch (err) {
-      console.error(err);
-      alert(err instanceof Error ? err.message : 'AI 튜터 설정에 실패했습니다.');
-    } finally {
-      setIsConfiguringTutor(null);
-      if (showedProgress) {
-        setIsTutorSetupProgressOpen(false);
-      }
+      const errMsg = err instanceof Error ? err.message : '기본 튜터 설정에 실패했습니다.';
+      alert(errMsg);
     }
   };
 
   useEffect(() => {
     loadAgents(false);
   }, [loadAgents]);
+
+  useEffect(() => {
+    if (agents.length > 0 && !hasInitialSynced && !isLoading) {
+      setHasInitialSynced(true);
+      handleSyncAll();
+    }
+  }, [agents, hasInitialSynced, isLoading]);
 
   useEffect(() => {
     if (searchParams.get('add') === 'true') {
@@ -185,7 +144,7 @@ Please confirm the success of the update, starting with: "SUCCESS: Soul configur
         <div>
           <h1 className="text-3xl font-bold tracking-tight">에이전트 관리</h1>
           <p className="text-muted-foreground mt-2">
-            로컬 또는 외부 가상 서버에 구축한 Hermes Agent 인스턴스를 연결하고 원격으로 대화하거나 제어합니다.
+            AI 튜터로 사용될 에이전트를 관리합니다.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -254,26 +213,21 @@ Please confirm the success of the update, starting with: "SUCCESS: Soul configur
           {agents.map((agent) => (
             <Card 
               key={agent.id} 
-              className="group border border-border bg-white dark:bg-zinc-900 hover:border-zinc-400 dark:hover:border-zinc-500 hover:shadow-md transition-all duration-200"
+              className="group border border-border bg-white dark:bg-zinc-900 hover:border-zinc-400 dark:hover:border-zinc-500 hover:shadow-md transition-all duration-200 cursor-pointer"
+              onClick={() => router.push(`/my-agents/${agent.id}`)}
             >
               <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
                 <div className="space-y-1 pr-4 min-w-0 flex-1">
-                  {agent.is_ai_tutor ? (
-                    <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
-                      <Badge className="bg-gradient-to-r from-violet-600 to-indigo-600 dark:from-violet-500 dark:to-indigo-500 text-white text-[10px] font-bold px-2 py-0.5 border-0 rounded-full shadow-sm">
-                        AI 튜터
+                  <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
+                    <Badge variant="outline" className="text-[10px] px-2 py-0.5 rounded-full">
+                      {agent.agent_type === 'llm' ? 'LLM' : '하네스'}
+                    </Badge>
+                    {agent.is_ai_tutor && (
+                      <Badge variant="default" className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-600 dark:bg-indigo-500 text-white font-bold">
+                        기본 튜터
                       </Badge>
-                      {agent.is_tutor_configured ? (
-                        <Badge variant="outline" className="text-[10px] font-medium text-emerald-600 border-emerald-500/20 bg-emerald-500/5 px-2 py-0 rounded-full">
-                          지침 설정 완료
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-[10px] font-medium text-amber-600 border-amber-500/20 bg-amber-500/5 px-2 py-0 rounded-full">
-                          지침 설정 대기
-                        </Badge>
-                      )}
-                    </div>
-                  ) : null}
+                    )}
+                  </div>
                   <CardTitle className="text-lg font-semibold truncate" title={agent.name}>
                     {agent.name}
                   </CardTitle>
@@ -282,7 +236,7 @@ Please confirm the success of the update, starting with: "SUCCESS: Soul configur
                     <span className="truncate text-xs font-mono" title={agent.endpoint}>{agent.endpoint}</span>
                   </CardDescription>
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                   {agent.status === 'online' ? (
                     <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20 px-2.5">
                       온라인
@@ -297,18 +251,14 @@ Please confirm the success of the update, starting with: "SUCCESS: Soul configur
                     </Badge>
                   )}
                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild disabled={isConfiguringTutor !== null}>
+                    <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="size-8 text-muted-foreground hover:text-foreground">
-                        {isConfiguringTutor === agent.id ? (
-                          <Loader2 className="size-4 animate-spin" />
-                        ) : (
-                          <MoreVertical className="size-4" />
-                        )}
+                        <MoreVertical className="size-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleToggleTutor(agent)}>
-                        {agent.is_ai_tutor ? 'AI 튜터 해제' : 'AI 튜터로 설정'}
+                      <DropdownMenuItem onClick={() => handleSetDefaultTutor(agent.id, !!agent.is_ai_tutor)}>
+                        {agent.is_ai_tutor ? '기본 튜터 해제' : '기본 튜터로 설정'}
                       </DropdownMenuItem>
                       <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => setAgentToDelete(agent)}>
                         삭제
@@ -317,32 +267,62 @@ Please confirm the success of the update, starting with: "SUCCESS: Soul configur
                   </DropdownMenu>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-3 pb-6">
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 gap-2 text-xs border-b border-border/50 pb-3">
+                  <div>
+                    <span className="text-muted-foreground">타입:</span>{' '}
+                    <span className="font-medium">{agent.agent_type === 'llm' ? 'LLM' : '하네스'}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">환경:</span>{' '}
+                    <span className="font-medium">{agent.env_type === 'cloud' ? '클라우드' : '로컬'}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">프로그램:</span>{' '}
+                    <span className="font-medium capitalize">{agent.agent_program || '-'}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">모델:</span>{' '}
+                    <span className="font-medium truncate block max-w-full" title={agent.selected_model}>{agent.selected_model || '-'}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 pt-1">
+                  <span className="text-xs font-semibold text-muted-foreground">할당된 강좌 ({courses.filter(c => c.agent_id === agent.id).length}개):</span>
+                  {courses.filter(c => c.agent_id === agent.id).length > 0 ? (
+                    <ul className="text-xs space-y-1 max-h-24 overflow-y-auto pr-1">
+                      {courses.filter(c => c.agent_id === agent.id).map(c => (
+                        <li key={c.id} className="text-muted-foreground truncate list-disc list-inside">
+                          {c.title}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic">할당된 강좌 없음</p>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-2">
                   <Calendar className="size-3 shrink-0" />
                   <span>등록일: {new Date(agent.created_at).toLocaleDateString()}</span>
                 </div>
               </CardContent>
-              <CardFooter className="pt-4 border-t flex gap-2">
+              <CardFooter className="pt-4 border-t flex gap-2" onClick={(e) => e.stopPropagation()}>
                 <Button asChild size="sm" className="flex-1 gap-1.5" variant="default">
                   <Link href={`/my-agents/${agent.id}`}>
                     <MessageSquare className="size-3.5" />
                     대화하기
                   </Link>
                 </Button>
-                {agent.web_ui_url ? (
-                  <Button asChild variant="outline" size="sm" className="flex-1 gap-1.5">
-                    <a href={agent.web_ui_url} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="size-3.5" />
-                      웹 UI
-                    </a>
-                  </Button>
-                ) : (
-                  <Button variant="outline" size="sm" className="flex-1 gap-1.5" disabled>
-                    <ExternalLink className="size-3.5" />
-                    웹 UI
-                  </Button>
-                )}
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  className="flex-1 gap-1.5"
+                  onClick={() => setAgentToDelete(agent)}
+                >
+                  <Trash2 className="size-3.5" />
+                  삭제
+                </Button>
               </CardFooter>
             </Card>
           ))}
@@ -356,8 +336,7 @@ Please confirm the success of the update, starting with: "SUCCESS: Soul configur
         onSuccess={() => loadAgents(true)} 
       />
 
-      {/* AI Tutor Setup Progress Overlay */}
-      <AITutorProgressOverlay isOpen={isTutorSetupProgressOpen} />
+
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={!!agentToDelete} onOpenChange={(open) => !open && setAgentToDelete(null)}>

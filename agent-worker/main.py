@@ -97,9 +97,11 @@ def get_models(request: Request):
     return {
         "object": "list",
         "data": [
-            {"id": "hermes-agent", "object": "model", "created": 1718870400, "owned_by": "nousresearch"},
-            {"id": "deepseek-v4-flash", "object": "model", "created": 1718870400, "owned_by": "deepseek"}
-        ]
+            {"id": "hermes-agent", "object": "model", "created": 1718870400, "owned_by": "nousresearch", "hidden": True},
+            {"id": "deepseek-v4-flash", "object": "model", "created": 1718870400, "owned_by": "deepseek", "current": True},
+            {"id": "deepseek-v4-pro", "object": "model", "created": 1718870400, "owned_by": "deepseek"}
+        ],
+        "current_model": "deepseek-v4-flash"
     }
 
 async def sse_stream(prompt: str):

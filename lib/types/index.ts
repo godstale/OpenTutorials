@@ -137,6 +137,9 @@ export interface UserExternalAgent {
   dashboard_session_token?: string;
   is_ai_tutor?: boolean;
   is_tutor_configured?: boolean;
+  agent_type?: 'harness' | 'llm';
+  env_type?: 'local' | 'cloud';
+  agent_program?: 'hermes' | 'openclaw' | 'ollama' | 'lmstudio' | 'other';
   created_at: string;
   updated_at: string;
 }
@@ -173,6 +176,7 @@ export interface Course {
   published: boolean;
   disabled?: boolean;
   tags?: string[];
+  agent_id?: string | null;
   created_at: string;
   updated_at: string;
   toc?: TocNode[];
@@ -196,6 +200,7 @@ export interface CoursePackage {
   published: boolean;
   sequential_play?: boolean;
   force_checkpoint?: boolean;
+  github_url?: string | null;
   created_at: string;
   updated_at: string;
   courses?: Course[];

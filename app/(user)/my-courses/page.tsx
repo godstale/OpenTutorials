@@ -8,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BookOpen, PlayCircle, Award, AlertCircle, Compass, FolderOpen } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { getExternalAgents } from '@/lib/api/external-agents';
+import type { UserExternalAgent } from '@/lib/types';
 
 interface ProgressItem {
   id: string;
@@ -25,6 +27,7 @@ interface ProgressItem {
     thumbnail: string;
     published: boolean;
     disabled: boolean;
+    agent_id?: string | null;
     course_package_items?: { id?: string; package_id?: string }[];
   };
 }
@@ -49,14 +52,16 @@ export default function MyCoursesPage() {
   const router = useRouter();
   const [progressList, setProgressList] = useState<ProgressItem[]>([]);
   const [packageSubscriptions, setPackageSubscriptions] = useState<PackageSubscriptionItem[]>([]);
+  const [agents, setAgents] = useState<UserExternalAgent[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [progressRes, packagesRes] = await Promise.all([
+        const [progressRes, packagesRes, agentsData] = await Promise.all([
           fetch('/api/courses/progress'),
-          fetch('/api/packages/subscribe')
+          fetch('/api/packages/subscribe'),
+          getExternalAgents().catch(() => [])
         ]);
         
         if (progressRes.ok) {
@@ -68,14 +73,46 @@ export default function MyCoursesPage() {
           const packagesData = await packagesRes.json();
           setPackageSubscriptions(packagesData);
         }
+
+        setAgents(agentsData);
       } catch (err) {
-        console.error('Failed to fetch user progress or packages:', err);
+        console.error('Failed to fetch user progress, packages or agents:', err);
       } finally {
         setLoading(false);
       }
     };
     fetchData();
   }, []);
+
+  const getAssignedAgent = (courseAgentId?: string | null) => {
+    if (courseAgentId) {
+      const found = agents.find(a => a.id === courseAgentId);
+      if (found) return { agent: found, isDefaultFallback: false };
+    }
+    
+    const defaultAgent = agents.find(a => a.is_ai_tutor);
+    if (defaultAgent) {
+      return { agent: defaultAgent, isDefaultFallback: true };
+    }
+    
+    return { agent: null, isDefaultFallback: false };
+  };
+
+  const getPackageTargetUrl = (packageId: string, defaultSlug: string) => {
+    const pkgProgresses = progressList.filter(p => 
+      p.course?.course_package_items?.some(item => item.package_id === packageId)
+    );
+    const incomplete = pkgProgresses.filter(p => !p.completed);
+    
+    if (incomplete.length > 0) {
+      const target = incomplete[0];
+      return `/learn/${target.course?.slug}?card=${target.last_card || 0}`;
+    } else if (pkgProgresses.length > 0) {
+      const target = pkgProgresses[0];
+      return `/learn/${target.course?.slug}?card=${target.last_card || 0}`;
+    }
+    return `/courses/${defaultSlug}`;
+  };
 
   // Filter out courses that belong to any package so they don't show up as individual courses
   const activeProgress = progressList.filter(
@@ -113,11 +150,11 @@ export default function MyCoursesPage() {
         </div>
       ) : (
         <Tabs defaultValue="active" className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2 mb-8 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl">
-            <TabsTrigger value="active" className="font-semibold py-2 rounded-lg">
+          <TabsList className="grid w-full max-w-md grid-cols-2 mb-8">
+            <TabsTrigger value="active">
               수강중인 강좌 ({activePackages.length + activeProgress.length})
             </TabsTrigger>
-            <TabsTrigger value="completed" className="font-semibold py-2 rounded-lg">
+            <TabsTrigger value="completed">
               완료한 강좌 ({completedPackages.length + completedProgress.length})
             </TabsTrigger>
           </TabsList>
@@ -140,9 +177,6 @@ export default function MyCoursesPage() {
                       <div>
                         <div className="flex items-start justify-between gap-2">
                           <h4 className="font-semibold text-zinc-900 dark:text-zinc-50 line-clamp-1">{pkg.title}</h4>
-                          <Badge className="bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-950 shrink-0">
-                            강좌 패키지
-                          </Badge>
                         </div>
                         <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{pkg.description}</p>
                       </div>
@@ -160,10 +194,11 @@ export default function MyCoursesPage() {
                         className="w-full bg-indigo-600 hover:bg-indigo-700 text-white mt-1.5"
                         onClick={(e) => {
                           e.stopPropagation();
-                          router.push(`/courses/${pkg.slug}`);
+                          const targetUrl = getPackageTargetUrl(sub.package_id, pkg.slug);
+                          router.push(targetUrl);
                         }}
                       >
-                        이어서 패키지 학습하기
+                        이어서 학습하기
                       </Button>
                     </Card>
                   );
@@ -178,6 +213,8 @@ export default function MyCoursesPage() {
                   const totalCards = 10;
                   const currentCard = progress.max_card ?? progress.last_card ?? 0;
                   const percent = Math.min(100, Math.round((currentCard / totalCards) * 100));
+                  
+                  const { agent, isDefaultFallback } = getAssignedAgent(course.agent_id);
                   
                   return (
                     <Card 
@@ -220,6 +257,23 @@ export default function MyCoursesPage() {
                           <Progress value={percent} className="h-2" />
                           <p className="text-xs text-muted-foreground text-right">{currentCard} / {totalCards} 단계</p>
                         </div>
+
+                        {/* 에이전트 정보 및 유효성 검증 표시 */}
+                        <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 text-xs">
+                          {agent ? (
+                            <div className="flex items-center justify-between">
+                              <span className="text-muted-foreground">담당 에이전트:</span>
+                              <span className={`font-semibold ${isDefaultFallback ? 'text-indigo-600 dark:text-indigo-400' : 'text-zinc-700 dark:text-zinc-300'}`}>
+                                {agent.name} {isDefaultFallback && '(기본 에이전트)'}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 p-2 rounded border border-red-200/50 dark:border-red-900/30">
+                              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                              <span className="font-semibold">에이전트 없음 (등록 필요)</span>
+                            </div>
+                          )}
+                        </div>
                         
                         {isDisabled ? (
                           <Button className="w-full mt-4" variant="secondary" disabled>
@@ -230,7 +284,7 @@ export default function MyCoursesPage() {
                             className="w-full mt-4" 
                             onClick={(e) => {
                               e.stopPropagation();
-                              router.push(`/learn/${course.slug}`);
+                              router.push(`/learn/${course.slug}?card=${progress.last_card || 0}`);
                             }}
                           >
                             <PlayCircle className="w-4 h-4 mr-2" />

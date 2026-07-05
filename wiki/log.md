@@ -30,6 +30,121 @@ Ran lint. See lint-report.md for details.
 
 <!-- Append-only. 최신 항목을 위에 추가. -->
 
+## 2026-07-05
+
+- **[FEATURE] 하네스 에이전트 등록/설정 화면 내 활성 모델 비노출 및 연결 검증 최적화**
+  - **수정/생성 파일**:
+    - `components/features/AgentSettingsTab.tsx` — 하네스 에이전트인 경우 지원 모델 조회 카드에서 새로고침(refresh) 버튼 및 감지 모델 목록/선택 UI 대신 프로그램에 설정된 LLM 사용 안내 메시지 박스를 표시하도록 변경했습니다. 또한 에이전트 정보 수정/보기 화면에서 '활성 모델' 필드를 숨기고, 연결상태 확인 시 복잡한 LLM 모델 목록 조회/검증 단계를 거치지 않고 연결 성공을 반환하도록 개선했습니다.
+    - `components/features/AddAgentModal.tsx` — 신규 에이전트 등록 화면에서도 하네스 에이전트인 경우 '활성 모델' 필드를 숨기고, 연결상태 확인 시 모델 조회를 생략한 채 연결 성공 처리가 완료되도록 변경했습니다.
+    - `wiki/sources/2026-07-05-harness-agent-model-view-improvement.md` (신규) — 작업의 상세 내용과 구조를 기록한 상세 위키 문서 생성.
+  - **작업 내용**:
+    - 하네스 에이전트 환경에서 불필요한 LLM 모델 입력/검증 단계를 완벽히 제거하여 사용자의 오인지를 방지하고 원격 서버와의 유연한 연결 수립을 도모했습니다.
+
+- **[FEATURE] 강좌 자동 수강 및 삭제 cascade 구현, 에이전트 상세 탭 개선 및 사용량 그래프 시각화**
+  - **수정/생성 파일**:
+    - `app/(user)/courses/manage/upload/page.tsx` — 새 강좌 등록 성공 직후, `/api/courses/subscribe` API를 자동으로 호출하여 등록자를 자동 수강 처리하도록 연동함.
+    - `app/api/admin/packages/[id]/route.ts` — 강좌 삭제(`DELETE`) 시, 누적 수강 정보 및 개별 학습 진행 기록 등 관련 매핑 데이터가 데이터베이스에서 함께 깔끔하게 cascade 삭제되도록 로직을 보강함.
+    - `app/(user)/my-agents/[id]/page.tsx` — 에이전트 상세 화면의 탭 배치를 `[통계 - 대화 - 설정]` 순으로 변경하고, `localStorage`를 활용해 마지막 활성 탭 상태를 기억 및 유지하도록 개선함. 또한 대화 로그의 타임스탬프를 로컬 시간 기준으로 일별 집계하여 Recharts 기반 월별 사용 시간 및 사용 토큰 추이 막대그래프로 표출하도록 통계 탭을 전면 개편함.
+    - `wiki/sources/2026-07-05-course-enrollment-and-agent-stats-chart.md` (신규) — 작업의 상세 내용과 구조를 기록한 상세 위키 문서 생성.
+  - **작업 내용**:
+    - 검색 화면이 사라짐에 따라 수강 신청을 처리하기 곤란했던 환경에서 강좌 등록과 동시에 자동 수강 신청이 되도록 개선하여 원활한 테스트 및 대시보드 진입을 지원하도록 함.
+    - 패키지 제거 시 정합성 오류로 유령 데이터가 남는 문제를 cascade delete를 통해 방지함.
+    - 에이전트 통계의 신뢰도 향상을 위해 실제 챗 기록을 일 단위로 버킷 집계하여 보여주고, Recharts 차트 도입을 통해 가시성 높은 추이 그래프를 튜터 포털 내에 제공함.
+
+- **[FEATURE] 하네스 에이전트 연결상태 확인 시 LLM 모델 정보 상세 노출 및 동기화 개선**
+  - **수정/생성 파일**:
+    - `components/features/AgentSettingsTab.tsx` — 연결상태 확인(`handleTestConnection`) 시 하네스 에이전트의 현재 사용 모델(`current_model`)과 지원 모델 목록 정보를 문자열로 요약하여 테스트 결과 메시지에 상세하게 노출하도록 변경함. 또한 연결 확인이 성공하면 컴포넌트의 `models` 상태를 API로부터 감지된 모델 목록으로 즉시 동적 갱신하여 우측 카드에 즉각 반영되도록 처리함.
+  - **작업 내용**:
+    - 하네스 에이전트에서 단순 "연결 성공!" 메시지만 보여주던 이전 UX를 보강하여, 실제 감지된 사용 모델 및 지원 모델 목록을 함께 확인하고 프론트엔드 상태에 실시간 동기화할 수 있도록 구현함.
+
+- **[BUGFIX] 에이전트 수정 폼에서 연결상태 확인 시 기존 API 키가 정상적으로 사용되도록 수정**
+  - **수정/생성 파일**:
+    - `components/features/AgentSettingsTab.tsx` — 연결상태 확인(`handleTestConnection`) 시 폼 내 입력된 `apiKey`가 비어있을 경우 기존 저장된 `agent.api_key`를 사용(fallback)하도록 통신 바인딩을 개선함.
+  - **작업 내용**:
+    - 에이전트 상세의 설정 탭에서 '정보 수정' 시 기존 설정된 API Server Key가 마스킹(빈값) 처리되어 화면에 표시되는데, 이 상태에서 하단 '연결상태 확인' 버튼을 누르면 빈 API Key로 요청되어 에러가 발생하는 UX 결함을 발견하여 기존에 저장해둔 유효한 API Key를 우선 대입해 성공적으로 검증할 수 있도록 수정함.
+
+- **[FEATURE] 에이전트 대화 내 히든 메시지를 활용한 사용 모델 자동 업데이트 기능 구현**
+  - **수정/생성 파일**:
+    - `components/features/AgentChatTab.tsx` — 대화 응답 스트림 수신 완료 후 `<!-- HIDDEN_MESSAGE: ... -->` 형태의 특수 주석을 감지하여 `selected_model` 또는 `current_model` 등을 추출하는 `parseHiddenMessages` 및 스트리밍 중인 미완성 주석을 숨기는 `cleanStreamingText` 기능을 탑재함. 감지된 사용 모델 정보가 있을 경우 `updateExternalAgent` API를 호출해 DB를 자동 업데이트하고, 변경 완료를 알리는 세련된 에메랄드 테마의 Toast 알림 배너를 띄움. 또한 `agents-updated` 전역 이벤트를 디스패치함.
+    - `app/(user)/my-agents/[id]/page.tsx` — `agents-updated` 전역 이벤트를 리슨하여 에이전트 정보가 업데이트되었을 때 화면 깜빡임 없이 무중단(silent)으로 에이전트 상세 및 설정 정보를 다시 로드하여 즉시 반영하는 실시간 SPA 동기화 로직을 보완함.
+  - **작업 내용**:
+    - 사용자가 에이전트와 대화하는 도중 에이전트가 "사용 중인 모델 정보"를 히든 메시지로 반환할 때, 수동으로 확인하고 변경할 필요 없이 에이전트의 타겟팅 모델 설정을 실시간으로 자동 갱신하도록 처리함.
+    - 사용자 메시지 및 에이전트 응답 렌더링 시 HTML 주석 블록이 날것으로 화면에 노출되지 않도록 깔끔하게 필터링(strip)하여 격리하도록 개선함.
+
+- **[BUGFIX] 하네스 에이전트 연결 확인(Refresh) 시 LLM 모델 정보 자동 업데이트 및 화면 표시 개선**
+  - **수정/생성 파일**:
+    - `agent-worker/main.py` — 하네스 에이전트의 mock `/v1/models` API 응답에 `current_model` 필드 및 사용 가능한 모델 정보(예: `deepseek-v4-pro`)를 추가하고, 사용 중인 LLM 모델에 `"current": True`와 에이전트 쉘에 `"hidden": True`를 설정함.
+    - `app/api/external-agents/test/route.ts` — 에이전트 서버의 `/v1/models` 응답에서 `current_model` 또는 `current: true` 속성을 추출하여 연결 테스트 결과 응답에 `current_model`로 함께 내려주도록 연동.
+    - `components/features/AgentSettingsTab.tsx` — `ModelItem` 인터페이스에 `hidden` 필드를 추가하고, `fetchModels`에서 모델 정보를 새로고침(Refresh)하거나 로드할 때 하네스 에이전트인 경우 `hidden` 속성이 없는 실제 LLM 모델 및 서버가 반환한 `current_model` 정보를 감지하여 DB의 `selected_model`로 자동 업데이트 및 화면 새로고침 처리함. 또한 화면에서 `hidden` 속성이 설정된 에이전트 쉘 모델(예: `hermes-agent`)을 필터링하여 사용자에게 실제 LLM 모델들만 지원 모델 목록으로 보여주도록 함.
+    - `components/features/AddAgentModal.tsx` — 에이전트 신규 등록 시 연결 테스트 단계에서 하네스 에이전트인 경우 `hidden: true`가 아닌 실제 LLM 모델들을 감지하고, 서버가 반환한 `current_model` 또는 첫 번째 실제 모델이 기본 선택되도록 보완함.
+
+- **[FEATURE] 에이전트 상세 정보 고도화 및 하네스 에이전트 모델 수동 관리 기능 구현**
+  - **수정/생성 파일**:
+    - `lib/types/index.ts` — `agent_program` 유니온 타입에 `'other'` 옵션 추가.
+    - `components/features/AddAgentModal.tsx` — 하네스 및 LLM 에이전트 프로그램 선택지에 '기타(Other)' 버튼 및 퀵 URL 매핑을 추가하고, 하네스 에이전트 등록 시 원격 API 대신 직접 사용할 LLM 모델명을 텍스트 입력창으로 수동 지정할 수 있도록 구현.
+    - `components/features/AgentSettingsTab.tsx` — 에이전트 상세의 '에이전트 타입' 영역에 [에이전트 타입, 실행 환경, 에이전트 프로그램] 3가지 메타데이터를 나란히 뱃지로 표시하고 중복 행을 제거. 또한 에이전트 프로그램 수정 선택지에 '기타' 추가 및 하네스 에이전트의 지원 모델이 없거나 API 실패 시 수동으로 모델을 입력하고 바로 갱신/업데이트할 수 있는 조력 UI 연동.
+  - **작업 내용**:
+    - 사용자가 에이전트 상세에서 어떤 에이전트인지 한눈에 알 수 있게 뱃지 3종을 그룹화하여 노출함.
+    - LM Studio 등 다양한 실행 툴 대응을 위해 '기타' 프로그램을 하네스/LLM 에이전트 양쪽 모두에 추가함.
+    - NousResearch Hermes 등 자체 `/v1/models`를 반환하지 않는 하네스 에이전트 프레임워크의 특성을 반영하여, 등록 및 설정 시 LLM 모델명을 수동으로 타겟팅해 지정 및 수동 조회(Refresh)가 가능하도록 개선함.
+
+- **[FEATURE] 에이전트 상세 화면 및 강좌 상세 화면 통계 실데이터(누적 사용 시간 등) 연동**
+  - **수정/생성 파일**:
+    - `app/api/external-agents/[id]/chat/route.ts` — 대화 로그 파일(`public/agent-chats/[id].json`)의 누적 기록 데이터를 조회할 수 있도록 GET 메소드 연동.
+    - `app/(user)/my-agents/[id]/page.tsx` — 가짜 hash 기반 통계(`getAgentStats`)를 제거하고, `/api/external-agents/[id]/chat`을 호출하여 실제 챗 로그 데이터를 불러와 누적 사용 시간, 평균 응답 시간, 누적 및 평균 토큰 등을 동적으로 계산하여 표출하도록 수정.
+    - `app/(user)/courses/[slug]/client.tsx` — 가짜 hash 기반 통계를 제거하고, 동적 fetch 훅을 장착한 `AgentStatsView` 서브 컴포넌트를 설계하여 선택된 에이전트의 챗 로그를 읽어와 실제 메트릭을 출력하도록 리팩토링.
+  - **작업 내용**:
+    - 에이전트 상세 화면과 강좌 상세 화면의 통계 탭에서 에이전트 누적 사용 시간이 기존의 고정값/가짜값이 아닌 "챗 요청부터 응답 완료까지의 실제 duration_ms 총합"을 연산하여 보여주도록 변경함.
+    - 이에 필요한 챗 로그 파일 전체 조회 API를 기존의 채팅 라우트에 GET 메소드로 빌드하여 연동 완료함.
+
+- **[FEATURE] 에이전트 등록 팝업 및 상세 페이지 편의성 개편, AI 튜터 설정 기능 제거**
+  - **수정/생성 파일**:
+    - `components/features/AddAgentModal.tsx` — Web UI/Kanban URL 필드 및 AI 튜터용 설정 스위치 삭제. 실행 환경(로컬/클라우드) 및 에이전트 프로그램(Hermes/Open claw 혹은 Ollama/LM Studio)을 선택하여 포트와 URL 템플릿이 자동으로 입력창에 채워지는 "빠른 URL 설정" 기능 구현. 에이전트 타입 설명(하네스: "Hermes, Open claw와 같은 에이전트 프로그램", LLM: "순수하게 LLM을 호출하는 API (Ollama, LM Studio 등)") 최적화.
+    - `app/(user)/my-agents/page.tsx` — 에이전트 카드에서 AI 튜터 뱃지 제거 및 우측 메뉴의 "AI 튜터로 설정" 토글 기능과 셋업 오버레이 제거.
+    - `app/(user)/my-agents/[id]/page.tsx` — 상세 화면 상단의 Web UI 새 창 열기 버튼 제거.
+    - `components/features/AgentSettingsTab.tsx` — 정보 수정 폼과 상세 정보 보기 화면에서 Web UI/Kanban URL 필드 제거, 에이전트 타입 설명 보완, AI 튜터 지정 스위치 및 관련 뱃지/오버레이 제거.
+
+- **[FEATURE] 로컬 LLM(Ollama, LM Studio) 에이전트 연동 버그 및 갭 수정**
+  - **수정/생성 파일**:
+    - `lib/utils/agent-endpoint.ts` (신규) — localhost IP 치환, trailing slash 제거, `/v1` 접미사 추출 헬퍼 함수 `normalizeAgentEndpoint` 구현.
+    - `app/api/external-agents/test/route.ts` — `/health` 호출이 실패하더라도 즉시 중단되지 않도록 완화하고, `/v1/models` 성공 여부만으로 연결 성공 판정하도록 수정. 엔드포인트 헬퍼 연동.
+    - `app/api/external-agents/[id]/chat/route.ts` — `selected_model`이 없을 경우 무조건 `'hermes-agent'`로 폴백하는 대신 예외(400)를 반환하도록 예외 처리 보강. 엔드포인트 헬퍼 연동.
+    - `app/api/external-agents/setup-tutor/route.ts` — 엔드포인트 헬퍼 연동.
+    - `components/features/AddAgentModal.tsx` — 연결 테스트 성공 시 모델 목록을 사용자가 직접 선택할 수 있는 Select 드롭다운 UI 추가 및 Ollama/LM Studio 안내 문구 보강. 엔드포인트 헬퍼 연동.
+    - `components/features/AgentSettingsTab.tsx` — 에이전트 수정 폼 및 지원 모델 조회 카드에 Select 드롭다운을 통한 활성 모델 선택 및 퀵 변경 UI 추가, Ollama/LM Studio 안내 문구 보강. 엔드포인트 헬퍼 연동.
+    - `app/(user)/my-agents/page.tsx` — 엔드포인트 헬퍼 연동.
+
+- **[INGEST] 로컬 LLM(Ollama, LM Studio) 에이전트 연동 리서치**
+  - **생성 파일**:
+    - `docs/research/2026-07-05-local-llm-ollama-lmstudio-integration.md` (신규) — 리서치 원본 문서
+    - `wiki/sources/2026-07-05-local-llm-ollama-lmstudio-integration.md` (신규) — 위키 인제스트 요약
+    - `wiki/concepts/LocalLLMAgentIntegration.md` (신규)
+    - `wiki/concepts/ExternalHermesAgent.md` — 관련 개념 링크 추가
+  - **작업 내용**: Ollama/LM Studio를 현재 `UserExternalAgent` 등록 구조(엔드포인트+API 키)로 연동하려면 무엇이 바뀌어야 하는지 코드 조사. 결론: 필드 추가는 불필요하나 (1) 연결 테스트의 `/health` 필수 체크, (2) 채팅 라우트의 `'hermes-agent'` 모델 폴백, (3) 모델 자동(첫 번째) 선택 UX 3가지가 로컬 LLM과 맞지 않아 수정이 필요함을 확인. 코드 변경은 미착수(리서치 전용).
+
+- **[FEATURE] 에이전트 기능 확장(하네스 및 LLM), 강좌별 개별 에이전트 매핑, 구독 시 기본 에이전트 자동 지정**
+  - **수정/생성 파일**:
+    - `lib/types/index.ts` — `UserExternalAgent` 타입에 `agent_type` 필드 및 `Course` 타입에 `agent_id` 필드 추가.
+    - `components/features/AddAgentModal.tsx` — 에이전트 등록 시 '하네스 에이전트' 또는 'LLM 에이전트' 타입을 선택하는 라디오 버튼 UI 추가 및 저장 기능 구현.
+    - `components/features/AgentSettingsTab.tsx` — 에이전트 설정 수정 시 에이전트 타입 선택 UI 추가 및 저장 기능 구현, 상세 조회 화면에 에이전트 타입 노출.
+    - `app/(user)/my-agents/page.tsx` — 에이전트 목록의 각 카드에 '하네스' / 'LLM' 타입을 나타내는 뱃지 UI 추가.
+    - `app/api/courses/subscribe/route.ts`, `app/api/packages/subscribe/route.ts` — 신규 강좌/패키지 구독 시 당시 활성화된 기본(Default) 에이전트의 ID를 강좌의 `agent_id`에 자동으로 매핑하는 기능 구현.
+    - `app/api/courses/[slug]/route.ts` — 강좌 상세 정보 조회 시 사용 가능한 전체 에이전트 목록(`external_agents`)을 함께 응답하도록 GET API 수정.
+    - `app/(user)/courses/[slug]/client.tsx` — 강좌 상세 화면에서 각 파트(하위 강좌)별로 학습을 전담할 에이전트를 선택하여 개별 저장(PATCH)할 수 있는 셀렉트 UI 추가.
+    - `app/(user)/learn/[slug]/client.tsx` — 강좌의 매핑된 에이전트(`agent_id`) 또는 기본 AI 튜터를 찾아 로드하고, `llm` 에이전트 타입인 경우 1) 시스템 리소스 다운로드/점검 절차를 생략하고 즉시 학습 상태(downloaded)로 초기화하며 2) 질문 시 [강좌 요약 및 설명, 현재 카드의 텍스트 내용, 관련 위키/리소스 context, 사용자의 질문]을 조합한 구조화된 프롬프트를 시스템 메시지로 다르게 조립하여 외부 LLM 서버로 전달하도록 개선.
+    - `app/api/external-agents/[id]/chat/route.ts` — LLM 에이전트 타입의 대화 요청 시 `user_external_agent_messages` 테이블의 누적 대화 기록을 역순(시간순)으로 정렬하여 messages 배열로 재구성한 후 외부 completions API로 중계(relay) 전송하는 세션 유지 로직 구현.
+
+- **[FEATURE/UI] 강좌 및 에이전트 관리 UI 개선 및 에이전트 대화 전체 보존(토큰/시간 로그 기록)**
+  - **수정/생성 파일**:
+    - `app/(user)/courses/manage/page.tsx` — 전체 강좌 목록 카드에서 불필요한 [매니페스트 수정] 버튼 삭제 및 버튼 정렬 레이아웃을 Grid에서 Flex로 최적화.
+    - `app/(user)/my-agents/page.tsx` — 에이전트 카드에서 "지침 설정 완료" 뱃지 제거, 하단 [웹 UI] 버튼 삭제 및 [삭제] 버튼 추가, 카드 body 클릭 시 상세 화면으로 이동하도록 구현. 마운트 시 에이전트 자동 상태 동기화 추가.
+    - `app/(user)/my-agents/[id]/page.tsx` — 상세 화면 탭을 [대화], [설정] 두 개로 축소. 이탈(unmount) 시 5분 연결 종료 타이머를 설정하는 전역 관리 훅 추가 및 머무는 동안 연결 유지. 전체 페이지 및 탭 spacing/margin 여백 밸런스 조절.
+    - `app/(user)/learn/[slug]/client.tsx` — 학습 화면 이탈 시 5분 타이머 작동 및 에이전트 연결 종료 명시적 처리.
+    - `components/features/AgentChatTab.tsx` — 대화 탭 헤더에서 Model 정보 노출부 삭제, footer 영역의 매크로 토글 버튼 및 매크로 선택 패널 삭제, input placeholder 가이드 문구 수정. CardContent 패딩 및 스페이싱 축소로 여백 최적화.
+    - `components/features/AgentSettingsTab.tsx` — 설정 정보 카드 및 모델 조회 카드의 Header, Content 패딩과 상세 항목 간 여백을 줄여 레이아웃 밸런스 개선.
+    - `app/api/external-agents/[id]/chat/route.ts` — 스트림 완료 시 대화 소요 시간(durationMs), 입력/출력 텍스트의 근사 토큰 크기를 연산하여 `public/agent-chats/<id>.json` 파일에 모든 대화 로그를 누적 보존하도록 고도화.
+    - `lib/utils.ts` — SPA 내 페이지 이동 시 에이전트 이탈 타이머를 지속 관리하기 위한 전역 딕셔너리 `agentLeaveTimers` 추가.
+
 ## 2026-07-04
 
 - **[BUGFIX/UI/UX] 기본 강좌 삭제 잔재 해결, 강좌 관리 아이콘 변경 및 사이드바 활성화 버그 수정, 나의 강좌 섹션 단일화**
@@ -1141,5 +1256,68 @@ Ran lint. See lint-report.md for details.
     - **기본 에이전트 씨드 제거**: 최초에 `db.json`이 생성될 때 등록되던 실제 동작하지 않는 더미 에이전트 데이터("기본 에이전트", ID: `agent-1`)를 삭제했습니다. 이로써 `user_external_agents` 목록은 기본적으로 빈 배열(`[]`)로 시작하게 됩니다.
   - **Concepts**: [[RemoveDefaultDummyAgentSeed]]
 
+## 2026-07-05
 
+- **[UI] 탭(Tabs) 컴포넌트 디자인 고도화 및 프로젝트 내 탭 스타일 통일**
+  - **수정 파일**:
+    - [components/ui/tabs.tsx](file:///C:/Workspace/Projects/OpenTutor/components/ui/tabs.tsx)
+    - [app/(user)/my-agents/[id]/page.tsx](file:///C:/Workspace/Projects/OpenTutor/app/(user)/my-agents/[id]/page.tsx)
+    - [app/(user)/my-courses/page.tsx](file:///C:/Workspace/Projects/OpenTutor/app/(user)/my-courses/page.tsx)
+  - **작업 내용**:
+    - **탭 UI 기본 스타일 고도화**: `components/ui/tabs.tsx`의 default 탭 리스트 스타일을 모던하고 세련된 `rounded-xl p-1 h-11 border backdrop-blur-sm` 형태로 향상시켰습니다. 활성 탭에 테마 색상(Indigo-600)의 백그라운드 shadow 및 rounded-lg 스타일을 내재화하여, 인라인으로 작성되던 복잡한 스타일 코드를 걷어내고 컴포넌트 자체에서 미려한 완성도를 보여주도록 개선했습니다.
+    - **사용처 인라인 스타일 리팩토링**: 에이전트 상세 화면(`my-agents/[id]/page.tsx`)과 나의 강좌 화면(`my-courses/page.tsx`)에 각각 다르게 하드코딩되어 불일치했던 탭 리스트 및 트리거 인라인 스타일을 모두 제거했습니다. 개선된 `components/ui/tabs.tsx`의 통일된 기본 테마를 적용하여, 프로젝트 전반의 탭 UI/UX가 일관성 있게 표시되도록 통일했습니다.
+  - **Concepts**: [[UnifiedTabsAesthetics]], [[TabsStyleRefactoring]]
 
+- **[FEATURE/UI] AI 튜터 복원, 정보 노출 강화, 에이전트 지정 및 통계 화면 구축과 Coming Soon 안내 적용**
+  - **수정 파일**:
+    - [lib/types/index.ts](file:///C:/Workspace/Projects/OpenTutor/lib/types/index.ts) — `UserExternalAgent` 타입에 `env_type`, `agent_program` 필드 추가
+    - [components/features/AddAgentModal.tsx](file:///C:/Workspace/Projects/OpenTutor/components/features/AddAgentModal.tsx) — 신규 에이전트 등록 시 실행 환경 및 프로그램 값 전달
+    - [app/(user)/my-agents/page.tsx](file:///C:/Workspace/Projects/OpenTutor/app/(user)/my-agents/page.tsx) — AI 튜터 뱃지 및 기본 튜터 설정 기능 복원, 에이전트 메타데이터 노출 강화 및 할당 강좌 수 표시
+    - [app/(user)/my-courses/page.tsx](file:///C:/Workspace/Projects/OpenTutor/app/(user)/my-courses/page.tsx) — 강좌 패키지 뱃지 제거, 튜터 정보 및 미지정 시 폴백/경고 스타일 노출, 이어서 학습하기 라우팅 연동
+    - [app/(user)/courses/manage/page.tsx](file:///C:/Workspace/Projects/OpenTutor/app/(user)/courses/manage/page.tsx) — 강좌 관리 설명 문구 현행화, 번들 등록/깃허브 등록 섹션 분리 및 할당 에이전트명 노출
+    - [app/(user)/courses/page.tsx](file:///C:/Workspace/Projects/OpenTutor/app/(user)/courses/page.tsx) — 외부 클라우드 마켓플레이스 연동 준비 안내 Placeholder / Coming Soon UI 구축
+    - [app/(user)/courses/[slug]/client.tsx](file:///C:/Workspace/Projects/OpenTutor/app/(user)/courses/[slug]/client.tsx) — 강좌 전체 단위 에이전트 지정/저장 구현, 헤더 하단 에이전트 통계 카드 배치, 챕터별 에이전트 텍스트화
+    - [app/(user)/my-agents/[id]/page.tsx](file:///C:/Workspace/Projects/OpenTutor/app/(user)/my-agents/[id]/page.tsx) — "통계" 탭 추가 및 사용량/강좌 할당 통계 연동
+    - [components/features/AgentSettingsTab.tsx](file:///C:/Workspace/Projects/OpenTutor/components/features/AgentSettingsTab.tsx)
+    - [app/api/external-agents/test/route.ts](file:///C:/Workspace/Projects/OpenTutor/app/api/external-agents/test/route.ts) — Dashboard 관련 설정 완전 제거, 실행 환경 및 에이전트 프로그램 설정 필드 일치 및 저장 연동
+  - **작업 내용**:
+    - **AI 튜터 복원 및 정보 노출**: 에이전트 카드 상단에 "AI 튜터" 뱃지를 복구하고, 드롭다운을 통해 기본 AI 튜터를 지정할 수 있는 벌크 리셋 연동을 적용했습니다. 또한 에이전트 타입 외에 실행 환경(로컬/클라우드) 및 에이전트 프로그램(Hermes/Ollama 등) 정보를 카드에 명시하고 필드를 확장했습니다.
+    - **수강 강좌 및 튜터 유효성 검증**: 나의 강좌 카드에서 불필요한 패키지 뱃지를 정리하고, 배정된 에이전트 또는 기본 튜터 정보를 노출시켰습니다. 튜터 정보가 전혀 없는 비정상적 강좌의 경우 빨간색 경고 스타일을 렌더링하고, 플레이어 진입 시 최적화된 학습 슬라이드로 즉각 라우팅되도록 네비게이션을 개편했습니다.
+    - **강좌 관리 섹션 분리**: 로컬에서 ZIP으로 직접 올린 강좌와 Github 저장소를 연동하여 다운로드한 강좌의 성격을 나누기 위해, 강좌 관리 리스트를 두 개의 섹션("강좌 번들 파일로 등록", "GITHUB 에서 추가")으로 분리하고 렌더러를 리팩토링했습니다.
+    - **Coming Soon 검색 마켓 플레이스**: 외부 클라우드 마켓플레이스 서버 연동 강좌 검색 기능을 안내하기 위해, 이메일 알림 신청이 가능한 고품격 Coming Soon Placeholder UI를 `courses/page.tsx`에 신설했습니다.
+    - **강좌 단위 튜터 지정 및 통계**: 챕터별로 튜터를 선택하던 복잡성을 제거하고, 강좌 전체 단위로 튜터를 지정하도록 개선하여 DB에 저장되도록 연결했습니다. 강좌 상세 헤더 하단 및 에이전트 포털 내에 "통계" 카드/탭을 각각 연동하여 사용 시간, 응답 속도, 누적 토큰, 평균 토큰 등의 가상 통계와 할당 강좌 수를 모니터링할 수 있도록 했습니다.
+    - **Dashboard 통합 연동 정리**: 로컬 중심의 전환에 맞춰 외부 에이전트 설정 내의 불필요한 Dashboard API 설정을 들어내고, AddAgentModal과 완벽히 동치되는 에이전트 속성 변경 및 저장이 가능하도록 탭 설정을 리팩토링했습니다.
+  - **Concepts**: [[AITutorRestoration]], [[TutorValidationFallback]], [[CourseManageSectionSplitting]], [[CloudMarketplaceComingSoon]], [[GlobalTutorSettingsAndStats]], [[CleanSettingsTabWithDashboardRemoval]]
+
+- **[BUGFIX] 에이전트 상세 화면 지원 모델 조회 예외 처리 개선 및 이전 설정 모델 유지**
+  - **수정 파일**:
+    - [components/features/AgentSettingsTab.tsx](file:///C:/Workspace/Projects/OpenTutor/components/features/AgentSettingsTab.tsx)
+  - **작업 내용**:
+    - **이전 설정 모델 정보 복구 및 경고 노출 조건 개선**: 원격 에이전트 서버로부터 지원 모델 리스트(`models`)를 가져오지 못하더라도, 이미 에이전트에 설정되어 있는 모델명(`agent.selected_model`)이 있다면 "LLM 모델 정보 없음" 경고 상자를 띄우지 않고 정상적인 모델 조회 UI를 유지하도록 개선했습니다.
+    - **누락 모델 자동 주입**: 원격 API 응답에 현재 설정된 모델이 빠져있거나 모델 리스트가 빈 상태여도 설정된 모델 정보를 목록 상에 임시로 노출하여 정상적으로 뱃지 및 드롭다운 선택 UI가 작동하도록 처리했습니다.
+    - **에러 메시지 상세화**: API 호출 에러가 발생했지만 설정된 모델 정보가 있어 정상 UI가 표시되는 경우, 성공 메시지 대신 실패 원인을 하단 캡션으로 작게 보여주어 디버깅 사용성을 개선했습니다.
+    - **대화(Chat) 기반 모델 조회 폴백 추가**: 하네스 에이전트와 같이 `/v1/models`를 직접 제공하지 않는 원격 에이전트를 위해, 테스트 API 내부에서 `/v1/chat/completions`를 통해 모델 정보와 활성 모델명을 JSON 구조로 질의하는 응답 처리 폴백 로직을 구현하여 목록 조회 성공률을 높였습니다.
+  - **Concepts**: [[AgentModelLookupFallback]], [[RestoreConfiguredAgentModelUI]]
+
+- **[FEATURE/UI] 에이전트 등록/수정 시 활성 모델 필드 자동 입력 및 연결상태 확인 필수 적용**
+  - **수정 파일**:
+    - [components/features/AddAgentModal.tsx](file:///C:/Workspace/Projects/OpenTutor/components/features/AddAgentModal.tsx)
+    - [components/features/AgentSettingsTab.tsx](file:///C:/Workspace/Projects/OpenTutor/components/features/AgentSettingsTab.tsx)
+    - [app/api/external-agents/[id]/chat/route.ts](file:///C:/Workspace/Projects/OpenTutor/app/api/external-agents/[id]/chat/route.ts)
+  - **작업 내용**:
+    - **활성 모델 필드 자동화 및 하단 이동**: 사용자가 수동으로 모델을 선택하거나 입력하지 않아도 되도록 "활성 모델 선택" 항목을 폼의 가장 하단으로 이동하고 read-only 필드로 변경했습니다. "연결상태 확인" 버튼을 클릭하면 원격 모델을 조회하여 자동으로 값이 채워지도록 연동했습니다.
+    - **타입별 모델 유효성 및 강제성 정의**: 하네스 에이전트의 경우는 활성 모델 정보가 없어도 등록/수정이 가능하도록 선택(Optional) 처리하고, LLM 에이전트의 경우에는 활성 모델이 필수이므로 "연결상태 확인" 시 반드시 모델이 감지되도록 설정했습니다 (LLM 모델 탐색 실패 시 에러 처리).
+    - **연결 변경 시 상태 검증 제어**: 에이전트 정보 수정 시 Endpoint, Key, 에이전트 타입/프로그램이 변경된 경우 반드시 "연결상태 확인"을 다시 거치도록 제한하여 유효하지 않은 정보의 저장을 미연에 방지했습니다.
+    - **채팅 API 폴백 지원**: 하네스 에이전트 연동 시 활성 모델이 DB 상에 비어있거나 누락되어도 채팅 API에서 `hermes-agent`로 자동 폴백되도록 백엔드 라우터를 개선했습니다.
+  - **Concepts**: [[ActiveModelAutoPopulation]], [[ConnectionVerificationMandatory]], [[LLMAgentModelEnforcement]]
+
+## 2026-07-05
+
+- **[UI] 대시보드 화면 내 "에이전트 관리" 및 "AI 강좌" 카드 가로 나란히 배치**
+  - **수정 파일**:
+    - [app/(user)/dashboard/page.tsx](file:///C:/Workspace/Projects/OpenTutor/app/(user)/dashboard/page.tsx)
+  - **작업 내용**:
+    - **가로 그리드 배치**: 기존의 세로로 순차 노출되던 "에이전트 관리" 카드와 "AI 강좌" 카드를 `grid gap-6 md:grid-cols-2` 컨테이너로 묶어 데스크탑 뷰포트에서 가로로 나란히 정렬되도록 레이아웃을 개편했습니다.
+    - **카드 높이 일치 및 버튼 하단 정렬**: 카드의 실제 텍스트 길이에 관계없이 카드의 전체 높이가 균등하게 일치하고 버튼 영역이 하단에 정렬되도록 `flex flex-col justify-between h-full` 스타일링을 적용했습니다.
+    - **스켈레톤 화면 동기화**: 대시보드 로딩 중 보여지는 스켈레톤 화면(`DashboardSkeleton`)에서도 동일하게 두 카드를 가로 2열 배치하도록 레이아웃을 일치시켰습니다.
+  - **Concepts**: [[DashboardSideBySideCards]], [[CardHeightEqualization]], [[SkeletonLayoutSync]]

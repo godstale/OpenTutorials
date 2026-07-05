@@ -44,6 +44,22 @@ export async function POST(request: NextRequest) {
       await adminClient
         .from('user_progress')
         .upsert(progressInserts, { onConflict: 'user_id,course_id' });
+
+      // 당시 활성화되어 있는 기본(Default) 에이전트의 ID를 해당 강좌의 agent_id에 자동으로 연결
+      const { data: defaultAgent } = await adminClient
+        .from('user_external_agents')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('is_ai_tutor', true)
+        .maybeSingle();
+
+      if (defaultAgent?.id) {
+        const courseIds = items.map((item: any) => item.course_id);
+        await adminClient
+          .from('courses')
+          .update({ agent_id: defaultAgent.id })
+          .in('id', courseIds);
+      }
     }
 
     return NextResponse.json({ success: true });

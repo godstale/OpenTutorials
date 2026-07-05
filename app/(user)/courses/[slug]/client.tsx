@@ -6,9 +6,112 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, PlayCircle, CheckCircle2, ArrowLeft, ArrowRight } from 'lucide-react';
-import { Course } from '@/lib/types';
+import { BookOpen, PlayCircle, CheckCircle2, ArrowLeft, ArrowRight, Bot } from 'lucide-react';
+import { Course, UserExternalAgent } from '@/lib/types';
 import { CourseIcon } from '@/components/ui/course-icon';
+
+interface ChatLog {
+  timestamp: string;
+  duration_ms: number;
+  input_token_size: number;
+  output_token_size: number;
+  user_message: string;
+  assistant_message: string;
+}
+
+function AgentStatsView({ agentId }: { agentId: string }) {
+  const [chatLogs, setChatLogs] = useState<ChatLog[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchLogs() {
+      try {
+        const res = await fetch(`/api/external-agents/${agentId}/chat`);
+        if (res.ok) {
+          const data = await res.json();
+          setChatLogs(data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch chat logs for stats:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchLogs();
+  }, [agentId]);
+
+  const totalLogs = chatLogs.length;
+  const totalMs = chatLogs.reduce((acc, log) => acc + (log.duration_ms || 0), 0);
+  const avgMs = totalLogs > 0 ? totalMs / totalLogs : 0;
+  const totalTokens = chatLogs.reduce((acc, log) => acc + (log.input_token_size || 0) + (log.output_token_size || 0), 0);
+  const avgTokens = totalLogs > 0 ? Math.round(totalTokens / totalLogs) : 0;
+
+  const formatTotalDuration = (ms: number) => {
+    if (ms <= 0) return '0초';
+    const totalSeconds = ms / 1000;
+    if (totalSeconds < 60) {
+      return `${totalSeconds.toFixed(1)}초`;
+    }
+    if (totalSeconds < 3600) {
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = Math.round(totalSeconds % 60);
+      return `${minutes}분 ${seconds}초`;
+    }
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    return `${hours}시간 ${minutes}분`;
+  };
+
+  const formatAvgResponse = (ms: number) => {
+    if (ms <= 0) return '0초';
+    return `${(ms / 1000).toFixed(1)}초`;
+  };
+
+  const stats = {
+    totalHours: formatTotalDuration(totalMs),
+    avgResponse: formatAvgResponse(avgMs),
+    totalTokens: `${totalTokens.toLocaleString()} 토큰`,
+    avgTokens: `${avgTokens.toLocaleString()} 토큰`
+  };
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+      <div className="p-3 bg-zinc-50 dark:bg-zinc-900/40 rounded-lg border">
+        <span className="text-[10px] text-muted-foreground block uppercase font-bold">누적 사용 시간</span>
+        {isLoading ? (
+          <span className="h-5 w-16 bg-zinc-200 dark:bg-zinc-800 animate-pulse rounded mt-1 mx-auto block" />
+        ) : (
+          <span className="text-base font-extrabold text-zinc-900 dark:text-zinc-50 mt-1 block">{stats.totalHours}</span>
+        )}
+      </div>
+      <div className="p-3 bg-zinc-50 dark:bg-zinc-900/40 rounded-lg border">
+        <span className="text-[10px] text-muted-foreground block uppercase font-bold">평균 응답 시간</span>
+        {isLoading ? (
+          <span className="h-5 w-16 bg-zinc-200 dark:bg-zinc-800 animate-pulse rounded mt-1 mx-auto block" />
+        ) : (
+          <span className="text-base font-extrabold text-zinc-900 dark:text-zinc-50 mt-1 block">{stats.avgResponse}</span>
+        )}
+      </div>
+      <div className="p-3 bg-zinc-50 dark:bg-zinc-900/40 rounded-lg border">
+        <span className="text-[10px] text-muted-foreground block uppercase font-bold">누적 사용 토큰</span>
+        {isLoading ? (
+          <span className="h-5 w-16 bg-zinc-200 dark:bg-zinc-800 animate-pulse rounded mt-1 mx-auto block" />
+        ) : (
+          <span className="text-base font-extrabold text-zinc-900 dark:text-zinc-50 mt-1 block">{stats.totalTokens}</span>
+        )}
+      </div>
+      <div className="p-3 bg-zinc-50 dark:bg-zinc-900/40 rounded-lg border">
+        <span className="text-[10px] text-muted-foreground block uppercase font-bold">평균 사용 토큰</span>
+        {isLoading ? (
+          <span className="h-5 w-16 bg-zinc-200 dark:bg-zinc-800 animate-pulse rounded mt-1 mx-auto block" />
+        ) : (
+          <span className="text-base font-extrabold text-zinc-900 dark:text-zinc-50 mt-1 block">{stats.avgTokens}</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 
 interface DetailedCourse extends Course {
   order_index: number;
@@ -31,8 +134,10 @@ interface CourseDetail {
   force_checkpoint: boolean;
   courses: DetailedCourse[];
   user_subscribed: boolean;
+  agent_id?: string | null;
   version?: string;
   changelog?: string;
+  external_agents?: UserExternalAgent[];
 }
 
 export default function CourseDetailPageClient({ slug }: { slug: string }) {
@@ -79,6 +184,45 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
       alert('네트워크 오류가 발생했습니다.');
     } finally {
       setRegistering(false);
+    }
+  };
+
+  const handleUpdateCourseAgent = async (courseId: string, agentId: string | null) => {
+    try {
+      const res = await fetch(`/api/admin/courses/${courseId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agent_id: agentId }),
+      });
+      if (res.ok) {
+        await fetchCourseDetail();
+      } else {
+        const errorData = await res.json();
+        alert(`에이전트 지정에 실패했습니다: ${errorData.error || '알 수 없는 오류'}`);
+      }
+    } catch (err) {
+      console.error('Failed to update course agent:', err);
+      alert('네트워크 오류가 발생했습니다.');
+    }
+  };
+
+  const handleUpdatePackageAgent = async (agentId: string | null) => {
+    if (!courseDetail) return;
+    try {
+      const res = await fetch(`/api/admin/packages/${courseDetail.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agent_id: agentId }),
+      });
+      if (res.ok) {
+        await fetchCourseDetail();
+      } else {
+        const errorData = await res.json();
+        alert(`전체 에이전트 지정에 실패했습니다: ${errorData.error || '알 수 없는 오류'}`);
+      }
+    } catch (err) {
+      console.error('Failed to update package agent:', err);
+      alert('네트워크 오류가 발생했습니다.');
     }
   };
 
@@ -217,7 +361,7 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
               <span className="text-zinc-400">등록된 태그 없음</span>
             )}
           </div>
-          <div className="flex items-center gap-4 shrink-0">
+          <div className="flex items-center gap-4 shrink-0 self-start">
             <div className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
               <span>순차학습: <strong className={courseDetail.sequential_play ? "text-indigo-600 dark:text-indigo-400" : "text-zinc-600 dark:text-zinc-400"}>{courseDetail.sequential_play ? "필수" : "선택"}</strong></span>
@@ -230,9 +374,70 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
         </CardFooter>
       </Card>
 
+      {/* 에이전트 카드 및 통계 배치 */}
+      {courseDetail.user_subscribed && (
+        <Card className="border border-indigo-100 dark:border-indigo-950 bg-white dark:bg-zinc-900 shadow-sm overflow-hidden">
+          <CardHeader className="pb-3 px-6 md:px-8">
+            <CardTitle className="text-lg font-bold flex items-center gap-2">
+              <Bot className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              학습 AI 튜터 설정 및 통계
+            </CardTitle>
+            <CardDescription className="text-xs">
+              이 강좌 전체에 적용될 AI 튜터 에이전트를 지정하고, 해당 에이전트의 수강 학습 통계를 모니터링합니다.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6 px-6 md:px-8">
+            {/* 에이전트 지정 셀렉트 박스 */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-lg bg-zinc-50 dark:bg-zinc-900/50 border">
+              <div className="space-y-1">
+                <span className="text-sm font-semibold block">튜터 에이전트 선택</span>
+                <span className="text-xs text-muted-foreground">강좌 내 모든 질문과 토론은 이 에이전트가 전담합니다.</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <select
+                  value={courseDetail.agent_id || ''}
+                  onChange={(e) => handleUpdatePackageAgent(e.target.value || null)}
+                  className="text-sm bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded px-3 py-1.5 min-w-[200px] focus:outline-none shadow-sm cursor-pointer"
+                >
+                  <option value="">튜터 미지정</option>
+                  {courseDetail.external_agents?.map((agent) => (
+                    <option key={agent.id} value={agent.id}>
+                      {agent.name} ({agent.agent_type === 'llm' ? 'LLM' : '하네스'}{agent.is_ai_tutor ? ' - 기본튜터' : ''})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* 통계 정보 표시 */}
+            {courseDetail.agent_id ? (
+              (() => {
+                const assignedAgent = courseDetail.external_agents?.find(a => a.id === courseDetail.agent_id);
+                return (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between text-xs border-b pb-2">
+                      <span className="font-semibold text-zinc-700 dark:text-zinc-300">선택된 에이전트 상세 프로필</span>
+                      <Badge className="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px]">
+                        {assignedAgent?.agent_type === 'llm' ? 'LLM 모드' : '하네스 모드'}
+                      </Badge>
+                    </div>
+                    
+                    <AgentStatsView agentId={courseDetail.agent_id} />
+                  </div>
+                );
+              })()
+            ) : (
+              <div className="text-center py-6 border border-dashed rounded-lg bg-zinc-50/30">
+                <p className="text-sm text-muted-foreground">지정된 튜터 에이전트가 없습니다. 위에 있는 선택창에서 에이전트를 지정해주세요.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* 강좌 버전 및 CHANGE-LOG 정보 */}
       <Card className="border border-indigo-100 dark:border-indigo-950 bg-white dark:bg-zinc-900 overflow-hidden shadow-sm">
-        <CardHeader className="pt-0 pb-4 px-6 md:px-8">
+        <CardHeader className="pt-0 px-6 md:px-8">
           <CardTitle className="text-lg font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
             <BookOpen className="w-5 h-5 text-indigo-600" />
             버전 및 변경 이력
@@ -241,7 +446,7 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
             현재 강좌의 릴리즈 버전 정보와 업데이트 세부 내용입니다.
           </CardDescription>
         </CardHeader>
-        <CardContent className="pt-6 md:pt-8 pb-0 px-6 md:px-8 space-y-4">
+        <CardContent className="pt-2 md:pt-4 pb-0 px-6 md:px-8 space-y-4">
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">현재 버전:</span>
             <Badge className="bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 font-mono hover:bg-indigo-100 border-none">
@@ -294,14 +499,14 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
                   {index + 1}
                 </div>
 
-                <Card className={`border hover:shadow-sm transition-all overflow-hidden ${
+                <Card className={`border hover:shadow-sm transition-all overflow-hidden bg-white dark:bg-zinc-900 ${
                   isCompleted 
                     ? 'border-green-100 bg-green-50/10 dark:border-green-950/20 dark:bg-green-950/5' 
                     : isStarted && !isLocked
                       ? 'border-indigo-100 dark:border-indigo-950' 
                       : 'border-zinc-200 dark:border-zinc-800'
                 } ${isLocked ? 'opacity-60 bg-zinc-50/30' : ''}`}>
-                  <CardContent className="p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <CardContent className="px-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div className="space-y-2 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-semibold text-lg text-zinc-900 dark:text-zinc-50">{subcourse.title}</h3>
@@ -333,21 +538,33 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
                       )}
                     </div>
 
-                    <div className="shrink-0 self-end md:self-center">
+                    <div className="shrink-0 self-end md:self-center flex flex-col items-end gap-2">
                       {courseDetail.user_subscribed ? (
-                        (!courseDetail.sequential_play || index <= nextCourseIndex) ? (
-                          <Button
-                            variant={isCompleted ? 'outline' : 'default'}
-                            size="sm"
-                            onClick={() => router.push(`/learn/${subcourse.slug}?package=${courseDetail.slug}${isCompleted ? '&review=true' : ''}`)}
-                            className={isCompleted 
-                              ? 'border-zinc-300 text-zinc-700 hover:bg-zinc-50' 
-                              : 'bg-indigo-600 hover:bg-indigo-700 text-white'
-                            }
-                          >
-                            {isCompleted ? '다시 보기' : isStarted ? '이어서 학습' : '파트 학습 시작'}
-                          </Button>
-                        ) : null
+                        <>
+                          {(!courseDetail.sequential_play || index <= nextCourseIndex) ? (
+                            <Button
+                              variant={isCompleted ? 'outline' : 'default'}
+                              size="sm"
+                              onClick={() => router.push(`/learn/${subcourse.slug}?package=${courseDetail.slug}${isCompleted ? '&review=true' : ''}`)}
+                              className={isCompleted 
+                                ? 'border-zinc-300 text-zinc-700 hover:bg-zinc-50' 
+                                : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                              }
+                            >
+                              {isCompleted ? '다시 보기' : isStarted ? '이어서 학습' : '파트 학습 시작'}
+                            </Button>
+                          ) : null}
+
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <span className="text-[10px] text-zinc-400">학습 튜터:</span>
+                            <span className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400">
+                              {courseDetail.agent_id 
+                                ? (courseDetail.external_agents?.find(a => a.id === courseDetail.agent_id)?.name || '지정됨') 
+                                : '미지정'
+                              }
+                            </span>
+                          </div>
+                        </>
                       ) : (
                         <Button variant="secondary" size="sm" onClick={handleSubscribe} disabled={registering || isLocked} className="border border-zinc-200">
                           수강 필요

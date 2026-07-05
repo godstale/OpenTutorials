@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   LayoutGrid, Calendar, Clock, RefreshCw, 
-  CheckCircle2, XCircle, ShieldAlert, Settings, Edit3, Save, X, Eye, EyeOff
+  CheckCircle2, XCircle, ShieldAlert, Settings, Edit3, Save, X, Eye, EyeOff, Loader2, Bot
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +14,14 @@ import { Switch } from '@/components/ui/switch';
 import { updateExternalAgent } from '@/lib/api/external-agents';
 import type { UserExternalAgent } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import AITutorProgressOverlay from '@/components/features/AITutorProgressOverlay';
+import { normalizeAgentEndpoint } from '@/lib/utils/agent-endpoint';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface AgentSettingsTabProps {
   agent: UserExternalAgent;
@@ -25,7 +32,16 @@ interface ModelItem {
   object: string;
   created: number;
   owned_by: string;
+  hidden?: boolean;
 }
+
+const programNames = {
+  hermes: 'Hermes',
+  openclaw: 'Open claw',
+  ollama: 'Ollama',
+  lmstudio: 'LM Studio',
+  other: '기타'
+};
 
 export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
   const isMountedRef = useRef(true);
@@ -41,27 +57,92 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
   const [name, setName] = useState(agent.name);
   const [endpoint, setEndpoint] = useState(agent.endpoint);
   const [apiKey, setApiKey] = useState('');
-  const [webUiUrl, setWebUiUrl] = useState(agent.web_ui_url || '');
-  const [dashboardApiUrl, setDashboardApiUrl] = useState(agent.dashboard_api_url || '');
-  const [dashboardSessionToken, setDashboardSessionToken] = useState('');
-  const [isAiTutor, setIsAiTutor] = useState(agent.is_ai_tutor || false);
+  const [agentType, setAgentType] = useState<'harness' | 'llm'>(agent.agent_type || 'harness');
+  const [selectedModel, setSelectedModel] = useState<string>(agent.selected_model || 'hermes-agent');
+  const [manualModelInput, setManualModelInput] = useState<string>(agent.selected_model || '');
+  const [envType, setEnvType] = useState<'local' | 'cloud'>(agent.env_type || 'local');
+
+  const [agentProgram, setAgentProgram] = useState<'hermes' | 'openclaw' | 'ollama' | 'lmstudio' | 'other'>(agent.agent_program || 'hermes');
+
 
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showApiKey, setShowApiKey] = useState(false);
-  const [showDashboardToken, setShowDashboardToken] = useState(false);
-  const [isTutorSetupProgressOpen, setIsTutorSetupProgressOpen] = useState(false);
 
-  // Dashboard API connection test state
-  const [dashboardTestStatus, setDashboardTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
-  const [dashboardTestMessage, setDashboardTestMessage] = useState<string | null>(null);
+  const [isTesting, setIsTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [detectedModels, setDetectedModels] = useState<string[]>([]);
+
+  const handleTestConnection = async () => {
+    if (!endpoint) return;
+    setIsTesting(true);
+    setTestResult(null);
+    setDetectedModels([]);
+    try {
+      const activeApiKey = apiKey.trim() || agent.api_key || '';
+      const res = await fetch('/api/external-agents/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ endpoint, api_key: activeApiKey }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (agentType === 'harness') {
+          setSelectedModel('hermes-agent');
+          setTestResult({
+            success: true,
+            message: '연결 성공! (하네스 에이전트)',
+          });
+          return;
+        }
+
+        const modelsList = Array.isArray(data.models) ? data.models : [];
+        const modelIds = modelsList.map((m: { id: string }) => m.id);
+
+        if (modelIds.length === 0) {
+          setTestResult({
+            success: false,
+            message: '연결은 성공했으나 LLM 모델을 찾지 못했습니다. LLM 에이전트는 모델이 반드시 존재해야 합니다.',
+          });
+          return;
+        }
+
+        setDetectedModels(modelIds);
+        setModels(modelsList); // 연결 상태 확인 성공 시 감지된 모델 목록 동적 동기화
+        const initialModel = modelIds[0] || '';
+
+        if (initialModel) {
+          setSelectedModel(initialModel);
+        }
+
+        const modelNames = modelIds.join(', ') || '모델 감지 안됨';
+        setTestResult({
+          success: true,
+          message: `연결 성공! 감지된 모델: ${modelNames}`,
+        });
+      } else {
+        setTestResult({
+          success: false,
+          message: data.error || '연결 실패',
+        });
+      }
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : '네트워크 연결 오류';
+      setTestResult({
+        success: false,
+        message: errMsg,
+      });
+    } finally {
+      setIsTesting(false);
+    }
+  };
 
   // Models list state
   const [models, setModels] = useState<ModelItem[]>([]);
   const [isLoadingModels, setIsLoadingModels] = useState(false);
   const [modelsError, setModelsError] = useState<string | null>(null);
 
-  const fetchModels = useCallback(async () => {
+  const fetchModels = useCallback(async (isManualRefresh = false) => {
     setIsLoadingModels(true);
     setModelsError(null);
     try {
@@ -73,7 +154,26 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
       const data = await res.json();
       if (isMountedRef.current) {
         if (data.success) {
-          setModels(data.models || []);
+          const modelsList: ModelItem[] = data.models || [];
+          setModels(modelsList);
+
+          // 하네스 에이전트인 경우 에이전트와 연결된 현재 사용 중인 LLM 모델 정보를 저장하고 표시
+          if (agent.agent_type === 'harness') {
+            const actualLLMModels = modelsList.filter(m => !m.hidden);
+            const detectedLLMModel = data.current_model || (actualLLMModels.length > 0 ? actualLLMModels[0].id : null);
+            if (detectedLLMModel) {
+              const isCurrentModelHidden = modelsList.find(m => m.id === agent.selected_model)?.hidden;
+              if (isManualRefresh || isCurrentModelHidden || agent.selected_model !== detectedLLMModel) {
+                try {
+                  await updateExternalAgent(agent.id, { selected_model: detectedLLMModel });
+                  window.location.reload();
+                  return;
+                } catch (e) {
+                  console.error('Failed to auto update harness LLM model:', e);
+                }
+              }
+            }
+          }
         } else {
           setModelsError(data.error || '에이전트 서버로부터 모델 정보를 조회하지 못했습니다.');
         }
@@ -87,12 +187,14 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
         setIsLoadingModels(false);
       }
     }
-  }, [agent.endpoint, agent.api_key]);
+  }, [agent.id, agent.agent_type, agent.selected_model, agent.endpoint, agent.api_key]);
 
   // Fetch models automatically when component mounts
   useEffect(() => {
-    fetchModels();
-  }, [fetchModels]);
+    if (agent.agent_type !== 'harness') {
+      fetchModels(false);
+    }
+  }, [agent.agent_type, fetchModels]);
 
   const [isUpdatingModel, setIsUpdatingModel] = useState(false);
 
@@ -111,92 +213,50 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
   };
 
   const activeModel = agent.selected_model || 'hermes-agent';
+  const hasModelInfo = (!!agent.selected_model && agent.selected_model.trim() !== '') || models.length > 0;
 
-  const handleDashboardTest = async () => {
-    setDashboardTestStatus('testing');
-    setDashboardTestMessage(null);
-    try {
-      const res = await fetch(`/api/external-agents/${agent.id}/dashboard/api/status`);
-      if (res.ok) {
-        setDashboardTestStatus('success');
-        setDashboardTestMessage('Dashboard API 연결 성공');
-      } else {
-        const data = await res.json().catch(() => ({}));
-        setDashboardTestStatus('error');
-        setDashboardTestMessage(data.error || `연결 실패 (HTTP ${res.status})`);
-      }
-    } catch (err) {
-      setDashboardTestStatus('error');
-      setDashboardTestMessage(err instanceof Error ? err.message : '네트워크 오류가 발생했습니다.');
-    }
-  };
+
+  const connectionChanged = 
+    endpoint !== agent.endpoint || 
+    apiKey.trim() !== '' || 
+    agentType !== agent.agent_type ||
+    agentProgram !== agent.agent_program;
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !endpoint) return;
+
+    if (connectionChanged && !testResult?.success) {
+      setSaveError('연결 정보가 변경되었습니다. 변경사항을 저장하려면 먼저 "연결상태 확인"을 성공적으로 완료해야 합니다.');
+      return;
+    }
+
+    const selected_model = selectedModel.trim() || (agentType === 'harness' ? 'hermes-agent' : '');
+    if (agentType === 'llm' && !selected_model) {
+      setSaveError('LLM 에이전트는 활성 모델이 반드시 지정되어야 합니다. 연결상태 확인을 진행해 주세요.');
+      return;
+    }
+
     setIsSaving(true);
     setSaveError(null);
     try {
-      let isTutorConfigured = agent.is_tutor_configured || false;
-      // AI 튜터용 에이전트로 새로 설정하거나, 설정되어 있으나 미완료된 경우 에이전트의 soul.md 설정을 위해 프롬프트 자동 전달
-      if (isAiTutor && (!agent.is_ai_tutor || !agent.is_tutor_configured)) {
-        setIsTutorSetupProgressOpen(true);
-        const setupPrompt = `You are an autonomous AI agent. You have been registered as the official AI Tutor for the PennyPress SaaS platform. To function correctly, you must update your active profile's \`soul.md\` (or \`SOUL.md\`) configuration file to match the PennyPress AI Tutor persona.
-Please write/overwrite your \`soul.md\` (or \`SOUL.md\`) file with the following Markdown content:
-"""
-# PennyPress AI Tutor Persona
-You are a highly capable and friendly AI Tutor designed to help users master their registered courses on the PennyPress platform.
-Your primary role is to guide students, answer their course-specific questions, and verify their learning progress.
-
-Key guidelines:
-1. **Be supportive and clear**: Explain complex topics simply using visual descriptions or clear structures.
-2. **Context-aware instruction**: Guide the user based on the current card context and course materials downloaded in your workspace directory (e.g. \`courses/<slug>\`).
-3. **Background Communication (Hidden Message)**: You must communicate the course download/analysis status to the PennyPress front-end using:
-   \`<!-- HIDDEN_MESSAGE: {"action": "download_status", "downloaded": true} -->\`
-"""
-Please confirm the success of the update, starting with: "SUCCESS: Soul configuration updated."`;
-
-        const resolvedEndpoint = endpoint.replace('//localhost', '//127.0.0.1');
-        const cleanEndpoint = resolvedEndpoint.replace(/\/$/, '');
-        const v1Url = cleanEndpoint.endsWith('/v1') ? cleanEndpoint : `${cleanEndpoint}/v1`;
-
-        const chatRes = await fetch('/api/external-agents/setup-tutor', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ endpoint: v1Url, api_key: apiKey.trim() || agent.api_key, prompt: setupPrompt }),
-        });
-
-        const chatData = await chatRes.json();
-        if (!chatData.success) {
-          throw new Error(`AI 튜터 설정 실패: ${chatData.error || '응답이 올바르지 않습니다.'}`);
-        }
-        isTutorConfigured = chatData.isConfigured === true;
-      } else if (!isAiTutor) {
-        isTutorConfigured = false;
-      }
-
       const updates: Partial<Omit<UserExternalAgent, 'id' | 'user_id' | 'created_at' | 'updated_at'>> = {
         name,
         endpoint,
-        web_ui_url: webUiUrl.trim() || undefined,
-        dashboard_api_url: dashboardApiUrl.trim() || undefined,
-        is_ai_tutor: isAiTutor,
-        is_tutor_configured: isTutorConfigured,
+        agent_type: agentType,
+        selected_model,
+        env_type: envType,
+        agent_program: agentProgram,
       };
 
       if (apiKey.trim()) {
         updates.api_key = apiKey.trim();
       }
 
-      if (dashboardSessionToken.trim()) {
-        updates.dashboard_session_token = dashboardSessionToken.trim();
-      }
-
       await updateExternalAgent(agent.id, updates);
       if (isMountedRef.current) {
         setIsEditing(false);
       }
-      // Refresh the page data to update parent component state
       window.location.reload();
     } catch (err) {
       if (isMountedRef.current) {
@@ -206,7 +266,6 @@ Please confirm the success of the update, starting with: "SUCCESS: Soul configur
       if (isMountedRef.current) {
         setIsSaving(false);
       }
-      setIsTutorSetupProgressOpen(false);
     }
   };
 
@@ -214,11 +273,12 @@ Please confirm the success of the update, starting with: "SUCCESS: Soul configur
     setName(agent.name);
     setEndpoint(agent.endpoint);
     setApiKey('');
-    setWebUiUrl(agent.web_ui_url || '');
-    setDashboardApiUrl(agent.dashboard_api_url || '');
-    setDashboardSessionToken('');
-    setIsAiTutor(agent.is_ai_tutor || false);
+    setAgentType(agent.agent_type || 'harness');
+    setSelectedModel(agent.selected_model || 'hermes-agent');
+    setEnvType(agent.env_type || 'local');
+    setAgentProgram(agent.agent_program || 'hermes');
     setSaveError(null);
+    setTestResult(null);
     setIsEditing(false);
   };
 
@@ -226,7 +286,7 @@ Please confirm the success of the update, starting with: "SUCCESS: Soul configur
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {/* Basic Configuration Card */}
       <Card className="md:col-span-2 border border-border/70 shadow-md rounded-2xl overflow-hidden bg-white/40 dark:bg-zinc-950/40 backdrop-blur-md">
-        <CardHeader className="border-b border-border/60 bg-zinc-50/50 dark:bg-zinc-900/50 flex flex-row items-center justify-between py-4 px-6">
+        <CardHeader className="border-b border-border/60 bg-zinc-50/50 dark:bg-zinc-900/50 flex flex-row items-center justify-between pb-5 px-6">
           <div>
             <CardTitle className="text-lg font-bold flex items-center gap-2">
               <Settings className="size-5 text-primary" />
@@ -243,7 +303,7 @@ Please confirm the success of the update, starting with: "SUCCESS: Soul configur
         </CardHeader>
         
         <form onSubmit={handleSave}>
-          <CardContent className="p-6 space-y-5">
+          <CardContent className="px-6 space-y-4">
             {isEditing ? (
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -294,100 +354,191 @@ Please confirm the success of the update, starting with: "SUCCESS: Soul configur
                     </button>
                   </div>
                 </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="agent-webui" className="text-xs font-bold">Web UI / Kanban Board URL (선택)</Label>
-                  <Input
-                    id="agent-webui"
-                    value={webUiUrl}
-                    onChange={(e) => setWebUiUrl(e.target.value)}
-                    placeholder="예: http://127.0.0.1:3000"
-                    className="bg-white dark:bg-zinc-900"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-3 rounded-xl border border-border/60 bg-zinc-50/20 dark:bg-zinc-900/20">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="agent-aitutor" className="text-sm font-bold">AI 튜터(강좌 학습)용 에이전트로 설정</Label>
-                    <p className="text-xs text-muted-foreground">이 에이전트를 강좌 학습 화면에서 개인 AI 튜터로 활성화합니다. (유저당 1개만 지정 가능)</p>
-                  </div>
-                  <Switch
-                    id="agent-aitutor"
-                    checked={isAiTutor}
-                    onCheckedChange={(checked) => setIsAiTutor(checked)}
-                  />
-                </div>
-
-                {/* Dashboard API Settings */}
-                <div className="pt-2 pb-1">
-                  <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                    <span>Dashboard API 설정</span>
-                    <div className="flex-1 h-px bg-border/60" />
-                  </div>
-                </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="agent-dashboard-url" className="text-xs font-bold">Dashboard API URL (선택)</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="agent-dashboard-url"
-                      value={dashboardApiUrl}
-                      onChange={(e) => setDashboardApiUrl(e.target.value)}
-                      placeholder="예: http://myserver:9120"
-                      className="bg-white dark:bg-zinc-900 font-mono flex-1"
-                    />
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={handleDashboardTest}
-                      disabled={dashboardTestStatus === 'testing' || !agent.dashboard_api_url}
-                      className="shrink-0 gap-1.5 active:scale-95 transition-all"
-                      title={!agent.dashboard_api_url ? '저장 후 테스트할 수 있습니다' : '연결 테스트'}
-                    >
-                      {dashboardTestStatus === 'testing' ? (
-                        <RefreshCw className="size-3.5 animate-spin" />
-                      ) : (
-                        <RefreshCw className="size-3.5" />
-                      )}
-                      연결 테스트
-                    </Button>
-                  </div>
-                  {dashboardTestStatus !== 'idle' && dashboardTestMessage && (
-                    <p className={`text-xs font-medium flex items-center gap-1 ${dashboardTestStatus === 'success' ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'}`}>
-                      {dashboardTestStatus === 'success' ? (
-                        <CheckCircle2 className="size-3.5 shrink-0" />
-                      ) : (
-                        <XCircle className="size-3.5 shrink-0" />
-                      )}
-                      {dashboardTestMessage}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="agent-dashboard-token" className="text-xs font-bold">Dashboard Session Token (새로운 토큰 입력 시에만 변경됨)</Label>
-                  <div className="relative">
-                    <Input
-                      id="agent-dashboard-token"
-                      type={showDashboardToken ? "text" : "password"}
-                      value={dashboardSessionToken}
-                      onChange={(e) => setDashboardSessionToken(e.target.value)}
-                      placeholder="비워두면 기존 토큰을 유지합니다"
-                      className="bg-white dark:bg-zinc-900 pr-10"
-                    />
+                  <Label className="text-xs font-bold">에이전트 타입 *</Label>
+                  <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
-                      onClick={() => setShowDashboardToken(!showDashboardToken)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+                      onClick={() => setAgentType('harness')}
+                      className={`flex flex-col items-start p-3 rounded-lg border text-left transition-all ${
+                        agentType === 'harness'
+                          ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/20 dark:border-indigo-400'
+                          : 'border-border bg-transparent hover:bg-zinc-50 dark:hover:bg-zinc-900'
+                      }`}
                     >
-                      {showDashboardToken ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
+                      <span className="text-xs font-bold">하네스 에이전트</span>
+                      <span className="text-[10px] text-muted-foreground mt-0.5">Hermes, Open claw와 같은 에이전트 프로그램</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAgentType('llm')}
+                      className={`flex flex-col items-start p-3 rounded-lg border text-left transition-all ${
+                        agentType === 'llm'
+                          ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/20 dark:border-indigo-400'
+                          : 'border-border bg-transparent hover:bg-zinc-50 dark:hover:bg-zinc-900'
+                      }`}
+                    >
+                      <span className="text-xs font-bold">LLM 에이전트</span>
+                      <span className="text-[10px] text-muted-foreground mt-0.5">순수하게 LLM을 호출하는 API (Ollama, LM Studio 등)</span>
                     </button>
                   </div>
+                </div>
+
+
+
+
+
+                {/* 실행 환경 및 프로그램 설정 */}
+                <div className="space-y-2 pt-2 border-t">
+                  <Label className="text-xs font-bold">실행 환경 *</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEnvType('local')}
+                      className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all ${
+                        envType === 'local'
+                          ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/20 dark:border-indigo-400 font-bold'
+                          : 'border-border bg-transparent hover:bg-zinc-50 dark:hover:bg-zinc-900'
+                      }`}
+                    >
+                      <span className="text-xs">로컬 (Local)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEnvType('cloud')}
+                      className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all ${
+                        envType === 'cloud'
+                          ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/20 dark:border-indigo-400 font-bold'
+                          : 'border-border bg-transparent hover:bg-zinc-50 dark:hover:bg-zinc-900'
+                      }`}
+                    >
+                      <span className="text-xs">클라우드 (Cloud)</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold">에이전트 프로그램 *</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {agentType === 'harness' ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setAgentProgram('hermes')}
+                          className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all ${
+                            agentProgram === 'hermes'
+                              ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/20 dark:border-indigo-400 font-bold'
+                              : 'border-border bg-transparent hover:bg-zinc-50 dark:hover:bg-zinc-900'
+                          }`}
+                        >
+                          <span className="text-xs">Hermes</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAgentProgram('openclaw')}
+                          className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all ${
+                            agentProgram === 'openclaw'
+                              ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/20 dark:border-indigo-400 font-bold'
+                              : 'border-border bg-transparent hover:bg-zinc-50 dark:hover:bg-zinc-900'
+                          }`}
+                        >
+                          <span className="text-xs">Open claw</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAgentProgram('other')}
+                          className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all ${
+                            agentProgram === 'other'
+                              ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/20 dark:border-indigo-400 font-bold'
+                              : 'border-border bg-transparent hover:bg-zinc-50 dark:hover:bg-zinc-900'
+                          }`}
+                        >
+                          <span className="text-xs">기타</span>
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setAgentProgram('ollama')}
+                          className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all ${
+                            agentProgram === 'ollama'
+                              ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/20 dark:border-indigo-400 font-bold'
+                              : 'border-border bg-transparent hover:bg-zinc-50 dark:hover:bg-zinc-900'
+                          }`}
+                        >
+                          <span className="text-xs">Ollama</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAgentProgram('lmstudio')}
+                          className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all ${
+                            agentProgram === 'lmstudio'
+                              ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/20 dark:border-indigo-400 font-bold'
+                              : 'border-border bg-transparent hover:bg-zinc-50 dark:hover:bg-zinc-900'
+                          }`}
+                        >
+                          <span className="text-xs">LM Studio</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAgentProgram('other')}
+                          className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all ${
+                            agentProgram === 'other'
+                              ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/20 dark:border-indigo-400 font-bold'
+                              : 'border-border bg-transparent hover:bg-zinc-50 dark:hover:bg-zinc-900'
+                          }`}
+                        >
+                          <span className="text-xs">기타</span>
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* 연결상태 확인 및 활성 모델 설정 */}
+                <div className="space-y-4 py-4 border-t">
+                  <div className="flex items-center justify-between gap-4">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={handleTestConnection} 
+                      disabled={isTesting || !endpoint}
+                      className="h-9 text-xs"
+                    >
+                      {isTesting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      연결상태 확인
+                    </Button>
+                    
+                    {testResult && (
+                      <div className={`flex items-center gap-1.5 text-xs ${testResult.success ? 'text-emerald-500 font-medium' : 'text-red-500 font-medium'}`}>
+                        {testResult.success ? <CheckCircle2 className="size-3.5 shrink-0" /> : <XCircle className="size-3.5 shrink-0" />}
+                        <span className="line-clamp-2">{testResult.message}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {agentType === 'llm' && (
+                    <div className="space-y-2 rounded-lg border border-border/85 bg-zinc-50/50 dark:bg-zinc-900/50 p-3 mt-1">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="agent-model" className="text-xs font-bold">
+                          활성 모델 *
+                        </Label>
+                        <Input 
+                          id="agent-model"
+                          readOnly
+                          disabled
+                          value={selectedModel}
+                          placeholder="연결상태 확인 버튼을 클릭하면 자동으로 모델을 조회하여 입력합니다."
+                          className="bg-zinc-100 dark:bg-zinc-900/50 h-9 text-sm text-muted-foreground"
+                        />
+                        <p className="text-[10px] text-muted-foreground">
+                          연결상태 확인 시 탐색된 LLM 모델명이 자동으로 입력됩니다.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {saveError && (
@@ -399,33 +550,33 @@ Please confirm the success of the update, starting with: "SUCCESS: Soul configur
               </div>
             ) : (
               <div className="divide-y divide-border/60">
-                <div className="flex justify-between py-3">
+                <div className="flex justify-between pb-3">
                   <span className="text-sm font-medium text-muted-foreground">에이전트명</span>
                   <span className="text-sm font-semibold text-foreground">{agent.name}</span>
                 </div>
+
                 <div className="flex justify-between py-3">
-                  <span className="text-sm font-medium text-muted-foreground">AI 튜터 지정 여부</span>
-                  <div className="flex items-center gap-2">
-                    {agent.is_ai_tutor ? (
-                      <>
-                        <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white border-0">지정됨</Badge>
-                        {agent.is_tutor_configured ? (
-                          <Badge variant="outline" className="text-emerald-600 border-emerald-500/20 bg-emerald-500/5">지침 설정 완료</Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-amber-600 border-amber-500/20 bg-amber-500/5">지침 설정 대기</Badge>
-                        )}
-                      </>
-                    ) : (
-                      <span className="text-muted-foreground">미지정</span>
-                    )}
+                  <span className="text-sm font-medium text-muted-foreground">에이전트 타입</span>
+                  <div className="flex flex-wrap gap-1.5 justify-end">
+                    <Badge variant="secondary" className="font-semibold bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/20 dark:text-indigo-400 dark:border-indigo-900/40 border">
+                      {agent.agent_type === 'llm' ? 'LLM 에이전트' : '하네스 에이전트'}
+                    </Badge>
+                    <Badge variant="secondary" className="font-semibold bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200">
+                      {agent.env_type === 'cloud' ? '클라우드' : '로컬'}
+                    </Badge>
+                    <Badge variant="secondary" className="font-semibold bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200">
+                      {programNames[agent.agent_program as keyof typeof programNames] || agent.agent_program || '기타'}
+                    </Badge>
                   </div>
                 </div>
-                <div className="flex justify-between py-3">
-                  <span className="text-sm font-medium text-muted-foreground">활성 모델</span>
-                  <span className="text-sm font-mono font-semibold text-primary">
-                    {agent.selected_model || 'hermes-agent'}
-                  </span>
-                </div>
+                {agent.agent_type !== 'harness' && (
+                  <div className="flex justify-between py-3">
+                    <span className="text-sm font-medium text-muted-foreground">활성 모델</span>
+                    <span className="text-sm font-mono font-semibold text-primary">
+                      {agent.selected_model || 'hermes-agent'}
+                    </span>
+                  </div>
+                )}
                 <div className="flex flex-col sm:flex-row sm:justify-between py-3 gap-1">
                   <span className="text-sm font-medium text-muted-foreground shrink-0">API Endpoint URL</span>
                   <span className="text-sm font-mono text-foreground break-all sm:text-right">{agent.endpoint}</span>
@@ -436,24 +587,6 @@ Please confirm the success of the update, starting with: "SUCCESS: Soul configur
                     {agent.api_key ? '********' : '없음'}
                   </span>
                 </div>
-                <div className="flex flex-col sm:flex-row sm:justify-between py-3 gap-1">
-                  <span className="text-sm font-medium text-muted-foreground shrink-0">Web UI / Kanban URL</span>
-                  <span className="text-sm font-mono text-foreground break-all sm:text-right">
-                    {agent.web_ui_url || '미지정'}
-                  </span>
-                </div>
-                <div className="flex flex-col sm:flex-row sm:justify-between py-3 gap-1">
-                  <span className="text-sm font-medium text-muted-foreground shrink-0">Dashboard API URL</span>
-                  <span className="text-sm font-mono text-foreground break-all sm:text-right">
-                    {agent.dashboard_api_url || '미설정'}
-                  </span>
-                </div>
-                <div className="flex justify-between py-3">
-                  <span className="text-sm font-medium text-muted-foreground">Dashboard 세션 토큰</span>
-                  <span className="text-sm font-mono font-semibold text-foreground">
-                    {agent.dashboard_session_token ? '●●●●●●●●' : '없음'}
-                  </span>
-                </div>
                 <div className="flex justify-between py-3">
                   <span className="text-sm font-medium text-muted-foreground">등록 일시</span>
                   <span className="text-xs text-foreground flex items-center gap-1">
@@ -461,7 +594,7 @@ Please confirm the success of the update, starting with: "SUCCESS: Soul configur
                     {new Date(agent.created_at).toLocaleString()}
                   </span>
                 </div>
-                <div className="flex justify-between py-3">
+                <div className="flex justify-between pt-3">
                   <span className="text-sm font-medium text-muted-foreground">최근 정보 수정</span>
                   <span className="text-xs text-foreground flex items-center gap-1">
                     <Clock className="size-3.5 text-muted-foreground" />
@@ -478,7 +611,12 @@ Please confirm the success of the update, starting with: "SUCCESS: Soul configur
                 <X className="size-4" />
                 취소
               </Button>
-              <Button type="submit" size="sm" disabled={isSaving} className="gap-1.5 shadow active:scale-95 transition-all">
+              <Button 
+                type="submit" 
+                size="sm" 
+                disabled={isSaving || (connectionChanged && !testResult?.success)} 
+                className="gap-1.5 shadow active:scale-95 transition-all"
+              >
                 <Save className="size-4" />
                 변경사항 저장
               </Button>
@@ -489,84 +627,155 @@ Please confirm the success of the update, starting with: "SUCCESS: Soul configur
 
       {/* Model Inquiry Card */}
       <Card className="border border-border/70 shadow-md rounded-2xl overflow-hidden bg-white/40 dark:bg-zinc-950/40 backdrop-blur-md">
-        <CardHeader className="border-b border-border/60 bg-zinc-50/50 dark:bg-zinc-900/50 py-4 px-6 flex flex-row items-center justify-between">
+        <CardHeader className="border-b border-border/60 bg-zinc-50/50 dark:bg-zinc-900/50 pb-5 px-6 flex flex-row items-center justify-between">
           <div>
             <CardTitle className="text-sm font-bold flex items-center gap-2">
               <LayoutGrid className="size-4.5 text-primary" />
               지원 모델 조회
             </CardTitle>
-            <CardDescription className="text-[10px]">연결된 Hermes Agent의 지원 LLM 목록입니다.</CardDescription>
+            <CardDescription className="text-[10px]">
+              {agent.agent_type === 'harness' 
+                ? '연결된 하네스 에이전트의 지원 LLM 목록입니다.' 
+                : '연결된 LLM 에이전트의 지원 LLM 목록입니다.'}
+            </CardDescription>
           </div>
-          <Button 
-            size="icon" 
-            variant="outline" 
-            onClick={fetchModels} 
-            disabled={isLoadingModels}
-            className="size-8 rounded-lg active:scale-95 transition-all"
-            title="모델 정보 갱신"
-          >
-            <RefreshCw className={`size-3.5 ${isLoadingModels ? 'animate-spin' : ''}`} />
-          </Button>
+          {agent.agent_type !== 'harness' && (
+            <Button 
+              size="icon" 
+              variant="outline" 
+              onClick={() => fetchModels(true)} 
+              disabled={isLoadingModels}
+              className="size-8 rounded-lg active:scale-95 transition-all"
+              title="모델 정보 갱신"
+            >
+              <RefreshCw className={`size-3.5 ${isLoadingModels ? 'animate-spin' : ''}`} />
+            </Button>
+          )}
         </CardHeader>
         
-        <CardContent className="p-6">
-          {isLoadingModels ? (
+        <CardContent className="px-6 pb-6">
+          {agent.agent_type === 'harness' ? (
+            <div className="rounded-xl border border-blue-200/60 dark:border-blue-900/40 bg-blue-50/30 dark:bg-blue-950/20 p-4 space-y-2 shadow-sm text-center">
+              <p className="text-xs text-blue-600 dark:text-blue-400 font-bold flex items-center justify-center gap-1.5">
+                <Bot className="size-4 text-blue-500" />
+                하네스 에이전트 안내
+              </p>
+              <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">
+                하네스 에이전트의 경우 해당 프로그램에 설정된 LLM 을 사용합니다.
+              </p>
+            </div>
+          ) : isLoadingModels ? (
             <div className="flex flex-col items-center justify-center py-12 space-y-2">
               <RefreshCw className="size-6 text-primary animate-spin" />
               <span className="text-xs text-muted-foreground animate-pulse">원격 서버 정보 조회 중...</span>
             </div>
-          ) : modelsError ? (
-            <div className="rounded-xl border border-destructive/20 bg-destructive/5 dark:bg-destructive/10 p-4 space-y-2 shadow-sm text-center">
-              <p className="text-xs text-destructive font-semibold flex items-center justify-center gap-1.5">
+          ) : !hasModelInfo ? (
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 space-y-3 shadow-sm text-center">
+              <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold flex items-center justify-center gap-1.5">
                 <ShieldAlert className="size-4" />
-                조회 실패
+                LLM 모델 정보 없음
               </p>
-              <p className="text-[11px] text-muted-foreground leading-normal">{modelsError}</p>
-              <Button size="sm" variant="outline" onClick={fetchModels} className="mt-1 h-7 text-xs">
-                다시 시도
-              </Button>
-            </div>
-          ) : models.length === 0 ? (
-            <div className="py-12 text-center text-muted-foreground space-y-2">
-              <LayoutGrid className="size-8 mx-auto text-zinc-300 dark:text-zinc-700" />
-              <p className="text-xs">조회된 모델 정보가 없습니다.</p>
+              <p className="text-[11px] text-muted-foreground leading-normal">
+                {agent.agent_type === 'harness' 
+                  ? '하네스 에이전트의 LLM 모델 정보가 감지되지 않았습니다. 우측 상단의 새로고침(refresh) 버튼을 눌러 수동 조회를 시도하거나, 아래에 직접 모델명을 입력해 업데이트하세요.'
+                  : '에이전트 서버로부터 지원 모델을 조회하지 못했습니다. 우측 상단의 새로고침(refresh) 버튼을 눌러 수동 조회를 시도하거나, 아래에 직접 모델명을 입력해 업데이트하세요.'
+                }
+              </p>
+              <div className="flex gap-2 max-w-xs mx-auto pt-1">
+                <Input 
+                  placeholder="예: gemma-2-9b-it" 
+                  value={manualModelInput} 
+                  onChange={(e) => setManualModelInput(e.target.value)} 
+                  className="h-8 text-xs bg-white dark:bg-zinc-900"
+                />
+                <Button 
+                  size="sm" 
+                  onClick={() => handleSelectModel(manualModelInput)} 
+                  disabled={isUpdatingModel || !manualModelInput.trim()}
+                  className="h-8 text-xs shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 border-none"
+                >
+                  업데이트
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="space-y-4">
-              <p className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">지원하는 에이전트 모델 ({models.length})</p>
-              <div className="flex flex-wrap gap-2">
-                {models.map((model) => {
-                  const isActive = model.id === activeModel;
-                  return (
-                    <Badge 
-                      key={model.id} 
-                      variant={isActive ? 'default' : 'secondary'}
-                      onClick={() => !isActive && !isUpdatingModel && handleSelectModel(model.id)}
-                      className={cn(
-                        "px-2.5 py-1 text-xs font-semibold font-mono border transition-colors flex items-center gap-1 select-none",
-                        isActive 
-                          ? "bg-primary border-primary text-primary-foreground cursor-default" 
-                          : cn(
-                              "bg-zinc-100/80 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border-border/40 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50 cursor-pointer hover:border-primary/50",
-                              isUpdatingModel && "opacity-50 cursor-not-allowed"
-                            )
-                      )}
-                    >
-                      {isActive && <CheckCircle2 className="size-3 shrink-0" />}
-                      {model.id}
-                    </Badge>
-                  );
-                })}
-              </div>
-              <div className="flex items-center gap-1.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-500/5 p-2 rounded-lg border border-emerald-500/10">
-                <CheckCircle2 className="size-3.5 shrink-0" />
-                <span>API 호출이 원활하게 작동 중입니다.</span>
-              </div>
+              {(() => {
+                let displayModels = agent.agent_type === 'harness' 
+                  ? models.filter(m => !m.hidden) 
+                  : models;
+
+                if (agent.selected_model && !displayModels.some(m => m.id === agent.selected_model)) {
+                  displayModels = [
+                    { id: agent.selected_model, object: 'model', created: 0, owned_by: 'system' },
+                    ...displayModels
+                  ];
+                }
+
+                return (
+                  <>
+                    <p className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">지원하는 LLM 모델 ({displayModels.length})</p>
+                    
+                    <div className="space-y-1.5">
+                      <Label htmlFor="activeModelSelect" className="text-xs text-muted-foreground font-medium">모델 즉시 선택</Label>
+                      <Select value={activeModel} onValueChange={handleSelectModel} disabled={isUpdatingModel}>
+                        <SelectTrigger id="activeModelSelect" className="w-full bg-white dark:bg-zinc-900 h-9">
+                          <SelectValue placeholder="모델 변경" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {displayModels.map((model) => (
+                            <SelectItem key={model.id} value={model.id}>
+                              {model.id}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {displayModels.map((model) => {
+                        const isActive = model.id === activeModel;
+                        return (
+                          <Badge 
+                            key={model.id} 
+                            variant={isActive ? 'default' : 'secondary'}
+                            onClick={() => !isActive && !isUpdatingModel && handleSelectModel(model.id)}
+                            className={cn(
+                              "px-2.5 py-1 text-xs font-semibold font-mono border transition-colors flex items-center gap-1 select-none",
+                              isActive 
+                                ? "bg-primary border-primary text-primary-foreground cursor-default" 
+                                : cn(
+                                    "bg-zinc-100/80 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border-border/40 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50 cursor-pointer hover:border-primary/50",
+                                    isUpdatingModel && "opacity-50 cursor-not-allowed"
+                                  )
+                            )}
+                          >
+                            {isActive && <CheckCircle2 className="size-3 shrink-0" />}
+                            {model.id}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  </>
+                );
+              })()}
+              
+              {modelsError ? (
+                <div className="flex items-center gap-1.5 text-[10px] text-amber-600 dark:text-amber-400 font-semibold bg-amber-500/5 p-2 rounded-lg border border-amber-500/10">
+                  <ShieldAlert className="size-3.5 shrink-0" />
+                  <span>모델 목록 조회 실패: {modelsError}</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-500/5 p-2 rounded-lg border border-emerald-500/10">
+                  <CheckCircle2 className="size-3.5 shrink-0" />
+                  <span>API 호출이 원활하게 작동 중입니다.</span>
+                </div>
+              )}
             </div>
           )}
         </CardContent>
       </Card>
-      <AITutorProgressOverlay isOpen={isTutorSetupProgressOpen} />
+
     </div>
   );
 }

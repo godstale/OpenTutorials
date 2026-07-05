@@ -2,18 +2,288 @@
 
 import { useEffect, useState, use, Suspense, useRef } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Bot, RefreshCw, AlertTriangle, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Bot, RefreshCw, AlertTriangle, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { createClient } from '@/lib/supabase/client';
 import { getExternalAgentById, updateExternalAgent } from '@/lib/api/external-agents';
 import type { UserExternalAgent } from '@/lib/types';
 import AgentChatTab from '@/components/features/AgentChatTab';
-import AgentKanbanTab from '@/components/features/AgentKanbanTab';
 import AgentSettingsTab from '@/components/features/AgentSettingsTab';
-import AgentDashboardTab from '@/components/features/AgentDashboardTab';
-import { cn } from '@/lib/utils';
+import { agentLeaveTimers, cn } from '@/lib/utils';
+
+interface ChatLog {
+  timestamp: string;
+  duration_ms: number;
+  input_token_size: number;
+  output_token_size: number;
+  user_message: string;
+  assistant_message: string;
+}
+
+function toDailyBuckets(logs: ChatLog[]): Map<string, { ms: number; tokens: number }> {
+  const map = new Map<string, { ms: number; tokens: number }>();
+  for (const log of logs) {
+    const d = new Date(log.timestamp);
+    const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const bucket = map.get(dateKey) || { ms: 0, tokens: 0 };
+    bucket.ms += log.duration_ms || 0;
+    bucket.tokens += (log.input_token_size || 0) + (log.output_token_size || 0);
+    map.set(dateKey, bucket);
+  }
+  return map;
+}
+
+interface DailySeriesPoint {
+  day: number;
+  ms: number;
+  minutes: number;
+  tokens: number;
+}
+
+function buildMonthSeries(
+  dailyBuckets: Map<string, { ms: number; tokens: number }>,
+  year: number,
+  month: number
+): DailySeriesPoint[] {
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const series: DailySeriesPoint[] = [];
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const bucket = dailyBuckets.get(dateKey) || { ms: 0, tokens: 0 };
+    series.push({
+      day,
+      ms: bucket.ms,
+      minutes: Math.round((bucket.ms / 60000) * 10) / 10,
+      tokens: bucket.tokens,
+    });
+  }
+  return series;
+}
+
+function AgentStatisticsTab({ agent, coursesCount }: { agent: UserExternalAgent; coursesCount: number }) {
+  const [chatLogs, setChatLogs] = useState<ChatLog[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const now = new Date();
+  const [viewYear, setViewYear] = useState(now.getFullYear());
+  const [viewMonth, setViewMonth] = useState(now.getMonth());
+
+  useEffect(() => {
+    async function fetchLogs() {
+      try {
+        const res = await fetch(`/api/external-agents/${agent.id}/chat`);
+        if (res.ok) {
+          const data = await res.json();
+          setChatLogs(data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch chat logs for stats:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchLogs();
+  }, [agent.id]);
+
+  const dailyBuckets = toDailyBuckets(chatLogs);
+  const totalMs = Array.from(dailyBuckets.values()).reduce((acc, b) => acc + b.ms, 0);
+  const totalTokens = Array.from(dailyBuckets.values()).reduce((acc, b) => acc + b.tokens, 0);
+  const totalLogs = chatLogs.length;
+  const avgMs = totalLogs > 0 ? totalMs / totalLogs : 0;
+  const avgTokens = totalLogs > 0 ? Math.round(totalTokens / totalLogs) : 0;
+
+  const formatTotalDuration = (ms: number) => {
+    if (ms <= 0) return '0초';
+    const totalSeconds = ms / 1000;
+    if (totalSeconds < 60) {
+      return `${totalSeconds.toFixed(1)}초`;
+    }
+    if (totalSeconds < 3600) {
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = Math.round(totalSeconds % 60);
+      return `${minutes}분 ${seconds}초`;
+    }
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    return `${hours}시간 ${minutes}분`;
+  };
+
+  const formatAvgResponse = (ms: number) => {
+    if (ms <= 0) return '0초';
+    return `${(ms / 1000).toFixed(1)}초`;
+  };
+
+  const stats = {
+    totalHours: formatTotalDuration(totalMs),
+    avgResponse: formatAvgResponse(avgMs),
+    totalTokens: `${totalTokens.toLocaleString()} 토큰`,
+    avgTokens: `${avgTokens.toLocaleString()} 토큰`
+  };
+
+  const monthSeries = buildMonthSeries(dailyBuckets, viewYear, viewMonth);
+  const hasDataInMonth = monthSeries.some((d) => d.ms > 0 || d.tokens > 0);
+  const isCurrentOrFutureMonth =
+    viewYear > now.getFullYear() || (viewYear === now.getFullYear() && viewMonth >= now.getMonth());
+
+  const goPrevMonth = () => {
+    if (viewMonth === 0) {
+      setViewYear((y) => y - 1);
+      setViewMonth(11);
+    } else {
+      setViewMonth((m) => m - 1);
+    }
+  };
+
+  const goNextMonth = () => {
+    if (isCurrentOrFutureMonth) return;
+    if (viewMonth === 11) {
+      setViewYear((y) => y + 1);
+      setViewMonth(0);
+    } else {
+      setViewMonth((m) => m + 1);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="md:col-span-2 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-lg font-bold">에이전트 사용량 통계</CardTitle>
+            <CardDescription className="text-xs">
+              현재 에이전트 인스턴스의 누적 및 평균 학습 지원 메트릭을 모니터링합니다. (챗 요청부터 응답까지의 누적 시간 기준)
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 gap-4">
+            <div className="p-4 bg-zinc-50 dark:bg-zinc-900/40 rounded-xl border flex flex-col justify-center h-24">
+              <span className="text-xs text-muted-foreground font-semibold">누적 사용 시간</span>
+              {isLoading ? (
+                <span className="h-6 w-24 bg-zinc-200 dark:bg-zinc-800 animate-pulse rounded mt-1" />
+              ) : (
+                <span className="text-xl font-black text-zinc-900 dark:text-zinc-50 mt-1">{stats.totalHours}</span>
+              )}
+            </div>
+            <div className="p-4 bg-zinc-50 dark:bg-zinc-900/40 rounded-xl border flex flex-col justify-center h-24">
+              <span className="text-xs text-muted-foreground font-semibold">평균 응답 시간</span>
+              {isLoading ? (
+                <span className="h-6 w-24 bg-zinc-200 dark:bg-zinc-800 animate-pulse rounded mt-1" />
+              ) : (
+                <span className="text-xl font-black text-zinc-900 dark:text-zinc-50 mt-1">{stats.avgResponse}</span>
+              )}
+            </div>
+            <div className="p-4 bg-zinc-50 dark:bg-zinc-900/40 rounded-xl border flex flex-col justify-center h-24">
+              <span className="text-xs text-muted-foreground font-semibold">누적 사용 토큰</span>
+              {isLoading ? (
+                <span className="h-6 w-24 bg-zinc-200 dark:bg-zinc-800 animate-pulse rounded mt-1" />
+              ) : (
+                <span className="text-xl font-black text-zinc-900 dark:text-zinc-50 mt-1">{stats.totalTokens}</span>
+              )}
+            </div>
+            <div className="p-4 bg-zinc-50 dark:bg-zinc-900/40 rounded-xl border flex flex-col justify-center h-24">
+              <span className="text-xs text-muted-foreground font-semibold">회당 평균 사용 토큰</span>
+              {isLoading ? (
+                <span className="h-6 w-24 bg-zinc-200 dark:bg-zinc-800 animate-pulse rounded mt-1" />
+              ) : (
+                <span className="text-xl font-black text-zinc-900 dark:text-zinc-50 mt-1">{stats.avgTokens}</span>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-lg font-bold">강좌 할당 통계</CardTitle>
+            <CardDescription className="text-xs">
+              현재 튜터가 전담하여 관리하는 로컬 강좌 개수입니다.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center justify-center py-6 gap-2">
+            <div className="size-20 bg-indigo-50 dark:bg-indigo-950/30 rounded-full border border-indigo-200/50 dark:border-indigo-900/40 flex items-center justify-center">
+              <span className="text-3xl font-black text-indigo-600 dark:text-indigo-400">{coursesCount}</span>
+            </div>
+            <span className="text-sm font-semibold mt-2">할당 강좌 수</span>
+            <span className="text-xs text-muted-foreground text-center">
+              {coursesCount > 0
+                ? `현재 ${coursesCount}개의 강좌에 학습 튜터로 활성화되어 활동 중입니다.`
+                : '현재 이 튜터가 할당된 강좌가 없습니다. 강좌 상세 화면에서 튜터를 지정할 수 있습니다.'}
+            </span>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <div>
+            <CardTitle className="text-lg font-bold">일별 사용 현황</CardTitle>
+            <CardDescription className="text-xs">선택한 달의 일별 사용 시간과 토큰 사용량입니다.</CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" className="size-8" onClick={goPrevMonth}>
+              <ChevronLeft className="size-4" />
+            </Button>
+            <span className="text-sm font-semibold min-w-[92px] text-center">
+              {viewYear}년 {viewMonth + 1}월
+            </span>
+            <Button
+              variant="outline"
+              size="icon"
+              className="size-8"
+              onClick={goNextMonth}
+              disabled={isCurrentOrFutureMonth}
+            >
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="h-64 bg-zinc-100 dark:bg-zinc-900/40 animate-pulse rounded-lg" />
+          ) : !hasDataInMonth ? (
+            <div className="py-12 text-center text-sm text-muted-foreground">이 달에는 기록된 대화가 없습니다.</div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="h-64">
+                <p className="text-xs font-semibold text-muted-foreground mb-2">일별 사용 시간 (분)</p>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={monthSeries} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="day" fontSize={11} tickLine={false} />
+                    <YAxis fontSize={11} tickLine={false} allowDecimals={false} />
+                    <Tooltip
+                      formatter={(value: any) => [`${parseFloat(value).toFixed(1)}분`, '사용 시간']}
+                      labelFormatter={(day: any) => `${viewMonth + 1}월 ${day}일`}
+                    />
+                    <Bar dataKey="minutes" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="h-64">
+                <p className="text-xs font-semibold text-muted-foreground mb-2">일별 사용 토큰</p>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={monthSeries} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="day" fontSize={11} tickLine={false} />
+                    <YAxis fontSize={11} tickLine={false} allowDecimals={false} />
+                    <Tooltip
+                      formatter={(value: any) => [`${parseInt(value).toLocaleString()} 토큰`, '토큰']}
+                      labelFormatter={(day: any) => `${viewMonth + 1}월 ${day}일`}
+                    />
+                    <Bar dataKey="tokens" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -27,6 +297,16 @@ function AgentPortalContent({ params }: { params: Promise<{ id: string }> }) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const isMountedRef = useRef(true);
   const [isIdleDisconnected, setIsIdleDisconnected] = useState(false);
+  const [assignedCoursesCount, setAssignedCoursesCount] = useState(0);
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    if (typeof window === 'undefined') return 'statistics';
+    return window.localStorage.getItem(`agent-tab-${id}`) || 'statistics';
+  });
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    window.localStorage.setItem(`agent-tab-${id}`, value);
+  };
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -35,58 +315,45 @@ function AgentPortalContent({ params }: { params: Promise<{ id: string }> }) {
     };
   }, []);
 
+  // 마운트/언마운트 시 에이전트 이탈 타이머 제어 (학습/상세 화면 이탈 시 5분 타이머 연결 종료)
   useEffect(() => {
-    if (!agent || agent.status !== 'online') return;
-
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
-
-    const resetTimer = () => {
-      if (timeoutId) clearTimeout(timeoutId);
-      timeoutId = setTimeout(async () => {
-        if (!isMountedRef.current) return;
-        try {
-          await updateExternalAgent(id, { status: 'offline' });
-        } catch (e) {
-          console.error('Failed to update agent status to offline on idle timeout:', e);
-        }
-
-        if (!isMountedRef.current) return;
-
-        setAgent(prev => prev ? { ...prev, status: 'offline' } : null);
-        setIsIdleDisconnected(true);
-        window.dispatchEvent(new CustomEvent('agents-updated'));
-      }, 180000);
-    };
-
-    resetTimer();
-
-    const events = ['mousemove', 'keydown', 'click', 'scroll'];
-    events.forEach(event => {
-      window.addEventListener(event, resetTimer, { capture: true, passive: true });
-    });
+    if (agentLeaveTimers[id]) {
+      clearTimeout(agentLeaveTimers[id]);
+      delete agentLeaveTimers[id];
+    }
 
     return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-      events.forEach(event => {
-        window.removeEventListener(event, resetTimer, { capture: true });
-      });
+      // 5분 타이머 작동 (300,000ms)
+      const timer = setTimeout(async () => {
+        try {
+          await updateExternalAgent(id, { status: 'offline' });
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('agents-updated'));
+          }
+        } catch (e) {
+          console.error('Failed to disconnect agent on timeout:', e);
+        }
+      }, 300000);
+      agentLeaveTimers[id] = timer;
     };
-  }, [agent, id]);
+  }, [id]);
 
   useEffect(() => {
     let active = true;
 
-    async function fetchAgentAndUser() {
-      setIsLoading(true);
+    async function fetchAgentAndUser(silent = false) {
+      if (!silent) setIsLoading(true);
       setError(null);
       try {
         const supabase = createClient();
         const [
           { data: { user } },
-          fetchedAgent
+          fetchedAgent,
+          { data: packagesData }
         ] = await Promise.all([
           supabase.auth.getUser(),
-          getExternalAgentById(id)
+          getExternalAgentById(id),
+          supabase.from('course_packages').select('id, agent_id')
         ]);
 
         if (!active) return;
@@ -101,8 +368,30 @@ function AgentPortalContent({ params }: { params: Promise<{ id: string }> }) {
           return;
         }
 
-        // Force connection status to offline initially to ensure a clean offline start
-        setAgent({ ...fetchedAgent, status: 'offline' });
+        setAgent(fetchedAgent);
+
+        const count = (packagesData || []).filter((p: any) => p.agent_id === id).length;
+        setAssignedCoursesCount(count);
+
+        // 백그라운드 핑 체크를 해서 연결 상태를 동적으로 확인 및 동기화
+        fetch('/api/external-agents/test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ endpoint: fetchedAgent.endpoint, api_key: fetchedAgent.api_key }),
+        })
+        .then(res => res.json())
+        .then(async (data) => {
+          const newStatus = data.success ? 'online' : 'offline';
+          if (fetchedAgent.status !== newStatus) {
+            await updateExternalAgent(id, { status: newStatus });
+            if (active && isMountedRef.current) {
+              setAgent(prev => prev ? { ...prev, status: newStatus } : null);
+              window.dispatchEvent(new CustomEvent('agents-updated'));
+            }
+          }
+        })
+        .catch(console.error);
+
       } catch (err) {
         if (!active) return;
         console.error('Failed to fetch agent:', err);
@@ -116,15 +405,24 @@ function AgentPortalContent({ params }: { params: Promise<{ id: string }> }) {
 
     fetchAgentAndUser();
 
+    const handleAgentsUpdated = () => {
+      if (active) {
+        fetchAgentAndUser(true);
+      }
+    };
+
+    window.addEventListener('agents-updated', handleAgentsUpdated);
+
     return () => {
       active = false;
+      window.removeEventListener('agents-updated', handleAgentsUpdated);
     };
   }, [id]);
 
   const handleRefreshStatus = async () => {
     if (!agent) return;
     setIsRefreshing(true);
-    setIsIdleDisconnected(false); // Hide the warning banner immediately upon manual connection check
+    setIsIdleDisconnected(false);
     try {
       const res = await fetch('/api/external-agents/test', {
         method: 'POST',
@@ -170,26 +468,6 @@ function AgentPortalContent({ params }: { params: Promise<{ id: string }> }) {
     }
   };
 
-  useEffect(() => {
-    async function initializeStatus() {
-      try {
-        await updateExternalAgent(id, { status: 'offline' });
-        window.dispatchEvent(new CustomEvent('agents-updated'));
-      } catch (e) {
-        console.error('Failed to initialize status to offline:', e);
-      }
-    }
-    initializeStatus();
-
-    return () => {
-      updateExternalAgent(id, { status: 'offline' })
-        .then(() => {
-          window.dispatchEvent(new CustomEvent('agents-updated'));
-        })
-        .catch(console.error);
-    };
-  }, [id]);
-
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
@@ -221,7 +499,7 @@ function AgentPortalContent({ params }: { params: Promise<{ id: string }> }) {
   }
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
+    <div className="space-y-4 max-w-6xl mx-auto">
       {/* Breadcrumb / Back Button */}
       <div className="flex flex-col gap-2">
         <div>
@@ -234,7 +512,7 @@ function AgentPortalContent({ params }: { params: Promise<{ id: string }> }) {
         </div>
 
         {/* Portal Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/40 dark:bg-zinc-900/40 p-6 rounded-2xl border border-border/60 backdrop-blur-md shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/40 dark:bg-zinc-900/40 py-4 px-6 rounded-2xl border border-border/60 backdrop-blur-md shadow-sm">
           <div className="flex items-center gap-4">
             <div className="size-12 bg-gradient-to-tr from-primary/20 to-primary/5 dark:from-primary/30 dark:to-primary/10 rounded-2xl flex items-center justify-center border border-primary/20 shadow-inner">
               <Bot className="size-7 text-primary animate-pulse" />
@@ -276,19 +554,6 @@ function AgentPortalContent({ params }: { params: Promise<{ id: string }> }) {
               <RefreshCw className={`size-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
               연결 확인
             </Button>
-            {agent.web_ui_url && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                asChild 
-                className="gap-1.5 border-border/80 hover:bg-zinc-50 dark:hover:bg-zinc-900 active:scale-95 transition-all duration-150"
-              >
-                <a href={agent.web_ui_url} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="size-3.5" />
-                  새 창 열기
-                </a>
-              </Button>
-            )}
           </div>
         </div>
       </div>
@@ -324,44 +589,25 @@ function AgentPortalContent({ params }: { params: Promise<{ id: string }> }) {
       )}
 
       {/* Tabs */}
-      <Tabs defaultValue="chat" className="w-full space-y-6">
-        <TabsList className="inline-flex h-11 items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-800/80 p-1 text-muted-foreground w-full sm:max-w-2xl border border-border/40 shadow-sm">
-          <TabsTrigger
-            value="chat"
-            className="flex-1 rounded-lg px-3 py-1.5 text-sm font-semibold ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-          >
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full space-y-4">
+        <TabsList className="w-full sm:max-w-md grid grid-cols-3">
+          <TabsTrigger value="statistics">
+            통계
+          </TabsTrigger>
+          <TabsTrigger value="chat">
             대화 (Chat)
           </TabsTrigger>
-          <TabsTrigger
-            value="kanban"
-            className="flex-1 rounded-lg px-3 py-1.5 text-sm font-semibold ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-          >
-            칸반 / 웹 UI
-          </TabsTrigger>
-          <TabsTrigger
-            value="remote"
-            className="flex-1 rounded-lg px-3 py-1.5 text-sm font-semibold ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-          >
-            원격 설정
-          </TabsTrigger>
-          <TabsTrigger
-            value="settings"
-            className="flex-1 rounded-lg px-3 py-1.5 text-sm font-semibold ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-          >
+          <TabsTrigger value="settings">
             설정
           </TabsTrigger>
         </TabsList>
 
+        <TabsContent value="statistics" className="border-none p-0 outline-none focus-visible:ring-0">
+          <AgentStatisticsTab agent={agent} coursesCount={assignedCoursesCount} />
+        </TabsContent>
+
         <TabsContent value="chat" className="border-none p-0 outline-none focus-visible:ring-0">
           <AgentChatTab agent={agent} />
-        </TabsContent>
-
-        <TabsContent value="kanban" className="border-none p-0 outline-none focus-visible:ring-0">
-          <AgentKanbanTab agent={agent} />
-        </TabsContent>
-
-        <TabsContent value="remote" className="border-none p-0 outline-none focus-visible:ring-0">
-          <AgentDashboardTab agentId={agent.id} hasDashboardUrl={!!agent.dashboard_api_url} />
         </TabsContent>
 
         <TabsContent value="settings" className="border-none p-0 outline-none focus-visible:ring-0">

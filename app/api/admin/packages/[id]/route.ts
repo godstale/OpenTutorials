@@ -127,6 +127,35 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       }
     }
 
+    // 5. 패키지-강좌 매핑, 수강 구독, 진행 기록을 함께 정리한다.
+    //    (안내 문구는 이미 "진행 정보가 완전히 삭제됩니다"라고 안내하고 있었으나
+    //     실제로는 정리되지 않던 버그를 수정한다.)
+    const { error: itemsDelError } = await supabaseAdmin
+      .from('course_package_items')
+      .delete()
+      .eq('package_id', id);
+    if (itemsDelError) {
+      console.error('Failed to delete course_package_items:', itemsDelError);
+    }
+
+    const { error: subsDelError } = await supabaseAdmin
+      .from('user_package_subscriptions')
+      .delete()
+      .eq('package_id', id);
+    if (subsDelError) {
+      console.error('Failed to delete user_package_subscriptions:', subsDelError);
+    }
+
+    if (courseIds.length > 0) {
+      const { error: progressDelError } = await supabaseAdmin
+        .from('user_progress')
+        .delete()
+        .in('course_id', courseIds);
+      if (progressDelError) {
+        console.error('Failed to delete user_progress:', progressDelError);
+      }
+    }
+
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('Package API DELETE error:', error);
