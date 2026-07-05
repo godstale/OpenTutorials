@@ -5,29 +5,17 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BookOpen, PlayCircle, Award, AlertCircle, Compass, FolderOpen } from 'lucide-react';
+import { BookOpen, Award, Compass, FolderOpen } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { getExternalAgents } from '@/lib/api/external-agents';
-import type { UserExternalAgent } from '@/lib/types';
 
 interface ProgressItem {
   id: string;
-  user_id: string;
   course_id: string;
   last_card: number;
-  max_card?: number;
   completed: boolean;
-  updated_at: string;
   course?: {
-    id: string;
     slug: string;
-    title: string;
-    description: string;
-    thumbnail: string;
-    published: boolean;
-    disabled: boolean;
-    agent_id?: string | null;
     course_package_items?: { id?: string; package_id?: string }[];
   };
 }
@@ -52,51 +40,33 @@ export default function MyCoursesPage() {
   const router = useRouter();
   const [progressList, setProgressList] = useState<ProgressItem[]>([]);
   const [packageSubscriptions, setPackageSubscriptions] = useState<PackageSubscriptionItem[]>([]);
-  const [agents, setAgents] = useState<UserExternalAgent[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [progressRes, packagesRes, agentsData] = await Promise.all([
+        const [progressRes, packagesRes] = await Promise.all([
           fetch('/api/courses/progress'),
-          fetch('/api/packages/subscribe'),
-          getExternalAgents().catch(() => [])
+          fetch('/api/packages/subscribe')
         ]);
-        
+
         if (progressRes.ok) {
           const progressData = await progressRes.json();
           setProgressList(progressData);
         }
-        
+
         if (packagesRes.ok) {
           const packagesData = await packagesRes.json();
           setPackageSubscriptions(packagesData);
         }
-
-        setAgents(agentsData);
       } catch (err) {
-        console.error('Failed to fetch user progress, packages or agents:', err);
+        console.error('Failed to fetch user progress or packages:', err);
       } finally {
         setLoading(false);
       }
     };
     fetchData();
   }, []);
-
-  const getAssignedAgent = (courseAgentId?: string | null) => {
-    if (courseAgentId) {
-      const found = agents.find(a => a.id === courseAgentId);
-      if (found) return { agent: found, isDefaultFallback: false };
-    }
-    
-    const defaultAgent = agents.find(a => a.is_ai_tutor);
-    if (defaultAgent) {
-      return { agent: defaultAgent, isDefaultFallback: true };
-    }
-    
-    return { agent: null, isDefaultFallback: false };
-  };
 
   const getPackageTargetUrl = (packageId: string, defaultSlug: string) => {
     const pkgProgresses = progressList.filter(p => 
@@ -113,14 +83,6 @@ export default function MyCoursesPage() {
     }
     return `/courses/${defaultSlug}`;
   };
-
-  // Filter out courses that belong to any package so they don't show up as individual courses
-  const activeProgress = progressList.filter(
-    p => !p.completed && (!p.course?.course_package_items || p.course.course_package_items.length === 0)
-  );
-  const completedProgress = progressList.filter(
-    p => p.completed && (!p.course?.course_package_items || p.course.course_package_items.length === 0)
-  );
 
   const activePackages = packageSubscriptions.filter(
     sub => sub.total_courses === 0 || sub.completed_courses < sub.total_courses
@@ -152,15 +114,15 @@ export default function MyCoursesPage() {
         <Tabs defaultValue="active" className="w-full">
           <TabsList className="grid w-full max-w-md grid-cols-2 mb-8">
             <TabsTrigger value="active">
-              수강중인 강좌 ({activePackages.length + activeProgress.length})
+              수강중인 강좌 ({activePackages.length})
             </TabsTrigger>
             <TabsTrigger value="completed">
-              완료한 강좌 ({completedPackages.length + completedProgress.length})
+              완료한 강좌 ({completedPackages.length})
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="active" className="mt-0 space-y-8">
-            {(activePackages.length > 0 || activeProgress.length > 0) && (
+            {activePackages.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {/* 패키지 카드 목록 */}
                 {activePackages.map((sub) => {
@@ -198,107 +160,15 @@ export default function MyCoursesPage() {
                           router.push(targetUrl);
                         }}
                       >
-                        이어서 학습하기
+                        학습 시작하기
                       </Button>
-                    </Card>
-                  );
-                })}
-
-                {/* 개별 강좌 카드 목록 */}
-                {activeProgress.map((progress) => {
-                  const course = progress.course;
-                  if (!course) return null;
-                  
-                  const isDisabled = course.disabled === true;
-                  const totalCards = 10;
-                  const currentCard = progress.max_card ?? progress.last_card ?? 0;
-                  const percent = Math.min(100, Math.round((currentCard / totalCards) * 100));
-                  
-                  const { agent, isDefaultFallback } = getAssignedAgent(course.agent_id);
-                  
-                  return (
-                    <Card 
-                      key={progress.id} 
-                      className={`flex flex-col overflow-hidden transition-colors cursor-pointer justify-between ${
-                        isDisabled ? 'opacity-70 border-destructive/30' : 'hover:border-primary/50'
-                      }`}
-                      onClick={() => {
-                        if (!isDisabled) {
-                          router.push(`/courses/${course.slug}`);
-                        }
-                      }}
-                    >
-                      <CardHeader className="pb-4 p-5">
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="flex gap-2">
-                            <Badge variant={progress.completed ? 'default' : 'secondary'} className="mb-2">
-                              {progress.completed ? '수강 완료' : '수강 중'}
-                            </Badge>
-                            {isDisabled && (
-                              <Badge variant="destructive" className="mb-2 flex gap-1 items-center">
-                                <AlertCircle className="w-3 h-3" />
-                                이용 불가
-                              </Badge>
-                            )}
-                          </div>
-                          {progress.completed && !isDisabled && <Award className="w-6 h-6 text-yellow-500" />}
-                        </div>
-                        <CardTitle className="text-xl line-clamp-1">{course.title}</CardTitle>
-                        <CardDescription className="line-clamp-2">
-                          {isDisabled ? '비활성화된 강좌입니다. 학습을 계속할 수 없습니다.' : course.description}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="flex-1 flex flex-col justify-end space-y-4 p-5 pt-0">
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm font-medium">
-                            <span>진도율 (최대 진행 기준)</span>
-                            <span className="text-primary">{percent}%</span>
-                          </div>
-                          <Progress value={percent} className="h-2" />
-                          <p className="text-xs text-muted-foreground text-right">{currentCard} / {totalCards} 단계</p>
-                        </div>
-
-                        {/* 에이전트 정보 및 유효성 검증 표시 */}
-                        <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 text-xs">
-                          {agent ? (
-                            <div className="flex items-center justify-between">
-                              <span className="text-muted-foreground">담당 에이전트:</span>
-                              <span className={`font-semibold ${isDefaultFallback ? 'text-indigo-600 dark:text-indigo-400' : 'text-zinc-700 dark:text-zinc-300'}`}>
-                                {agent.name} {isDefaultFallback && '(기본 에이전트)'}
-                              </span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-1 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 p-2 rounded border border-red-200/50 dark:border-red-900/30">
-                              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                              <span className="font-semibold">에이전트 없음 (등록 필요)</span>
-                            </div>
-                          )}
-                        </div>
-                        
-                        {isDisabled ? (
-                          <Button className="w-full mt-4" variant="secondary" disabled>
-                            비활성화된 강좌
-                          </Button>
-                        ) : (
-                          <Button 
-                            className="w-full mt-4" 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              router.push(`/learn/${course.slug}?card=${progress.last_card || 0}`);
-                            }}
-                          >
-                            <PlayCircle className="w-4 h-4 mr-2" />
-                            이어서 학습하기
-                          </Button>
-                        )}
-                      </CardContent>
                     </Card>
                   );
                 })}
               </div>
             )}
 
-            {activePackages.length === 0 && activeProgress.length === 0 && (
+            {activePackages.length === 0 && (
               <div className="py-12 text-center text-muted-foreground bg-muted/20 rounded-lg border border-dashed flex flex-col items-center justify-center gap-4">
                 <FolderOpen className="w-12 h-12 text-muted-foreground/50" />
                 <div>수강 중인 강좌 또는 패키지가 없습니다.</div>
@@ -311,7 +181,7 @@ export default function MyCoursesPage() {
           </TabsContent>
 
           <TabsContent value="completed" className="mt-0 space-y-8">
-            {(completedPackages.length > 0 || completedProgress.length > 0) && (
+            {completedPackages.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {/* 완료 패키지 카드 목록 */}
                 {completedPackages.map((sub) => {
@@ -360,83 +230,10 @@ export default function MyCoursesPage() {
                     </Card>
                   );
                 })}
-
-                {/* 완료 개별 강좌 카드 목록 */}
-                {completedProgress.map((progress) => {
-                  const course = progress.course;
-                  if (!course) return null;
-                  
-                  const isDisabled = course.disabled === true;
-                  const totalCards = 10;
-                  const currentCard = progress.max_card ?? progress.last_card ?? 0;
-                  const percent = Math.min(100, Math.round((currentCard / totalCards) * 100));
-                  
-                  return (
-                    <Card 
-                      key={progress.id} 
-                      className={`flex flex-col overflow-hidden transition-colors cursor-pointer justify-between ${
-                        isDisabled ? 'opacity-70 border-destructive/30' : 'hover:border-primary/50'
-                      }`}
-                      onClick={() => {
-                        if (!isDisabled) {
-                          router.push(`/courses/${course.slug}`);
-                        }
-                      }}
-                    >
-                      <CardHeader className="pb-4 p-5">
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="flex gap-2">
-                            <Badge variant="default" className="mb-2">
-                              수강 완료
-                            </Badge>
-                            {isDisabled && (
-                              <Badge variant="destructive" className="mb-2 flex gap-1 items-center">
-                                <AlertCircle className="w-3 h-3" />
-                                이용 불가
-                              </Badge>
-                            )}
-                          </div>
-                          {!isDisabled && <Award className="w-6 h-6 text-yellow-500" />}
-                        </div>
-                        <CardTitle className="text-xl line-clamp-1">{course.title}</CardTitle>
-                        <CardDescription className="line-clamp-2">
-                          {isDisabled ? '비활성화된 강좌입니다. 학습을 계속할 수 없습니다.' : course.description}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="flex-1 flex flex-col justify-end space-y-4 p-5 pt-0">
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm font-medium">
-                            <span>진도율 (최대 진행 기준)</span>
-                            <span className="text-primary">{percent}%</span>
-                          </div>
-                          <Progress value={percent} className="h-2" />
-                          <p className="text-xs text-muted-foreground text-right">{currentCard} / {totalCards} 단계</p>
-                        </div>
-                        
-                        {isDisabled ? (
-                          <Button className="w-full mt-4" variant="secondary" disabled>
-                            비활성화된 강좌
-                          </Button>
-                        ) : (
-                          <Button 
-                            className="w-full mt-4 bg-zinc-950 text-white hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200" 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              router.push(`/learn/${course.slug}?review=true`);
-                            }}
-                          >
-                            <PlayCircle className="w-4 h-4 mr-2" />
-                            다시 보기
-                          </Button>
-                        )}
-                      </CardContent>
-                    </Card>
-                  );
-                })}
               </div>
             )}
 
-            {completedPackages.length === 0 && completedProgress.length === 0 && (
+            {completedPackages.length === 0 && (
               <div className="py-12 text-center text-muted-foreground bg-muted/20 rounded-lg border border-dashed flex flex-col items-center justify-center gap-4">
                 <Award className="w-12 h-12 text-muted-foreground/50" />
                 <div>완료한 강좌 또는 패키지가 없습니다.</div>

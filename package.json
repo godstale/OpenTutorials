@@ -1,5 +1,6 @@
 {
   "private": true,
+  "version": "0.1.0",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -30,6 +31,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.79.0",
+    "react-player": "^3.4.0",
     "recharts": "^3.9.2",
     "tailwind-merge": "^3.3.0",
     "zod": "^4.4.3"

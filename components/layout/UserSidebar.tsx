@@ -33,6 +33,11 @@ export function UserSidebar() {
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const [agents, setAgents] = useState<UserExternalAgent[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const hasFetchedRef = useRef(false);
@@ -107,7 +112,7 @@ export function UserSidebar() {
     <Sidebar variant="sidebar" collapsible="icon">
       <SidebarHeader className="h-16 flex items-center px-4 justify-center border-b">
         <Link href="/" className="font-bold text-lg flex items-center w-full overflow-hidden whitespace-nowrap">
-          {isCollapsed ? "O" : "Open Tutorials"}
+          {mounted && isCollapsed ? "O" : "Open Tutorials"}
         </Link>
       </SidebarHeader>
 

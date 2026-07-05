@@ -71,6 +71,9 @@ export default function MigrationGuidePage() {
   "force_checkpoint": false,
   "version": "1.0.0",
   "changelog": "최초 릴리즈",
+  "bundler_protocol_version": "1.0.0",
+  "target_age": "성인",
+  "category": "Marketing",
   "courses": [
     { "slug": "marketing-basic-1" },
     { "slug": "marketing-strategy-2" }
@@ -101,6 +104,9 @@ export default function MigrationGuidePage() {
               🔍 필수 유효성 검증 규칙 (중요):
             </p>
             <ul className="list-disc pl-5 space-y-1.5 text-zinc-600 dark:text-zinc-400 text-xs leading-relaxed">
+              <li>
+                <code className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-850 rounded">package-manifest.json</code>에 <code className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-850 rounded">bundler_protocol_version</code> (예: &quot;1.0.0&quot;), <code className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-850 rounded">target_age</code>, <code className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-850 rounded">category</code> 필드가 필수적으로 포함되어야 합니다.
+              </li>
               <li>
                 <code className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-850 rounded">config.json</code>의 <code>cards</code> 배열에 있는 모든 파일은 실제로 <code className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-850 rounded">cards/</code> 디렉토리 안에 <code className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-850 rounded">.md</code> 또는 <code className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-850 rounded">.mdx</code>로 존재해야 합니다.
               </li>

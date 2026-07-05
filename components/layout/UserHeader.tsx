@@ -1,14 +1,24 @@
+'use client';
+
 import Link from 'next/link';
-import { connection } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { ROUTES } from '@/lib/constants/routes';
+import { useEffect, useState } from 'react';
 
-export async function UserHeader() {
-  await connection();
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+export function UserHeader() {
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user) {
+        setUser(data.user);
+      }
+    });
+  }, []);
+
   const initial = user?.email?.charAt(0).toUpperCase() ?? 'U';
 
   return (
@@ -18,7 +28,6 @@ export async function UserHeader() {
       </div>
       <div className="flex items-center gap-4">
         <Link href={ROUTES.SETTINGS}>
-
           <Avatar className="h-8 w-8 cursor-pointer hover:opacity-80 transition-opacity">
             <AvatarImage src={user?.user_metadata?.avatar_url} />
             <AvatarFallback className="bg-primary text-primary-foreground text-sm">{initial}</AvatarFallback>

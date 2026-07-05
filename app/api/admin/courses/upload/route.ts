@@ -32,7 +32,7 @@ function validateTocRecursive(
       };
     }
 
-    const cleanFilename = node.filename ? node.filename.replace(/\.mdx?$/, '') : '';
+    const cleanFilename = node.filename ? node.filename.replace(/\.(mdx?|json)$/, '') : '';
     if (node.title.trim() === cleanFilename) {
       return {
         valid: false,
@@ -90,7 +90,16 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: `매니페스트 JSON 파싱 에러: ${err.message}` }, { status: 400 });
       }
 
-      const { title, slug: rawSlug, description, thumbnail: manifestThumbnail, published } = manifestData;
+      const { 
+        title, 
+        slug: rawSlug, 
+        description, 
+        thumbnail: manifestThumbnail, 
+        published,
+        bundler_protocol_version,
+        target_age,
+        category
+      } = manifestData;
       if (!title) {
         return NextResponse.json({ error: '패키지 매니페스트에 title이 누락되었습니다.' }, { status: 400 });
       }
@@ -142,6 +151,9 @@ export async function POST(request: NextRequest) {
             force_checkpoint: manifestData.force_checkpoint ?? false,
             version: manifestData.version ?? '1.0.0',
             changelog: manifestData.changelog ?? '최초 릴리즈',
+            bundler_protocol_version: bundler_protocol_version ?? '1.0.0',
+            target_age: target_age ?? '전연령',
+            category: category ?? '기타',
             updated_at: new Date().toISOString()
           }, { onConflict: 'slug' })
           .select()
@@ -168,6 +180,9 @@ export async function POST(request: NextRequest) {
           published: published ?? true,
           sequential_play: manifestData.sequential_play ?? false,
           force_checkpoint: manifestData.force_checkpoint ?? false,
+          bundler_protocol_version: bundler_protocol_version ?? '1.0.0',
+          target_age: target_age ?? '전연령',
+          category: category ?? '기타',
           updated_at: new Date().toISOString()
         };
         
@@ -197,6 +212,9 @@ export async function POST(request: NextRequest) {
           description,
           thumbnail: finalPackageThumbnail,
           published: published ?? true,
+          bundler_protocol_version: bundler_protocol_version ?? '1.0.0',
+          target_age: target_age ?? '전연령',
+          category: category ?? '기타',
           updated_at: new Date().toISOString()
         };
         
@@ -340,6 +358,37 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({
             error: `cards/ 폴더 내에 config.json에 정의된 '${card}' 파일이 실제 존재하지 않습니다.`
           }, { status: 400 });
+        }
+
+        // 동영상 JSON 카드 추가 검증
+        if (card.endsWith('.json')) {
+          const cardFile = childFilesToUpload.find(f => f.path === `cards/${card}`);
+          if (cardFile) {
+            try {
+              const cardJson = JSON.parse(cardFile.buffer.toString('utf8'));
+              if (!cardJson.title || typeof cardJson.title !== 'string') {
+                return NextResponse.json({ error: `동영상 카드 '${card}'에 유효한 title이 누락되었습니다.` }, { status: 400 });
+              }
+              if (cardJson.type !== 'video') {
+                return NextResponse.json({ error: `동영상 카드 '${card}'의 type은 반드시 'video'여야 합니다.` }, { status: 400 });
+              }
+              if (!cardJson.video_info || typeof cardJson.video_info !== 'object') {
+                return NextResponse.json({ error: `동영상 카드 '${card}'에 video_info 객체가 누락되었습니다.` }, { status: 400 });
+              }
+              const vi = cardJson.video_info;
+              if (vi.provider !== 'youtube') {
+                return NextResponse.json({ error: `동영상 카드 '${card}'의 video_info.provider는 'youtube'만 지원됩니다.` }, { status: 400 });
+              }
+              if (!vi.video_id || typeof vi.video_id !== 'string') {
+                return NextResponse.json({ error: `동영상 카드 '${card}'의 video_info.video_id가 누락되었거나 문자열이 아닙니다.` }, { status: 400 });
+              }
+              if (vi.subtitles && !Array.isArray(vi.subtitles)) {
+                return NextResponse.json({ error: `동영상 카드 '${card}'의 video_info.subtitles는 배열이어야 합니다.` }, { status: 400 });
+              }
+            } catch (err: any) {
+              return NextResponse.json({ error: `동영상 카드 '${card}' JSON 파싱 에러: ${err.message}` }, { status: 400 });
+            }
+          }
         }
       }
 

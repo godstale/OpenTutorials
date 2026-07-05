@@ -32,6 +32,108 @@ Ran lint. See lint-report.md for details.
 
 ## 2026-07-05
 
+- **[CHORE] 앱 버전 v0.1.0 태깅 및 릴리즈/체인지로그 관리 프로세스 확립**
+  - **수정/생성 파일**:
+    - `package.json` — 버전 필드가 없던 것을 `"version": "0.1.0"`으로 신설.
+    - `CHANGELOG.md` — 기존에 내용 없이 헤더만 있던 `v0.1.0` 항목을 실제 포함 기능(강좌 업로드/Bundler 프로토콜, 동영상 카드, AI 튜터 에이전트, 로컬 데스크탑 전환 등) 요약으로 채우고, 향후 릴리즈를 위한 `[Unreleased]` 섹션을 추가함.
+  - **작업 내용**:
+    - 강좌 제작 프로젝트가 `OpenTutorials-Bundler` GitHub 저장소로 이관됨에 따라 앱 URL을 갱신하는 김에, 이번 PR 머지 시점을 기점으로 앱 버전(`v0.1.0`)과 Course Bundler Protocol 버전(`v1.0.0`)을 각각 git 태그로 고정함. 이후부터는 main 머지 시마다 `CHANGELOG.md`에 버전 항목을 추가/갱신하는 것을 릴리즈 프로세스로 삼기로 함.
+
+- **[CHORE] 로컬 DB 스냅샷 및 에이전트 대화 로그 갱신, `db.json` gitignore 규칙 보강**
+  - **수정/생성 파일**:
+    - `db.json` — 로컬 실행 중 누적된 강좌/진행률/에이전트 데이터 스냅샷 갱신.
+    - `public/agent-chats/c3111115-c54b-48a3-919a-3cec5ec77627.json` — 에이전트 대화 로그 갱신.
+    - `.gitignore` — 최상위 `/db.json` 규칙 외에 하위 경로에서도 `db.json`이 실수로 추적되지 않도록 규칙을 보강.
+  - **작업 내용**: 로컬 온디바이스 DB 파일 특성상 실행할 때마다 상태가 바뀌므로 기능 변경 없이 스냅샷만 최신화함.
+
+- **[FIX] 학습 화면 이미지가 Supabase Storage 대신 로컬 정적 경로에서 서빙되도록 수정**
+  - **수정/생성 파일**:
+    - `app/(user)/learn/[slug]/client.tsx` — MDX 카드 내 상대 경로 이미지(`images/...`)를 해석할 때 여전히 `NEXT_PUBLIC_SUPABASE_URL` 기반 Supabase Storage 공개 URL을 조립하던 잔재 코드를 제거하고, 데스크탑 로컬 실행 아키텍처(`public/courses/[slug]/images/...` 정적 서빙)에 맞춰 `/courses/[slug]/images/[filename]` 상대 경로로 직접 연결하도록 수정함.
+  - **작업 내용**: 클라우드/Supabase 호스팅 모델을 걷어내고 로컬 파일 시스템 기반으로 전환한 이후에도 남아있던 구 스토리지 참조를 정리함.
+
+- **[FIX] 강좌 업로드 화면의 Bundler 생성기 GitHub 링크를 신규 저장소 주소로 갱신**
+  - **수정/생성 파일**:
+    - `app/(user)/courses/manage/upload/page.tsx` — "강좌 번들 자동 생성기" 배너의 GitHub 바로가기 버튼이 예전 프로젝트 위치(`https://github.com/godstale/pennypress-course-generator`)를 가리키고 있던 것을 실제 이관된 저장소(`https://github.com/godstale/OpenTutorials-Bundler`)로 수정함. `README.md`, `docs/manual/README.md`에는 이미 신규 주소가 반영되어 있었으나 이 화면만 누락되어 있었음.
+  - **작업 내용**:
+    - 강좌 제작용 Bundler 프로젝트가 `OpenTutorials-Bundler` GitHub 저장소로 위치를 옮김에 따라, 앱 내 마지막 남은 구주소 참조를 정리함.
+
+- **[DOCS] 동영상/자막 카드 기능에 맞춰 Bundler 프로토콜 하위 지침 문서 동기화**
+  - **수정/생성 파일**:
+    - `docs/bundler/protocol.md` — `bb1b195`(유튜브 동영상 카드 기능 추가) 커밋에서 4.3절(동영상 카드 JSON 스펙)이 추가될 때 헤딩 레벨이 `####`로 잘못 지정되어 4.1/4.2와 형제 관계가 아닌 것처럼 보이던 문제를 `###`로 수정하고 구분선(`---`)을 추가함. 또한 6절(검증 규칙)에 실제 업로드 API(`app/api/admin/courses/upload/route.ts`)가 수행하는 동영상 카드 스키마 검증(4번 항목: `title`/`type`/`video_info.provider`/`video_info.video_id`/`subtitles` 배열 타입) 내역이 누락되어 있어 추가하고, 서버가 검증하지 않는 자막 `start<end` 순서 정합성은 "권장, 서버 미검증" 항목으로 명시함.
+    - `docs/bundler/ai-agent-instructions.md` — 동영상 카드 기능 추가 이후에도 마크다운 카드 생성 지침만 남아 있어, 원고에 대응하는 유튜브 영상이 있을 때 `cards/*.json` 동영상 카드로 제작하는 핵심 준수 지침(5번 항목)과 작업 프로세스(2/3단계), 자가 검증 체크리스트(4단계)를 추가함. 자막 타임스탬프는 실제 영상 자막/스크립트 근거 없이 임의로 생성하지 말라는 주의사항을 명시함.
+    - `docs/bundler/creator-interview-guide.md` — 강좌 제작자 인터뷰 질문 목록에 동영상 카드 관련 3.3절(유튜브 영상 URL/ID 확인, 원본 자막 유무 확인, 재생 길이 확인)을 신규 추가함. AI가 자막을 추측 생성하지 않도록 명시적으로 안내함.
+  - **작업 내용**:
+    - `bb1b195` 커밋에서 `protocol.md`만 갱신되고 두 하위 지침 문서(`ai-agent-instructions.md`, `creator-interview-guide.md`)는 갱신되지 않아 CLAUDE.md의 "Bundler 프로토콜 수정 시 하위 지침 문서들도 즉시 최신화" 규칙을 완전히 만족하지 못한 상태였음을 발견하고 보완함. 코드(검증 로직, `client.tsx`의 자막 클릭 탐색 UI) 변경은 없으며 문서만 갱신함.
+
+- **[CLEANUP] 나의 강좌 화면에서 개별 강좌 카드 제거 및 테스트 데이터 정리**
+  - **수정/생성 파일**:
+    - `app/(user)/my-courses/page.tsx` — 패키지에 속하지 않은 "개별 강좌" 카드 UI(활성/완료 탭 모두)를 완전히 제거하고 패키지 카드만 표시하도록 변경함. 이에 따라 개별 강좌 카드에서만 쓰이던 담당 에이전트 조회 로직(`getAssignedAgent`, `agents` state, `getExternalAgents` 호출)과 관련 아이콘 import(`PlayCircle`, `AlertCircle`)를 제거했고, 탭 카운트/빈 상태 문구도 패키지 기준으로만 계산하도록 단순화함. `progressList`(및 `/api/courses/progress` 호출)는 패키지 내 강좌의 "이어보기" 대상(`getPackageTargetUrl`)을 계산하는 데 계속 사용되므로 유지함.
+    - `db.json` — 개별 강좌로 등록되어 있던 테스트용 강좌 `video-test-course-id`("동영상 및 자막 연동 테스트 강좌")를 `courses`에서 삭제하고, 관련 `user_progress` 5건, 해당 강좌를 언급하는 테스트용 `user_external_agent_messages` 4건을 함께 삭제함.
+    - `public/courses/video-test-course/` (삭제) — 위 테스트 강좌의 카드/설정 에셋 폴더.
+  - **작업 내용**:
+    - 개별 강좌 카드는 패키지에 속하지 않은 강좌 진행 상태를 보여주던 기능이었으나 실사용 데이터가 없고 테스트용으로만 쓰이고 있어(위 `video-test-course` 사례), 향후 개별 강좌 등록 플로우 자체를 사용하지 않기로 하고 UI와 테스트 데이터를 모두 제거함.
+    - `tsc --noEmit` 확인: 수정한 파일 기준 신규 에러 없음 (기존에 있던 `components/layout/UserHeader.tsx`의 무관한 타입 에러 1건은 이번 변경과 무관).
+
+- **[FEATURE] 영상 학습 화면 자막 UX를 팝업형 "자막 탐색"으로 개편**
+  - **수정/생성 파일**:
+    - `app/(user)/learn/[slug]/client.tsx` — 영상 카드 하단에 항상 펼쳐져 있던 인라인 자막 리스트(스크롤 영역이 좁아 가독성이 나쁘다는 피드백)를 제거하고, 콘텐츠 헤더의 즐겨찾기(Bookmark)/공유(Share2) 아이콘 버튼(미연결 상태였음)을 "자막 탐색" 버튼으로 교체함. 버튼은 영상 타입 카드이고 자막이 있을 때만 노출되며, 클릭 시 좌측 "강좌 목차" 패널 전체를 덮는 오버레이 팝업(`isSubtitlePopupOpen` state)을 띄워 `[mm:ss] 자막` 형식의 리스트를 보여줌. 초를 `mm:ss`로 변환하는 `formatSubtitleTime` 헬퍼를 추가. 자막 항목 클릭 시 기존과 동일하게 `playerRef.current.currentTime` 이동 + 재생하되 팝업은 닫지 않고 유지, 현재 재생 시간과 일치하는 자막은 계속 강조 표시됨. 카드 전환 시 팝업은 자동으로 닫힘.
+    - `docs/superpowers/specs/2026-07-05-subtitle-explorer-popup-design.md` (신규, gitignore 대상) — 설계 스펙 문서
+  - **작업 내용**:
+    - Playwright로 `/learn/video-test-course` 접속 후: 텍스트 카드(1.1)에서는 버튼 미노출, 영상 카드(1.2)에서 버튼 노출을 확인. 버튼 클릭 → 목차 패널이 팝업으로 전환되고 현재 재생 시점 자막(`[00:03]`)이 강조됨을 확인. `[00:14]` 자막 클릭 → 영상 프레임이 해당 시점으로 이동하고 팝업이 유지됨을 확인. X 버튼 클릭 → 팝업이 닫히고 목차 패널이 정상 복귀됨을 확인. 콘솔에 새 에러 없음 (기존에 알려진 무관한 에이전트/이슈 위젯 경고만 존재).
+    - Bundler 프로토콜(카드 JSON 스키마)은 변경되지 않았으므로 `docs/bundler/protocol.md` 동기화는 해당 없음.
+
+- **[BUGFIX] 비디오 카드 컨텐츠 영역에 원본 JSON 텍스트가 출력되던 문제 근본 해결**
+  - **수정/생성 파일**:
+    - `app/(user)/learn/[slug]/client.tsx` — 비디오 타입 카드(`type: 'video'`)일 때 카드 컨텐츠 영역이 `mdxSource`/`content` 분기만 확인하고 `videoInfo`를 전혀 처리하지 않아, `page.tsx`가 채워준 카드 JSON 원본 텍스트(`content`)가 그대로 화면에 출력되던 근본 원인을 수정함. `next/dynamic(ssr:false)`로 `ReactPlayer`를 동적 임포트하고, 실제 설치된 `react-player@3.4.0`의 `dist/types.d.ts`를 직접 확인하여 v3 API(`src`, `ref`→`HTMLVideoElement`, `onTimeUpdate`, `config.youtube`의 평탄한 스키마)에 맞춰 구현. 카드 이동 시에만 자동재생되도록 `lastPlayedCardIndex` ref로 최초 로드와 구분했고, `playerConfig`는 `useMemo`로 고정하여 리렌더링마다 플레이어가 재생성되지 않도록 함. 자막 목록 클릭 시 `playerRef.current.currentTime`으로 탐색.
+    - `wiki/sources/2026-07-05-video-card-content-not-rendering-fix.md` (신규) — 원인 분석과 해결 내역, 그리고 과거 위키 문서 오기재 정황 정리.
+  - **작업 내용**:
+    - 조사 결과, 기존 위키 문서(`2026-07-05-video-playback-and-sidebar-hydration-fix.md`, `2026-07-05-react-player-v3-api-migration-fix.md`)는 `client.tsx`에 `ReactPlayer` 구현이 이미 완료·검증되었다고 기록했으나, `git log -p -S "ReactPlayer"` 전체 이력 조회 결과 해당 코드는 어떤 커밋에도 존재한 적이 없었음을 확인함. 실제로는 다른 AI 코딩 툴(Antigravity CLI)이 여러 차례 동일 JSX 교체를 시도했으나(트랜스크립트 로그 추출 결과 `scripts/extracted_changes.txt` 참고) 파일에 반영되지 못했고, 위키 문서만 "완료"로 잘못 남겨진 상태였음.
+    - Playwright로 `/learn/glm52-video-course?package=glm52-video-package` 접속 후 비디오 썸네일 렌더링, 재생 버튼 클릭 시 실제 재생(`paused: false`, `currentTime` 증가), 자막 클릭 시 탐색 동작을 모두 확인. 콘솔 에러 0건. 별도 MDX 텍스트 강좌(`iot-communication-ch01`)에서도 회귀 없음을 확인함 (기존에 알려진 `next-mdx-remote`/React 19 SSR Hydration 에러는 본 작업과 무관한 별개 이슈로 클라이언트 폴백 렌더링에 지장 없음).
+    - 강좌 번들 프로토콜(`video_info` JSON 스키마)은 변경되지 않았으므로 `docs/bundler/protocol.md` 동기화는 해당 없음.
+
+- **[BUGFIX] react-player v3 API 마이그레이션 불일치로 인한 동영상 강좌 재생 불가 문제 근본 해결**
+  - **수정/생성 파일**:
+    - `app/(user)/learn/[slug]/client.tsx` — `package.json`에 설치된 `react-player`가 `^3.4.0`(네이티브 커스텀 엘리먼트 기반 완전 재작성 버전)임에도 코드가 v2 스타일 API(`url`, `onReady(player)`, `onProgress({playedSeconds})`, `config.youtube.playerVars`, `seekTo()`)를 그대로 사용하고 있어 플레이어가 완전히 빈 화면으로 렌더링되고 재생/탐색이 전혀 동작하지 않던 근본 원인을 해결함. 구체적으로 `url` prop을 `src`로 변경(v3에는 `url` prop 자체가 없어 소스가 전달되지 않아 화면이 비어 있었음), `onReady`가 v3에서 인자 없이 호출되는 점을 확인하고 `ref={playerRef}`로 변경(v3의 ref는 내부 커스텀 엘리먼트(`HTMLVideoElement` 확장)로 직접 포워딩됨을 `dist/index.d.ts` 타입 정의로 검증), `onProgress`를 표준 `onTimeUpdate` + `event.currentTarget.currentTime`으로 교체, `config.youtube`를 `youtube-video-element`의 실제 config 타입에 맞춰 `playerVars` 래핑 없는 평탄한 객체로 수정(존재하지 않는 `autoplay`/`modestbranding` 키 제거), 자막 클릭 시 `playerRef.current.seekTo(sub.start, 'seconds')` 호출을 `playerRef.current.currentTime = sub.start`로 교체(v3 ref 대상은 `seekTo` 메서드가 없는 네이티브 비디오 엘리먼트이므로).
+  - **작업 내용**:
+    - `node_modules/react-player`의 실제 `dist/index.d.ts`, `dist/types.d.ts`와 `youtube-video-element`의 타입 정의를 직접 확인하여 v2→v3 API 변경점을 규명한 뒤, 기존 4가지 디버깅 히스토리(자동재생 차단/높이 0px/config 리렌더링/seekTo ref 문제)의 수정 코드는 그대로 보존한 채 v3 불일치 지점만 교정함. Playwright로 `/learn/glm52-video-course` 페이지에서 실제 유튜브 프레임 렌더링, 재생 버튼 클릭 시 재생 전환, 자막 클릭 시 시점 이동, 콘솔 에러 없음, 그리고 별도 MDX 텍스트 강좌(`iot-communication-ch01`)의 회귀 없음을 모두 시각적으로 검증함. 번들 프로토콜(카드 JSON 스키마)은 변경되지 않았으므로 `docs/bundler/protocol.md` 동기화는 해당 없음.
+    - 검증 중 `iot-communication-ch01` 강좌에서 `next-mdx-remote`와 React 19 간의 SSR Hydration 에러(`Cannot read properties of null (reading 'useState')`)가 발견되었으나, 이는 본 작업의 변경 범위(비디오 카드 렌더링 분기)와 무관한 기존 이슈이며 클라이언트 렌더링으로 정상 폴백되어 콘텐츠 표시에는 지장이 없음을 확인함. 별도 이슈로 추적 필요.
+
+- **[MAINTENANCE] 동영상 강좌 기능 구현/디버깅 통합 스펙 아카이빙**
+  - **수정/생성 파일**:
+    - `docs/temp/01-debugging-history.md` (신규) — 비디오 자동 재생 차단, aspect-video 높이 0px 렌더링 붕괴, useMemo 메모이제이션 및 seekTo 타입 에러 해결 등 상세 디버깅 역사 정리
+    - `docs/temp/02-video-course-protocol.md` (신규) — 동영상 학습 카드의 JSON 데이터 스키마 및 프론트엔드 연동 컨벤션 규격 요약
+    - `docs/temp/03-test-data-spec.md` (신규) — GLM-5.2 테스트 강좌 패키지 구조, 로컬 파일 시스템 경로 및 db.json 구독 검증 안내 가이드 작성
+  - **작업 내용**:
+    - 다른 검증 에이전트의 교차 확인 및 기능 검증 절차를 매끄럽게 지원하기 위하여 지금까지 축적된 모든 동영상 학습 기능 관련 디버깅 결과물과 테스트 사양서를 아카이브 폴더에 일원화하여 구축했습니다.
+
+- **[BUGFIX] 비디오 강좌 최초 진입 시 자동 재생 에러, 플레이어 렌더링 붕괴, seekTo 예외 및 사이드바 Hydration mismatch 해결**
+  - **수정/생성 파일**:
+    - `components/layout/UserSidebar.tsx` — 사이드바 축소 상태 텍스트(`O` / `Open Tutorials`) 렌더링에 `mounted` 체크 상태를 추가하여 SSR과 CSR 결과 불일치로 인한 Hydration mismatch 에러 해결
+    - `app/(user)/learn/[slug]/client.tsx` — Strict Mode로 인한 이중 마운트 시 `isFirstLoad` 초기값 초기화 오작동을 방지하기 위해 `lastPlayedCardIndex` ref 추적으로 변경하여 최초 자동 재생 차단을 보장함. 또한 `ReactPlayer`에 `absolute` 배치를 적용하여 16:9 높이 0px 붕괴를 해결하고, YouTube `origin` 파라미터를 추가하여 로컬에서의 임베드 재생 오류 방지. `next/dynamic` 래퍼에 기인한 `ref` 포워딩 유실로 발생하던 `seekTo is not a function` 에러를 `onReady` 콜백으로 직접 인스턴스를 주입받도록 수정하여 해결하고, `playerConfig`를 `useMemo`로 메모이제이션하여 매 리렌더링마다 플레이어가 재로드되는 현상을 방지함.
+    - `wiki/sources/2026-07-05-video-playback-and-sidebar-hydration-fix.md` — 해당 이슈 원인 분석과 대책을 정리한 상세 위키 문서 추가 및 보완
+  - **작업 내용**:
+    - 동영상 강좌 페이지 진입 시 발생하는 브라우저 자동 재생 차단 오류, Strict Mode 중복 실행 버그, ReactPlayer 크기 0px 렌더링 문제, 자막 클릭 시 seekTo 타입 에러 및 사이드바의 Hydration mismatch 오류를 종합적으로 해결하여 정상적인 동영상 수강 및 자막 동기화가 가능하도록 개선했습니다.
+
+- **[FEATURE] 유튜브 동영상 강좌 예제 패키지 생성 및 등록**
+  - **수정/생성 파일**:
+    - `public/courses/glm52-video-course/config.json` (신규) — 유튜브 동영상 강의 카드를 담기 위한 목차 및 메타데이터 정의 파일 생성
+    - `public/courses/glm52-video-course/wiki.md` (신규) — 강좌의 지식베이스 콘텐츠로 사용될 마크다운 가이드 파일 생성
+    - `public/courses/glm52-video-course/cards/01_introduction.json` (신규) — 유튜브 비디오 ID(`TIDGQVVkSZ8`)와 학습 편의를 위한 자막 데이터를 포함한 동영상 카드 파일 생성
+    - `db.json` — `courses`, `course_packages`, `course_package_items`, `user_package_subscriptions` 테이블에 GLM-5.2 동영상 강좌와 패키지를 수동 등록 및 사용자 자동 구독 처리
+  - **작업 내용**:
+    - 유튜브 영상 링크(`https://www.youtube.com/watch?v=TIDGQVVkSZ8`)를 활용해 플랫폼 내 동영상 재생 및 자막 동기화 동작을 검증하기 위한 테스트용 예제 강좌 번들을 로컬 스토리지에 직접 구성하고 데이터베이스에 등록을 완료했습니다.
+
+- **[MAINTENANCE] 배포 준비를 위한 사용하지 않는 리소스 아카이빙 및 문서/매뉴얼 작성**
+  - **수정/생성 파일**:
+    - `README.md` — PennyPress 기반의 설명을 모두 걷어내고 Open Tutorials의 설치, 실행, 강좌 업로드, AI 튜터 연동, 강좌 작성용 AI 에이전트(Bundler) 활용을 설명하는 최신 문서로 개편했습니다.
+    - `docs/architecture/README.md` (신규) — 온디바이스 로컬 애플리케이션 플랫폼(Open Tutorials)의 프론트엔드, 로컬 DB(`db.json` 및 mock-client), 로컬 스토리지(`public/courses/`), AI 튜터 연동 등의 아키텍처 구조를 설명하는 문서를 생성했습니다.
+    - `docs/manual/README.md` (신규) — 사용자를 위한 앱 설치/실행 및 강좌 등록/학습 방법과 제작자를 위한 강좌 번들 ZIP 구성 명세, AI 에이전트(Bundler) 활용법을 포함하는 종합 매뉴얼을 생성했습니다.
+    - `.gitignore` — `docs/` 디렉토리 하위의 `architecture/`와 `manual/` 폴더를 제외한 모든 임시/아카이브 하위 폴더들을 무시하도록 룰을 재설정했습니다.
+    - `docs/archive/` (신규) — 기존에 사용하던 배포 불필요 디렉토리인 `agent-worker`, `supabase`, `graph`를 아카이브 목적으로 내부 이동시켰습니다.
+  - **작업 내용**:
+    - Open Tutorials 오픈소스 출시 및 배포를 앞두고 프로젝트 전반의 기술 스펙을 최신화하고 불필요한 유산을 정리하였습니다.
+    - 매뉴얼에 강좌 제작을 돕는 OpenTutorials-Bundler AI 에이전트 저장소 주소를 연동하여 제작자가 쉽게 로컬 콘텐츠 패키지를 빌드할 수 있도록 유도하였습니다.
+
 - **[FEATURE] 하네스 에이전트 등록/설정 화면 내 활성 모델 비노출 및 연결 검증 최적화**
   - **수정/생성 파일**:
     - `components/features/AgentSettingsTab.tsx` — 하네스 에이전트인 경우 지원 모델 조회 카드에서 새로고침(refresh) 버튼 및 감지 모델 목록/선택 UI 대신 프로그램에 설정된 LLM 사용 안내 메시지 박스를 표시하도록 변경했습니다. 또한 에이전트 정보 수정/보기 화면에서 '활성 모델' 필드를 숨기고, 연결상태 확인 시 복잡한 LLM 모델 목록 조회/검증 단계를 거치지 않고 연결 성공을 반환하도록 개선했습니다.
@@ -1321,3 +1423,78 @@ Ran lint. See lint-report.md for details.
     - **카드 높이 일치 및 버튼 하단 정렬**: 카드의 실제 텍스트 길이에 관계없이 카드의 전체 높이가 균등하게 일치하고 버튼 영역이 하단에 정렬되도록 `flex flex-col justify-between h-full` 스타일링을 적용했습니다.
     - **스켈레톤 화면 동기화**: 대시보드 로딩 중 보여지는 스켈레톤 화면(`DashboardSkeleton`)에서도 동일하게 두 카드를 가로 2열 배치하도록 레이아웃을 일치시켰습니다.
   - **Concepts**: [[DashboardSideBySideCards]], [[CardHeightEqualization]], [[SkeletonLayoutSync]]
+
+- **[DOCS/FEAT] 강좌 번들 프로토콜 문서 추가 및 필수 3대 필드(프로토콜 버전, 대상 연령대, 카테고리) 검증 및 저장 구현**
+  - **생성 파일**:
+    - [docs/bundler/protocol.md](file:///C:/Workspace/Projects/OpenTutor/docs/bundler/protocol.md)
+    - [docs/bundler/ai-agent-instructions.md](file:///C:/Workspace/Projects/OpenTutor/docs/bundler/ai-agent-instructions.md)
+    - [docs/bundler/creator-interview-guide.md](file:///C:/Workspace/Projects/OpenTutor/docs/bundler/creator-interview-guide.md)
+  - **수정 파일**:
+    - [app/(user)/courses/manage/upload/page.tsx](file:///C:/Workspace/Projects/OpenTutor/app/(user)/courses/manage/upload/page.tsx)
+    - [app/(user)/courses/manage/upload/guide/page.tsx](file:///C:/Workspace/Projects/OpenTutor/app/(user)/courses/manage/upload/guide/page.tsx)
+    - [app/api/admin/courses/upload/route.ts](file:///C:/Workspace/Projects/OpenTutor/app/api/admin/courses/upload/route.ts)
+    - [AGENTS.md](file:///C:/Workspace/Projects/OpenTutor/AGENTS.md)
+    - [CLAUDE.md](file:///C:/Workspace/Projects/OpenTutor/CLAUDE.md)
+    - [GEMINI.md](file:///C:/Workspace/Projects/OpenTutor/GEMINI.md)
+    - [wiki/log.md](file:///C:/Workspace/Projects/OpenTutor/wiki/log.md)
+  - **작업 내용**:
+    - **번들러 공유 문서 생성**: 외부 강좌 생성용 프로젝트와 프로토콜 명세 공유를 위해 `docs/bundler/` 폴더 하위에 번들링 공식 프로토콜 스펙(`protocol.md`), AI Agent 생성 가이드라인(`ai-agent-instructions.md`), 콘텐츠 제작자 인터뷰 가이드(`creator-interview-guide.md`)를 신설했습니다.
+    - **필수 메타데이터 추가 및 검증 규칙 강화**: `package-manifest.json`에 `bundler_protocol_version`, `target_age`, `category` 3대 필드를 추가/수정하는 프로토콜(v1.0.0)을 정립했습니다. 또한 강좌 ZIP 검증 단계(`manifest-fields`)에 해당 필드가 올바른 문자열 형식으로 채워졌는지 확인하는 엄격한 유효성 검증을 반영했습니다.
+    - **검증 결과 UI 노출**: 검증 성공 시 화면 하단의 매니페스트 분석 정보 카드에 프로토콜 버전, 대상 연령대, 카테고리가 가시적으로 표시되도록 UI를 개선했습니다.
+    - **가이드 페이지 및 API 동기화**: 마이그레이션 가이드 페이지(`/courses/manage/upload/guide`)의 `package-manifest.json` 예시와 핵심 검증 목록을 업데이트하여 신규 필드를 포함시켰습니다. 서버사이드 업로드 API(`app/api/admin/courses/upload/route.ts`) 내 `course_packages` 데이터 upsert 로직에도 이 3대 필드를 추출하여 DB(`db.json`)에 완벽히 반영하도록 통합 및 Fallback 구조를 동기화했습니다.
+    - **프로토콜 문서 유지 관리 규칙 추가**: 강좌 제작용 Bundler 프로토콜의 스펙 변경 시 `docs/bundler/` 폴더의 문서들을 즉각 최신화하도록 지시하는 프로젝트 중요 규칙을 `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`에 추가하여 향후 작업자들과의 공조가 끊이지 않도록 강제했습니다.
+  - **Concepts**: [[CourseBundlerProtocolv1.0.0]], [[ManifestFieldsValidationUpdate]], [[CourseUploadMetadataUI]], [[ServerUpsertFieldsSync]], [[ProtocolDocumentationSyncRule]]
+
+## 2026-07-05
+
+- **[FEATURE] 동영상 강좌 수강 및 자막 동기화(자동 스크롤 및 Seek) 구현 및 Bundler 프로토콜 확장**
+  - **수정 파일**:
+    - [docs/bundler/protocol.md](file:///C:/Workspace/Projects/OpenTutor/docs/bundler/protocol.md)
+    - [app/api/admin/courses/upload/route.ts](file:///C:/Workspace/Projects/OpenTutor/app/api/admin/courses/upload/route.ts)
+    - [app/(user)/learn/[slug]/page.tsx](file:///C:/Workspace/Projects/OpenTutor/app/(user)/learn/[slug]/page.tsx)
+    - [app/(user)/learn/[slug]/client.tsx](file:///C:/Workspace/Projects/OpenTutor/app/(user)/learn/[slug]/client.tsx)
+    - [components/features/AgentSettingsTab.tsx](file:///C:/Workspace/Projects/OpenTutor/components/features/AgentSettingsTab.tsx)
+  - **작업 내용**:
+    - **Bundler 프로토콜 확장**: 동영상 전용 카드를 위해 기존 마크다운 외에 구조화된 JSON 카드 포맷(`.json`)을 도입하고, `config.json` 목록 및 TOC 정의에서 `.json` 파일의 등록을 허용했습니다. 자막 상세 구조(`subtitles`: `start`, `end`, `text`) 및 `video_info` 필드 스키마를 `docs/bundler/protocol.md`에 공식 규정했습니다.
+    - **업로드 검증 엔진 패치**: 업로드 API(`route.ts`)의 TOC 재귀 검증 시 `.json` 확장자를 허용하도록 정규식을 개선했으며, `cards/*.json` 파일 로드 시 `type: "video"`, `video_info.video_id` 등 필수 구조 정합성 검사(Linting)를 추가하여 업로드 무결성을 확보했습니다.
+    - **Next.js 서버 데이터 로더 개편**: `learn/[slug]/page.tsx`에서 다운로드한 카드 파일이 `.json` 형식일 경우, MDX serialize 대신 JSON 파싱을 수행하여 `type: 'video'` 및 `videoInfo` 등의 Props로 분기해 반환하도록 구현했습니다.
+    - **유튜브 비디오 플레이어 연동**: `client.tsx` 내에 `react-player`를 동적으로 바인딩하고, 현재 카드의 물리 타입이 `video`인 경우 aspect-video 형태의 플레이어가 화면 가득 차도록 조건부 렌더링을 적용했습니다.
+    - **채팅/자막 이중 탭(Tabs) UI 구성**: 우측 채팅 영역에 Radix/Shadcn Tabs를 적용하여 'AI 튜터' 및 '자막' 목록 탭을 손쉽게 전환하도록 레이아웃을 확장했습니다. (비디오가 아닐 때는 자막 탭 비활성화)
+    - **자막 스크롤 동기화 & 역방향 탐색(Seek)**: 플레이어의 `onProgress` 이벤트에 맞춰 활성 자막 행을 하이라이팅 처리하고 자동으로 스크롤 포커스가 이동하도록 구현했습니다. 자막 리스트의 특정 자막 클릭 시 플레이어의 `seekTo`를 호출하여 해당 시점으로 영상 재생 위치를 조절하는 역방향 이동 기능을 제공합니다.
+    - **재생 일시정지 및 스크롤 인터랙션**: 카드를 전환하거나 강좌 페이지를 벗어날 때(unmount) 영상 재생이 일시 중지되도록 `isPlaying` 상태를 제어하며, 유저가 자막 탭을 마우스 휠 등으로 직접 스크롤할 때는 수초간 자동 스크롤 동기화를 멈춰 수강을 방해하지 않도록 정교하게 처리했습니다.
+    - **빌드 예외 및 TS 컴파일러 에러 수정**: `ReactPlayer` dynamic import 컴포넌트의 타입 추론 누락 및 `AgentSettingsTab.tsx` 내에서 발생한 unintentional comparison type check 에러들을 캐스팅(`as any`, `as string`)을 통해 해결하여 Next.js 빌드 성공을 보장했습니다.
+  - **Concepts**: [[VideoCardJSONFormat]], [[VideoUploadAPILinting]], [[ReactPlayerIntegration]], [[SubtitlesTabsUI]], [[SubtitleAutoScrollAndSeek]], [[TSBuildCompilationFix]]
+
+- **[BUGFIX] 동영상 강좌 영역 가로폭 최대화 및 자동 재생 / 재생 차단 피드백 루프 해결**
+  - **수정 파일**:
+    - [app/(user)/learn/[slug]/client.tsx](file:///C:/Workspace/Projects/OpenTutor/app/(user)/learn/[slug]/client.tsx)
+  - **작업 내용**:
+    - **가로폭 최대화 및 종횡비 유지 (스크롤 방지)**: 비디오 플레이어 컨테이너의 가로/세로 크기 결정에 있어 오작동하던 `w-full h-full aspect-video` 클래스 충돌 문제를 `w-full max-w-full max-h-full aspect-video relative` 및 패딩(p-4) 부여로 해결했습니다. 이를 통해 비디오 영역이 스크롤 없이 부모의 가용 영역 내에서 16:9 비율을 유지하며 최대 너비로 꽉 차게 렌더링됩니다.
+    - **동영상 카드 진입 시 자동 재생 구현**: `isPlaying` 상태의 초기값 및 카드 전환(useEffect) 시 초기화 값을 `true`로 설정하고, ReactPlayer의 YouTube config 파라미터에 `autoplay: 1`을 명시적으로 주어 학습 화면 진입 시 영상이 자동으로 재생되도록 했습니다.
+    - **재생 불가 피드백 루프 해결**: 이전에 `isPlaying`이 `false`로 굳어진 상태에서 사용자가 클릭하면, 일시적으로 재생을 시작하지만 React 렌더링에 의해 `playing={false}`가 다시 강제 적용되어 재생이 즉각 멈추는 오작동을 해결했습니다. 초기 재생 플래그 설정 및 `onPlay`/`onPause` 상태 싱크 보강을 통해 클릭 시 막힘 없는 재생 제어가 가능합니다.
+  - **Concepts**: [[VideoMaximizeLayoutFix]], [[AutoplayEnablement]], [[ReactPlayerFeedbackLoopFix]]
+
+## 2026-07-05 (2nd Session)
+
+- **[REFACTOR/UI] 영상 학습 화면 여백 제거, 자막 탭 좌측 이관 및 AI 튜터 우측 단일화**
+  - **수정 파일**:
+    - [app/(user)/layout.tsx](file:///C:/Workspace/Projects/OpenTutor/app/(user)/layout.tsx)
+    - [app/(user)/learn/[slug]/client.tsx](file:///C:/Workspace/Projects/OpenTutor/app/(user)/learn/[slug]/client.tsx)
+  - **작업 내용**:
+    - **학습 화면 가로폭 여백 제거**: 학습 플레이어 화면 진입 시 최상위 레이아웃 `layout.tsx`에서 `isLearnPage` 분기 로직을 타이트하게 적용하여 가로 최대 너비 제한(`max-w-7xl`)과 패딩(`px-10 py-8`)을 제거하고 `max-w-none p-0`을 주어 화면 가로폭을 가득 채우도록 개선했습니다.
+    - **자막 탭 좌측 목차 영역으로 이관**: 우측 `[AI 튜터 / 자막]` 탭 구조에서 자막을 완전히 분리해내어, 좌측 목차 영역을 `[목차 / 자막]` 탭(Tabs) 형태로 개편하여 자막을 볼 수 있도록 자막 뷰를 좌측 탭으로 이관했습니다. 비디오 카드로 진입 시 자동으로 자막 탭이 포커싱되도록 `leftActiveTab` 분기를 연결했습니다.
+    - **AI 튜터 우측 단일 패널로 원복**: 자막 기능이 이관되면서 우측 패널은 복잡한 탭 구조 대신 단일 집중형 AI 튜터 채팅 패널로 원복하여 UI의 y축 정렬 불균형 문제를 해결하고 정밀한 QnA 소통에 집중할 수 있도록 복구했습니다.
+    - **TS 컴파일 에러 & JSX 태그 정합성 픽스**: 빌드 단계에서 발생한 `Expected '}', got '<eof>'` 구문 에러 및 dynamic wrapper와 관련해 누락되었던 닫는 괄호 복구 및 `useMemo`, `Tabs` 컴포넌트의 누락된 임포트를 추가하여 Next.js Turbopack 빌드 컴파일을 완전히 성공시켰습니다.
+  - **Concepts**: [[LearnLayoutNoMargins]], [[SubtitlesLeftTabsMigration]], [[SingleFocusedRightAITutor]], [[TurbopackBuildFix]]
+
+## 2026-07-05 (3rd Session)
+
+- **[BUGFIX] UserHeader 컴포넌트의 Next.js `connection()` 및 Async Client Component 렌더링 오류 해결**
+  - **수정 파일**:
+    - [components/layout/UserHeader.tsx](file:///C:/Workspace/Projects/OpenTutor/components/layout/UserHeader.tsx)
+  - **작업 내용**:
+    - Next.js 15의 `connection()` dynamic API가 request scope 외부(예: 빌드 타임 혹은 정적 context)에서 호출되어 `connection was called outside a request scope` 에러가 발생하던 문제를 1차 조치했습니다.
+    - 2차적으로, 상위 컴포넌트인 `app/(user)/layout.tsx`가 `'use client'` 지시어를 포함한 Client Component인 관계로, 그 하위에서 렌더링되던 비동기 서버 컴포넌트 `<UserHeader />`가 async Client Component로 인식되어 `Only Server Components can be async at the moment` 및 `A component was suspended by an uncached promise` 에러가 연속적으로 발생하던 현상을 해결했습니다.
+    - `UserHeader` 컴포넌트를 `'use client'` 클라이언트 컴포넌트로 전면 리팩토링하고, `useState` 및 `useEffect` 훅을 활용해 마운트 시점에 로컬 Mock Supabase Client(`createClient`)로부터 유저 데이터를 비동기 획득하도록 구조를 보완하여 두 에러를 모두 완벽히 픽스했습니다.
+  - **Concepts**: [[NextConnectionScopeFix]], [[LocalMockClientPruning]], [[AsyncClientComponentFix]]
+

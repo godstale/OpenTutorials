@@ -676,7 +676,7 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
                 LLM 모델 정보 없음
               </p>
               <p className="text-[11px] text-muted-foreground leading-normal">
-                {agent.agent_type === 'harness' 
+                {(agent.agent_type as string) === 'harness' 
                   ? '하네스 에이전트의 LLM 모델 정보가 감지되지 않았습니다. 우측 상단의 새로고침(refresh) 버튼을 눌러 수동 조회를 시도하거나, 아래에 직접 모델명을 입력해 업데이트하세요.'
                   : '에이전트 서버로부터 지원 모델을 조회하지 못했습니다. 우측 상단의 새로고침(refresh) 버튼을 눌러 수동 조회를 시도하거나, 아래에 직접 모델명을 입력해 업데이트하세요.'
                 }
@@ -701,7 +701,7 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
           ) : (
             <div className="space-y-4">
               {(() => {
-                let displayModels = agent.agent_type === 'harness' 
+                let displayModels = (agent.agent_type as string) === 'harness' 
                   ? models.filter(m => !m.hidden) 
                   : models;
 

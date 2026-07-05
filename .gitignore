@@ -54,11 +54,15 @@ next-env.d.ts
 .DS_Store
 Thumbs.db
 
-# Etc
-docs/screenshot
+# Docs Configuration
+/docs/*
+!/docs/architecture/
+!/docs/manual/
+!/docs/bundler/
 
 # Local Database
 /db.json
+db.json
 
 # Local Uploaded Courses (Storage)
 /public/courses/
@@ -78,4 +82,6 @@ ENV/
 
 # Superpowers subagent-driven-development scratch (progress ledger, task briefs/reports)
 .superpowers/
+
+
 

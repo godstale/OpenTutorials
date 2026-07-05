@@ -182,11 +182,8 @@ async function LearnPageContent({
 
       if (cardData) {
         const text = await cardData.text();
-        console.log(`[LearnServer] Serializing MDX for card: ${filename}`);
-        // Compile/serialize the MDX content on the server
-        const mdxSource = await serialize(text);
         
-        let cardTitle = filename.replace('.mdx', '').replace('.md', '');
+        let cardTitle = filename.replace(/\.(mdx?|json)$/, '');
         if (configJson && Array.isArray(configJson.toc)) {
           const tocItem = findTocNodeByFilename(configJson.toc, filename);
           if (tocItem && tocItem.title) {
@@ -194,13 +191,40 @@ async function LearnPageContent({
           }
         }
 
-        cards.push({
-          filename,
-          title: cardTitle,
-          mdxSource,
-          content: text,
-        });
-        console.log(`[LearnServer] Card ${filename} successfully serialized.`);
+        if (filename.endsWith('.json')) {
+          console.log(`[LearnServer] Parsing JSON for card: ${filename}`);
+          try {
+            const parsedJson = JSON.parse(text);
+            cards.push({
+              filename,
+              title: cardTitle,
+              type: 'video' as const,
+              videoInfo: parsedJson.video_info || null,
+              content: text,
+            });
+            console.log(`[LearnServer] Card ${filename} successfully parsed as video.`);
+          } catch (err: any) {
+            console.error(`[LearnServer] JSON parse failed for card ${filename}:`, err);
+            const errText = `### 동영상 강좌 에러\n동영상 카드 파일 \`${filename}\`을(를) 파싱하는 중 오류가 발생했습니다.\n\`\`\`\n${err.message}\n\`\`\``;
+            const mdxSource = await serialize(errText);
+            cards.push({
+              filename,
+              title: cardTitle,
+              mdxSource,
+              content: text,
+            });
+          }
+        } else {
+          console.log(`[LearnServer] Serializing MDX for card: ${filename}`);
+          const mdxSource = await serialize(text);
+          cards.push({
+            filename,
+            title: cardTitle,
+            mdxSource,
+            content: text,
+          });
+          console.log(`[LearnServer] Card ${filename} successfully serialized.`);
+        }
       }
     } catch (err) {
       console.error(`[LearnServer] Exception occurred processing card ${filename}:`, err);

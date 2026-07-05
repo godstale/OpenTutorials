@@ -1,0 +1,161 @@
+============================================================
+Instruction: "Import dynamic and Tabs, and dynamically import ReactPlayer."
+Description: "Import dynamic from next/dynamic, Tabs component, and dynamically load ReactPlayer to prevent SSR window reference error"
+StartLine: 16 EndLine: 18
+------------------------------ TARGET ------------------------------
+"import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';"
+------------------------------ REPLACEMENT ------------------------------
+"import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';\nimport dynamic from 'next/dynamic';\nimport { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';\n\n// Dynamically import ReactPlayer to prevent SSR window reference error\nconst ReactPlayer = dynamic(() => import('react-player'), { ssr: false }) as any;"
+============================================================
+
+
+
+============================================================
+Instruction: "Extend card prop type inside LearnPageClientProps."
+Description: "Extend card prop type inside LearnPageClientProps interface to support video type and subtitles metadata"
+StartLine: 32 EndLine: 39
+------------------------------ TARGET ------------------------------
+"  cards: Array<{\n    filename?: string;\n    title: string;\n    mdxSource?: MDXRemoteSerializeResult;\n    content?: string;\n  }>;"
+------------------------------ REPLACEMENT ------------------------------
+"  cards: Array<{\n    filename?: string;\n    title: string;\n    mdxSource?: MDXRemoteSerializeResult;\n    content?: string;\n    type?: 'video';\n    videoInfo?: {\n      provider: string;\n      video_id: string;\n      duration_seconds?: number;\n      subtitles?: Array<{\n        start: number;\n        end: number;\n        text: string;\n      }>;\n    };\n  }>;"
+============================================================
+
+
+
+============================================================
+Instruction: "Add video player states, refs and playerConfig."
+Description: "Add states for video player, currentTime, activeTab, play state, refs, and memoized playerConfig"
+StartLine: 461 EndLine: 463
+------------------------------ TARGET ------------------------------
+"  const [dismissedCheckpointPopups, setDismissedCheckpointPopups] = useState<Set<string>>(new Set());"
+------------------------------ REPLACEMENT ------------------------------
+"  const [dismissedCheckpointPopups, setDismissedCheckpointPopups] = useState<Set<string>>(new Set());\n\n  // Video course feature states\n  const [leftActiveTab, setLeftActiveTab] = useState<'toc' | 'subtitles'>('toc');\n  const [currentTime, setCurrentTime] = useState<number>(0);\n  const [isPlaying, setIsPlaying] = useState<boolean>(false);\n  const playerRef = useRef<any>(null);\n  const lastPlayedCardIndex = useRef<number | null>(null);\n  const subtitlesContainerRef = useRef<HTMLDivElement>(null);\n  const [isUserScrollingSubtitles, setIsUserScrollingSubtitles] = useState<boolean>(false);\n  const subtitleScrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);\n\n  const playerConfig = useMemo(() => {\n    return {\n      youtube: {\n        playerVars: {\n          autoplay: 0,\n          modestbranding: 1,\n          rel: 0,\n          origin: typeof window !== 'undefined' ? window.location.origin : ''\n        }\n      }\n    };\n  }, []);"
+============================================================
+
+
+
+============================================================
+Instruction: "Add video player and subtitle sync useEffect hooks."
+Description: "Add video control and subtitle synchronization useEffect hooks inside LearnPageClient"
+StartLine: 612 EndLine: 617
+------------------------------ TARGET ------------------------------
+"  const { setOpen } = useSidebar();\n  // Minimize global sidebar on mount\n  useEffect(() => {\n    setOpen(false);\n  }, [setOpen]);"
+------------------------------ REPLACEMENT ------------------------------
+"  const { setOpen } = useSidebar();\n  // Minimize global sidebar on mount\n  useEffect(() => {\n    setOpen(false);\n  }, [setOpen]);\n\n  // Video playback control on card index change or component unmount\n  useEffect(() => {\n    if (lastPlayedCardIndex.current === null) {\n      lastPlayedCardIndex.current = currentCardIndex;\n      setIsPlaying(false);\n    } else if (lastPlayedCardIndex.current !== currentCardIndex) {\n      lastPlayedCardIndex.current = currentCardIndex;\n      setIsPlaying(true);\n    }\n    setCurrentTime(0);\n    setIsUserScrollingSubtitles(false);\n    \n    // Auto switch left active tab to subtitles if next card is a video card\n    if (cards[currentCardIndex]?.type === 'video') {\n      setLeftActiveTab('subtitles');\n    } else {\n      setLeftActiveTab('toc');\n    }\n  }, [currentCardIndex, cards]);\n\n  useEffect(() => {\n    return () => {\n      setIsPlaying(false);\n      if (subtitleScrollTimeoutRef.current) clearTimeout(subtitleScrollTimeoutRef.current);\n    };\n  }, []);\n\n  // Subtitle auto-scroll sync\n  useEffect(() => {\n    if (\n      leftActiveTab !== 'subtitles' || \n      isUserScrollingSubtitles || \n      cards[currentCardIndex]?.type !== 'video'\n    ) return;\n\n    const subtitles = cards[currentCardIndex]?.videoInfo?.subtitles;\n    if (!subtitles || subtitles.length === 0) return;\n\n    const activeIdx = subtitles.findIndex(sub => currentTime >= sub.start && currentTime <= sub.end);\n    if (activeIdx !== -1) {\n      const activeEl = document.getElementById(`subtitle-row-${activeIdx}`);\n      if (activeEl) {\n        activeEl.scrollIntoView({\n          behavior: 'smooth',\n          block: 'center',\n        });\n      }\n    }\n  }, [currentTime, leftActiveTab, currentCardIndex, cards, isUserScrollingSubtitles]);"
+============================================================
+
+
+
+============================================================
+Instruction: "Replace the entire JSX return statement."
+Description: "Replace the entire JSX return block to split subtitles to the left TOC panel tabs and make the right AI tutor panel single-focused. Fix ReactPlayer props and onReady binding to resolve playback errors."
+StartLine: 1185 EndLine: 1588
+------------------------------ TARGET ------------------------------
+"  return (\n    <div className=\"no-layout-padding flex h-full w-full overflow-hidden\">\n      {/* Course TOC Panel */}\n      <div className=\"w-64 border-r bg-background flex flex-col h-full shrink-0 min-h-0\">\n        <div className=\"p-4 border-b shrink-0 flex items-center justify-between\">\n          <h3 className=\"font-bold text-sm text-foreground flex items-center gap-2\">\n            <BookOpen className=\"w-4 h-4 text-primary\" /> 강좌 목차\n          </h3>\n        </div>\n        \n        {/* Progress Bar */}\n        <div className=\"px-4 py-3 border-b bg-muted/20 shrink-0\">\n          <div className=\"flex justify-between items-center text-xs text-muted-foreground mb-1.5 font-medium\">\n            <span>학습 진도</span>\n            <span>{maxUnlockedIndex + 1} / {totalCards} 해제 ({Math.round(((maxUnlockedIndex + 1) / totalCards) * 100)}%)</span>\n          </div>\n          <div className=\"w-full bg-zinc-200 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden\">\n            <div \n              className=\"bg-primary h-full rounded-full transition-all duration-300\"\n              style={{ width: `${Math.round(((maxUnlockedIndex + 1) / totalCards) * 100)}%` }}\n            />\n          </div>\n        </div>\n\n        <ScrollArea className=\"flex-1 min-h-0\">\n          <div className=\"p-2 space-y-1\">\n            {tocItems.length === 0 ? (\n              cards.map((card, idx) => {\n                const isUnlocked = isPreview || idx <= maxUnlockedIndex;\n                const isActive = idx === currentCardIndex;\n                return (\n                  <button\n                    key={idx}\n                    disabled={!isUnlocked}\n                    onClick={() => handleSelectCard(idx)}\n                    className={cn(\n                      \"w-full text-left p-3 rounded-lg flex items-center gap-3 transition-all text-sm relative group\",\n                      isActive\n                        ? \"bg-primary/10 text-primary font-semibold border-l-4 border-prima
+<truncated 18641 bytes>
+------------------------------ REPLACEMENT ------------------------------
+"  return (\n    <div className=\"no-layout-padding flex h-full w-full overflow-hidden\">\n      {/* Course TOC / Subtitle Panel */}\n      <div className=\"w-64 border-r bg-background flex flex-col h-full shrink-0 min-h-0\">\n        <Tabs \n          value={leftActiveTab} \n          onValueChange={(v) => setLeftActiveTab(v as 'toc' | 'subtitles')} \n          className=\"flex-1 flex flex-col min-h-0\"\n        >\n          <div className=\"px-4 py-2 border-b bg-background shrink-0 flex items-center justify-between\">\n            <TabsList className=\"grid grid-cols-2 w-full h-8\">\n              <TabsTrigger value=\"toc\" className=\"text-xs\">목차</TabsTrigger>\n              <TabsTrigger \n                value=\"subtitles\" \n                className=\"text-xs\"\n                disabled={cards[currentCardIndex]?.type !== 'video'}\n              >\n                자막\n              </TabsTrigger>\n            </TabsList>\n          </div>\n\n          <TabsContent value=\"toc\" className=\"flex-1 flex flex-col min-h-0 outline-none\">\n            {/* Progress Bar */}\n            <div className=\"px-4 py-3 border-b bg-muted/20 shrink-0\">\n              <div className=\"flex justify-between items-center text-xs text-muted-foreground mb-1.5 font-medium\">\n                <span>학습 진도</span>\n                <span>{maxUnlockedIndex + 1} / {totalCards} 해제 ({Math.round(((maxUnlockedIndex + 1) / totalCards) * 100)}%)</span>\n              </div>\n              <div className=\"w-full bg-zinc-200 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden\">\n                <div \n                  className=\"bg-primary h-full rounded-full transition-all duration-300\"\n                  style={{ width: `${Math.round(((maxUnlockedIndex + 1) / totalCards) * 100)}%` }}\n                />\n              </div>\n            </div>\n\n            <ScrollArea className=\"flex-1 min-h-0\">\n              <div className=\"p-2 space-y-1\">\n                {tocItems.length === 0 ? (\n                  cards
+<truncated 24030 bytes>
+============================================================
+
+
+
+============================================================
+Instruction: "Insert showPackageNextDialog block before the closing wrapper tag."
+Description: "Add package next course dialog to the end of LearnPageClient component to fix Turbopack build syntax error"
+StartLine: 1596 EndLine: 1601
+------------------------------ TARGET ------------------------------
+"      </Dialog>\n    </div>\n  );\n}"
+------------------------------ REPLACEMENT ------------------------------
+"      </Dialog>\n\n      {/* Package Next Course Dialog */}\n      <Dialog open={showPackageNextDialog} onOpenChange={setShowPackageNextDialog}>\n        <DialogContent className=\"sm:max-w-[425px]\">\n          <DialogHeader>\n            <DialogTitle className=\"flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold\">\n              <CheckCircle2 className=\"w-5 h-5 text-indigo-600 dark:text-indigo-400\" />\n              강좌 완료!\n            </DialogTitle>\n            <DialogDescription className=\"pt-2 text-sm text-foreground/80 leading-relaxed font-normal\">\n              축하합니다! 현재 강좌를 성공적으로 완료하셨습니다.\n              <br /><br />\n              이어서 다음 패키지 강좌를 진행하시겠습니까?\n              {nextCourseInPackage && (\n                <div className=\"mt-3 p-3 bg-indigo-50 dark:bg-indigo-950/30 rounded-lg border border-indigo-100 dark:border-indigo-900 text-indigo-950 dark:text-indigo-200\">\n                  <span className=\"text-xs font-semibold block text-indigo-600 dark:text-indigo-400\">다음 강좌</span>\n                  <span className=\"font-semibold text-sm\">{nextCourseInPackage.title}</span>\n                </div>\n              )}\n            </DialogDescription>\n          </DialogHeader>\n          <DialogFooter className=\"mt-4 flex flex-col sm:flex-row gap-2 sm:justify-between w-full\">\n            <Button\n              variant=\"outline\"\n              onClick={() => {\n                setShowPackageNextDialog(false);\n                router.push(packageSlug ? `/packages/${packageSlug}` : '/my-courses');\n              }}\n              className=\"flex-1\"\n            >\n              로드맵 상세 보기\n            </Button>\n            <Button\n              className=\"bg-indigo-600 hover:bg-indigo-700 text-white flex-1\"\n              onClick={() => {\n                setShowPackageNextDialog(false);\n                if (nextCourseInPackage) {\n                  router.pu
+<truncated 346 bytes>
+============================================================
+
+
+
+============================================================
+Instruction: "Replace layout JSX and dialogs at the end of the client component."
+Description: "Replace client.tsx JSX block from return statement to the end of file, adding video/subtitles toggle in the left TOC panel, fixing right AI tutor panel spacing, and adding the required next course dialog."
+StartLine: 1185 EndLine: 1499
+------------------------------ TARGET ------------------------------
+"  return (\n    <div className=\"no-layout-padding flex h-full w-full overflow-hidden\">\n      {/* Course TOC Panel */}\n      <div className=\"w-64 border-r bg-background flex flex-col h-full shrink-0 min-h-0\">\n        <div className=\"p-4 border-b shrink-0 flex items-center justify-between\">\n          <h3 className=\"font-bold text-sm text-foreground flex items-center gap-2\">\n            <BookOpen className=\"w-4 h-4 text-primary\" /> 강좌 목차\n          </h3>\n        </div>\n        \n        {/* Progress Bar */}\n        <div className=\"px-4 py-3 border-b bg-muted/20 shrink-0\">\n          <div className=\"flex justify-between items-center text-xs text-muted-foreground mb-1.5 font-medium\">\n            <span>학습 진도</span>\n            <span>{maxUnlockedIndex + 1} / {totalCards} 해제 ({Math.round(((maxUnlockedIndex + 1) / totalCards) * 100)}%)</span>\n          </div>\n          <div className=\"w-full bg-zinc-200 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden\">\n            <div \n              className=\"bg-primary h-full rounded-full transition-all duration-300\"\n              style={{ width: `${Math.round(((maxUnlockedIndex + 1) / totalCards) * 100)}%` }}\n            />\n          </div>\n        </div>\n\n        <ScrollArea className=\"flex-1 min-h-0\">\n          <div className=\"p-2 space-y-1\">\n            {tocItems.length === 0 ? (\n              cards.map((card, idx) => {\n                const isUnlocked = isPreview || idx <= maxUnlockedIndex;\n                const isActive = idx === currentCardIndex;\n                return (\n                  <button\n                    key={idx}\n                    disabled={!isUnlocked}\n                    onClick={() => handleSelectCard(idx)}\n                    className={cn(\n                      \"w-full text-left p-3 rounded-lg flex items-center gap-3 transition-all text-sm relative group\",\n                      isActive\n                        ? \"bg-primary/10 text-primary font-semibold border-l-4 border-prima
+<truncated 18281 bytes>
+------------------------------ REPLACEMENT ------------------------------
+"  return (\n    <div className=\"no-layout-padding flex h-full w-full overflow-hidden\">\n      {/* Course TOC / Subtitle Panel */}\n      <div className=\"w-64 border-r bg-background flex flex-col h-full shrink-0 min-h-0\">\n        <Tabs \n          value={leftActiveTab} \n          onValueChange={(v) => setLeftActiveTab(v as 'toc' | 'subtitles')} \n          className=\"flex-1 flex flex-col min-h-0\"\n        >\n          <div className=\"px-4 py-2 border-b bg-background shrink-0 flex items-center justify-between\">\n            <TabsList className=\"grid grid-cols-2 w-full h-8\">\n              <TabsTrigger value=\"toc\" className=\"text-xs\">목차</TabsTrigger>\n              <TabsTrigger \n                value=\"subtitles\" \n                className=\"text-xs\"\n                disabled={cards[currentCardIndex]?.type !== 'video'}\n              >\n                자막\n              </TabsTrigger>\n            </TabsList>\n          </div>\n\n          <TabsContent value=\"toc\" className=\"flex-1 flex flex-col min-h-0 outline-none\">\n            {/* Progress Bar */}\n            <div className=\"px-4 py-3 border-b bg-muted/20 shrink-0\">\n              <div className=\"flex justify-between items-center text-xs text-muted-foreground mb-1.5 font-medium\">\n                <span>학습 진도</span>\n                <span>{maxUnlockedIndex + 1} / {totalCards} 해제 ({Math.round(((maxUnlockedIndex + 1) / totalCards) * 100)}%)</span>\n              </div>\n              <div className=\"w-full bg-zinc-200 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden\">\n                <div \n                  className=\"bg-primary h-full rounded-full transition-all duration-300\"\n                  style={{ width: `${Math.round(((maxUnlockedIndex + 1) / totalCards) * 100)}%` }}\n                />\n              </div>\n            </div>\n\n            <ScrollArea className=\"flex-1 min-h-0\">\n              <div className=\"p-2 space-y-1\">\n                {tocItems.length === 0 ? (\n                  cards
+<truncated 24030 bytes>
+============================================================
+
+
+
+============================================================
+Instruction: "Insert the 3 missing closing braces after catch block."
+Description: "Restore missing closing braces for stream reading loop and try block in client.tsx to fix compiler syntax error"
+StartLine: 1047 EndLine: 1052
+------------------------------ TARGET ------------------------------
+"            } catch {\n              // ignore parse errors on incomplete stream chunks\n            }"
+------------------------------ REPLACEMENT ------------------------------
+"            } catch {\n              // ignore parse errors on incomplete stream chunks\n            }\n          }\n        }\n      }"
+============================================================
+
+
+
+============================================================
+Instruction: "Add Tabs and dynamic ReactPlayer imports."
+Description: "Add dynamic from next/dynamic and Tabs imports, and setup ReactPlayer dynamic loader inside client.tsx to support video layout and fix type error"
+StartLine: 16 EndLine: 18
+------------------------------ TARGET ------------------------------
+"import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';"
+------------------------------ REPLACEMENT ------------------------------
+"import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';\nimport dynamic from 'next/dynamic';\nimport { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';\n\n// Dynamically import ReactPlayer to prevent SSR window reference error\nconst ReactPlayer = dynamic(() => import('react-player'), { ssr: false }) as any;"
+============================================================
+
+
+
+============================================================
+Instruction: "Add video playing states."
+Description: "Add video course feature states (leftActiveTab, currentTime, isPlaying, playerRef, lastPlayedCardIndex, subtitlesContainerRef, scrolling states, and playerConfig) to client.tsx"
+StartLine: 450 EndLine: 452
+------------------------------ TARGET ------------------------------
+"  const [dismissedCheckpointPopups, setDismissedCheckpointPopups] = useState<Set<string>>(new Set());"
+------------------------------ REPLACEMENT ------------------------------
+"  const [dismissedCheckpointPopups, setDismissedCheckpointPopups] = useState<Set<string>>(new Set());\n\n  // Video course feature states\n  const [leftActiveTab, setLeftActiveTab] = useState<'toc' | 'subtitles'>('toc');\n  const [currentTime, setCurrentTime] = useState<number>(0);\n  const [isPlaying, setIsPlaying] = useState<boolean>(false);\n  const playerRef = useRef<any>(null);\n  const lastPlayedCardIndex = useRef<number | null>(null);\n  const subtitlesContainerRef = useRef<HTMLDivElement>(null);\n  const [isUserScrollingSubtitles, setIsUserScrollingSubtitles] = useState<boolean>(false);\n  const subtitleScrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);\n\n  const playerConfig = useMemo(() => {\n    return {\n      youtube: {\n        playerVars: {\n          autoplay: 0,\n          modestbranding: 1,\n          rel: 0,\n          origin: typeof window !== 'undefined' ? window.location.origin : ''\n        }\n      }\n    };\n  }, []);"
+============================================================
+
+
+
+============================================================
+Instruction: "Import useMemo and extend cards prop type."
+Description: "Add useMemo import and expand LearnPageClientProps cards prop type in client.tsx"
+StartLine: 1 EndLine: 52
+------------------------------ TARGET ------------------------------
+"'use client';\nimport React, { useState, useRef, useEffect } from 'react';\nimport { useRouter, useSearchParams } from 'next/navigation';\nimport { Button } from '@/components/ui/button';\nimport { Textarea } from '@/components/ui/textarea';\nimport { ScrollArea } from '@/components/ui/scroll-area';\nimport { Card } from '@/components/ui/card';\nimport { ChevronLeft, ChevronRight, Send, Bot, User, Bookmark, Share2, Copy, Check, Loader2, Lock, BookOpen, ChevronDown, CheckCircle2 } from 'lucide-react';\nimport { MDXRemote, type MDXRemoteSerializeResult } from 'next-mdx-remote';\nimport { Course, TocNode, CoursePackage } from '@/lib/types';\nimport { createClient } from '@/lib/supabase/client';\nimport { updateExternalAgent } from '@/lib/api/external-agents';\nimport { useSidebar } from '@/components/ui/sidebar';\nimport { Badge } from '@/components/ui/badge';\nimport { cn, agentLeaveTimers } from '@/lib/utils';\nimport { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';\nimport dynamic from 'next/dynamic';\nimport { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';\n\n// Dynamically import ReactPlayer to prevent SSR window reference error\nconst ReactPlayer = dynamic(() => import('react-player'), { ssr: false }) as any;\n\n\ninterface ChatMessage {\n  id: string;\n  role: 'agent' | 'user';\n  content: string;\n}\n\ninterface LearnPageClientProps {\n  slug: string;\n  course: Course;\n  cards: Array<{\n    filename?: string;\n    title: string;\n    mdxSource?: MDXRemoteSerializeResult;\n    content?: string;\n  }>;\n  initialCardIndex?: number;\n  isUpdated?: boolean;\n  userProgress?: {\n    last_card: number;\n    max_card?: number;\n    completed: boolean;\n  } | null;\n  checkpoints?: Array<{\n    afterCard: string;\n    prompt: string;\n  }>;\n  coursePackage?: CoursePackage | null;\n}"
+------------------------------ REPLACEMENT ------------------------------
+"'use client';\nimport React, { useState, useRef, useEffect, useMemo } from 'react';\nimport { useRouter, useSearchParams } from 'next/navigation';\nimport { Button } from '@/components/ui/button';\nimport { Textarea } from '@/components/ui/textarea';\nimport { ScrollArea } from '@/components/ui/scroll-area';\nimport { Card } from '@/components/ui/card';\nimport { ChevronLeft, ChevronRight, Send, Bot, User, Bookmark, Share2, Copy, Check, Loader2, Lock, BookOpen, ChevronDown, CheckCircle2 } from 'lucide-react';\nimport { MDXRemote, type MDXRemoteSerializeResult } from 'next-mdx-remote';\nimport { Course, TocNode, CoursePackage } from '@/lib/types';\nimport { createClient } from '@/lib/supabase/client';\nimport { updateExternalAgent } from '@/lib/api/external-agents';\nimport { useSidebar } from '@/components/ui/sidebar';\nimport { Badge } from '@/components/ui/badge';\nimport { cn, agentLeaveTimers } from '@/lib/utils';\nimport { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';\nimport dynamic from 'next/dynamic';\nimport { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';\n\n// Dynamically import ReactPlayer to prevent SSR window reference error\nconst ReactPlayer = dynamic(() => import('react-player'), { ssr: false }) as any;\n\n\ninterface ChatMessage {\n  id: string;\n  role: 'agent' | 'user';\n  content: string;\n}\n\ninterface LearnPageClientProps {\n  slug: string;\n  course: Course;\n  cards: Array<{\n    filename?: string;\n    title: string;\n    mdxSource?: MDXRemoteSerializeResult;\n    content?: string;\n    type?: 'video';\n    videoInfo?: {\n      provider: string;\n      video_id: string;\n      duration_seconds?: number;\n      subtitles?: Array<{\n        start: number;\n        end: number;\n        text: string;\n      }>;\n    };\n  }>;\n  initialCardIndex?: number;\n  isUpdated?: boolean;\n  userProgress?: {\n    last_card: number;\n    max_card?: number;\n    completed: boolean;\n  } | null;\n  checkpoint
+<truncated 108 bytes>
+============================================================
+
+
+
+============================================================
+Instruction: "Import useMemo."
+Description: "Import useMemo at the top of client.tsx"
+StartLine: 1 EndLine: 3
+------------------------------ TARGET ------------------------------
+"'use client';\nimport React, { useState, useRef, useEffect } from 'react';\nimport { useRouter, useSearchParams } from 'next/navigation';"
+------------------------------ REPLACEMENT ------------------------------
+"'use client';\nimport React, { useState, useRef, useEffect, useMemo } from 'react';\nimport { useRouter, useSearchParams } from 'next/navigation';"
+============================================================
+
+
+
+============================================================
+Instruction: "Extend cards interface in props type."
+Description: "Extend client.tsx cards props type to support video courses with subtitles metadata"
+StartLine: 30 EndLine: 40
+------------------------------ TARGET ------------------------------
+"  cards: Array<{\n    filename?: string;\n    title: string;\n    mdxSource?: MDXRemoteSerializeResult;\n    content?: string;\n  }>;"
+------------------------------ REPLACEMENT ------------------------------
+"  cards: Array<{\n    filename?: string;\n    title: string;\n    mdxSource?: MDXRemoteSerializeResult;\n    content?: string;\n    type?: 'video';\n    videoInfo?: {\n      provider: string;\n      video_id: string;\n      duration_seconds?: number;\n      subtitles?: Array<{\n        start: number;\n        end: number;\n        text: string;\n      }>;\n    };\n  }>;"
+============================================================
+
+
