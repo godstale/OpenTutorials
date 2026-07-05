@@ -9,6 +9,9 @@
 
 | 슬러그 | 제목 | 인제스트 날짜 |
 |--------|------|--------------|
+| [2026-07-05-video-card-content-not-rendering-fix](sources/2026-07-05-video-card-content-not-rendering-fix.md) | 비디오 카드 컨텐츠 영역에 원본 JSON 텍스트가 출력되던 문제 근본 해결 (과거 위키 기록이 미적용 작업을 완료로 오기재했던 정황 포함) | 2026-07-05 |
+| [2026-07-05-react-player-v3-api-migration-fix](sources/2026-07-05-react-player-v3-api-migration-fix.md) | react-player v3 API 마이그레이션 불일치로 인한 동영상 강좌 재생 불가 문제 해결 | 2026-07-05 |
+| [2026-07-05-release-preparation-archiving-documentation](sources/2026-07-05-release-preparation-archiving-documentation.md) | Open Tutorials 배포 준비 및 아카이빙 작업 상세 | 2026-07-05 |
 | [2026-07-05-course-enrollment-and-agent-stats-chart](sources/2026-07-05-course-enrollment-and-agent-stats-chart.md) | 강좌 자동 수강/삭제 정합성 + 에이전트 상세 탭/통계 개선 작업 상세 | 2026-07-05 |
 | [2026-07-05-agent-advanced-metadata-and-model-management](sources/2026-07-05-agent-advanced-metadata-and-model-management.md) | 에이전트 상세 정보 고도화 및 하네스 에이전트 모델 수동 관리 기능 구현 결과 | 2026-07-05 |
 | [2026-07-05-agent-stats-real-duration](sources/2026-07-05-agent-stats-real-duration.md) | 에이전트 상세 화면 및 강좌 상세 화면 통계 실데이터(누적 사용 시간 등) 연동 | 2026-07-05 |
