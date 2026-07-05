@@ -1342,10 +1342,15 @@ Ran lint. See lint-report.md for details.
     - [app/(user)/courses/manage/upload/page.tsx](file:///C:/Workspace/Projects/OpenTutor/app/(user)/courses/manage/upload/page.tsx)
     - [app/(user)/courses/manage/upload/guide/page.tsx](file:///C:/Workspace/Projects/OpenTutor/app/(user)/courses/manage/upload/guide/page.tsx)
     - [app/api/admin/courses/upload/route.ts](file:///C:/Workspace/Projects/OpenTutor/app/api/admin/courses/upload/route.ts)
+    - [AGENTS.md](file:///C:/Workspace/Projects/OpenTutor/AGENTS.md)
+    - [CLAUDE.md](file:///C:/Workspace/Projects/OpenTutor/CLAUDE.md)
+    - [GEMINI.md](file:///C:/Workspace/Projects/OpenTutor/GEMINI.md)
+    - [wiki/log.md](file:///C:/Workspace/Projects/OpenTutor/wiki/log.md)
   - **작업 내용**:
     - **번들러 공유 문서 생성**: 외부 강좌 생성용 프로젝트와 프로토콜 명세 공유를 위해 `docs/bundler/` 폴더 하위에 번들링 공식 프로토콜 스펙(`protocol.md`), AI Agent 생성 가이드라인(`ai-agent-instructions.md`), 콘텐츠 제작자 인터뷰 가이드(`creator-interview-guide.md`)를 신설했습니다.
     - **필수 메타데이터 추가 및 검증 규칙 강화**: `package-manifest.json`에 `bundler_protocol_version`, `target_age`, `category` 3대 필드를 추가/수정하는 프로토콜(v1.0.0)을 정립했습니다. 또한 강좌 ZIP 검증 단계(`manifest-fields`)에 해당 필드가 올바른 문자열 형식으로 채워졌는지 확인하는 엄격한 유효성 검증을 반영했습니다.
     - **검증 결과 UI 노출**: 검증 성공 시 화면 하단의 매니페스트 분석 정보 카드에 프로토콜 버전, 대상 연령대, 카테고리가 가시적으로 표시되도록 UI를 개선했습니다.
     - **가이드 페이지 및 API 동기화**: 마이그레이션 가이드 페이지(`/courses/manage/upload/guide`)의 `package-manifest.json` 예시와 핵심 검증 목록을 업데이트하여 신규 필드를 포함시켰습니다. 서버사이드 업로드 API(`app/api/admin/courses/upload/route.ts`) 내 `course_packages` 데이터 upsert 로직에도 이 3대 필드를 추출하여 DB(`db.json`)에 완벽히 반영하도록 통합 및 Fallback 구조를 동기화했습니다.
-  - **Concepts**: [[CourseBundlerProtocolv1.0.0]], [[ManifestFieldsValidationUpdate]], [[CourseUploadMetadataUI]], [[ServerUpsertFieldsSync]]
+    - **프로토콜 문서 유지 관리 규칙 추가**: 강좌 제작용 Bundler 프로토콜의 스펙 변경 시 `docs/bundler/` 폴더의 문서들을 즉각 최신화하도록 지시하는 프로젝트 중요 규칙을 `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`에 추가하여 향후 작업자들과의 공조가 끊이지 않도록 강제했습니다.
+  - **Concepts**: [[CourseBundlerProtocolv1.0.0]], [[ManifestFieldsValidationUpdate]], [[CourseUploadMetadataUI]], [[ServerUpsertFieldsSync]], [[ProtocolDocumentationSyncRule]]
 
