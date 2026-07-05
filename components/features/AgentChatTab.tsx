@@ -178,11 +178,6 @@ export default function AgentChatTab({ agent }: AgentChatTabProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Macro state
-  const [macros, setMacros] = useState<AgentMacro[]>([]);
-  const [showMacroPanel, setShowMacroPanel] = useState(false);
-  const [macroCategory, setMacroCategory] = useState<'all' | 'cron' | 'config' | 'general'>('all');
-
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -206,14 +201,6 @@ export default function AgentChatTab({ agent }: AgentChatTabProps) {
         abortControllerRef.current.abort();
       }
     };
-  }, []);
-
-  // Fetch macros once on mount
-  useEffect(() => {
-    fetch('/api/macros')
-      .then(r => r.json())
-      .then(data => setMacros(Array.isArray(data) ? data : []))
-      .catch(() => {}); // 매크로 실패는 비치명적
   }, []);
 
   // Load chat history dynamically on mount and when agent.id changes
@@ -389,20 +376,6 @@ export default function AgentChatTab({ agent }: AgentChatTabProps) {
     }
   };
 
-  const handleInputChange = (value: string) => {
-    setInput(value);
-    setShowMacroPanel(value.startsWith('/'));
-  };
-
-  const handleMacroSelect = (macro: AgentMacro) => {
-    setInput(macro.prompt_template);
-    setShowMacroPanel(false);
-  };
-
-  const filteredMacros = macroCategory === 'all'
-    ? macros
-    : macros.filter(m => m.category === macroCategory);
-
   const starterPrompts = [
     { text: '현재 시스템 상태 검사', prompt: '현재 너의 에이전트 인스턴스 정보와 구동 환경 상태가 어떤지 요약해서 알려줘.' },
     { text: '할 일 목록 정리', prompt: '마케팅 기획을 위한 분석 및 작업 플랜 목록을 간결한 테이블 형태로 작성해줘.' },
@@ -422,7 +395,6 @@ export default function AgentChatTab({ agent }: AgentChatTabProps) {
           )}>
             {agent.status === 'online' ? 'Connected' : 'Disconnected'}
           </Badge>
-          <span className="text-xs text-muted-foreground font-medium hidden sm:inline">| Model: {agent.selected_model || 'hermes-agent'}</span>
         </div>
         
         {messages.length > 0 && (
@@ -553,85 +525,13 @@ export default function AgentChatTab({ agent }: AgentChatTabProps) {
           </Button>
         )}
 
-        {/* Macro toggle button */}
-        <div className="flex items-center gap-2 w-full">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setShowMacroPanel(prev => !prev)}
-            className={cn(
-              "text-xs h-7 px-3 rounded-lg transition-all",
-              showMacroPanel
-                ? "bg-primary/10 text-primary border-primary/30"
-                : "text-muted-foreground"
-            )}
-          >
-            매크로
-          </Button>
-        </div>
-
-        {/* Macro panel */}
-        {showMacroPanel && (
-          <div className="w-full rounded-xl border border-border/80 bg-white dark:bg-zinc-900 shadow-sm overflow-hidden">
-            {/* Category tabs */}
-            <div className="flex items-center gap-1 px-3 pt-3 pb-2 border-b border-border/60">
-              {(['all', 'cron', 'config', 'general'] as const).map(cat => (
-                <Button
-                  key={cat}
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setMacroCategory(cat)}
-                  className={cn(
-                    "text-xs h-6 px-2.5 rounded-md transition-all",
-                    macroCategory === cat
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "text-muted-foreground"
-                  )}
-                >
-                  {cat === 'all' ? '전체' : cat}
-                </Button>
-              ))}
-            </div>
-
-            {/* Macro list */}
-            <div className="max-h-[180px] overflow-y-auto py-2">
-              {filteredMacros.length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-4">등록된 매크로가 없습니다</p>
-              ) : (
-                filteredMacros.map(macro => (
-                  <button
-                    key={macro.id}
-                    type="button"
-                    onClick={() => handleMacroSelect(macro)}
-                    className="w-full text-left px-4 py-2.5 hover:bg-primary/5 hover:text-primary transition-colors group"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-medium text-foreground group-hover:text-primary truncate">
-                        {macro.title}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground shrink-0 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded">
-                        {macro.category}
-                      </span>
-                    </div>
-                    {macro.description && (
-                      <p className="text-xs text-muted-foreground mt-0.5 truncate">{macro.description}</p>
-                    )}
-                  </button>
-                ))
-              )}
-            </div>
-          </div>
-        )}
-
         <div className="flex items-end gap-2 w-full relative">
           <Textarea
             rows={1}
             value={input}
-            onChange={(e) => handleInputChange(e.target.value)}
+            onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyPress}
-            placeholder={agent.status === 'online' ? "에이전트에게 전할 메시지를 입력하세요... (Enter로 전송, /로 매크로 검색)" : "에이전트가 오프라인 상태입니다."}
+            placeholder={agent.status === 'online' ? "에이전트에게 전할 메시지를 입력하세요... (Enter로 전송)" : "에이전트가 오프라인 상태입니다."}
             disabled={agent.status !== 'online' || isGenerating}
             className="flex-1 min-h-[48px] max-h-[160px] py-3.5 px-4 pr-12 rounded-xl bg-white dark:bg-zinc-900 border border-border/80 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary/50 resize-none shadow-inner text-sm transition-all"
           />

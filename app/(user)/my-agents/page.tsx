@@ -33,6 +33,7 @@ function MyAgentsContent() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isConfiguringTutor, setIsConfiguringTutor] = useState<string | null>(null);
   const [isTutorSetupProgressOpen, setIsTutorSetupProgressOpen] = useState(false);
+  const [hasInitialSynced, setHasInitialSynced] = useState(false);
 
   const loadAgents = useCallback(async (triggerSidebarRefresh = false) => {
     setIsLoading(true);
@@ -119,6 +120,13 @@ Please confirm the success of the update, starting with: "SUCCESS: Soul configur
   useEffect(() => {
     loadAgents(false);
   }, [loadAgents]);
+
+  useEffect(() => {
+    if (agents.length > 0 && !hasInitialSynced && !isLoading) {
+      setHasInitialSynced(true);
+      handleSyncAll();
+    }
+  }, [agents, hasInitialSynced, isLoading]);
 
   useEffect(() => {
     if (searchParams.get('add') === 'true') {
@@ -254,7 +262,8 @@ Please confirm the success of the update, starting with: "SUCCESS: Soul configur
           {agents.map((agent) => (
             <Card 
               key={agent.id} 
-              className="group border border-border bg-white dark:bg-zinc-900 hover:border-zinc-400 dark:hover:border-zinc-500 hover:shadow-md transition-all duration-200"
+              className="group border border-border bg-white dark:bg-zinc-900 hover:border-zinc-400 dark:hover:border-zinc-500 hover:shadow-md transition-all duration-200 cursor-pointer"
+              onClick={() => router.push(`/my-agents/${agent.id}`)}
             >
               <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
                 <div className="space-y-1 pr-4 min-w-0 flex-1">
@@ -263,15 +272,6 @@ Please confirm the success of the update, starting with: "SUCCESS: Soul configur
                       <Badge className="bg-gradient-to-r from-violet-600 to-indigo-600 dark:from-violet-500 dark:to-indigo-500 text-white text-[10px] font-bold px-2 py-0.5 border-0 rounded-full shadow-sm">
                         AI 튜터
                       </Badge>
-                      {agent.is_tutor_configured ? (
-                        <Badge variant="outline" className="text-[10px] font-medium text-emerald-600 border-emerald-500/20 bg-emerald-500/5 px-2 py-0 rounded-full">
-                          지침 설정 완료
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-[10px] font-medium text-amber-600 border-amber-500/20 bg-amber-500/5 px-2 py-0 rounded-full">
-                          지침 설정 대기
-                        </Badge>
-                      )}
                     </div>
                   ) : null}
                   <CardTitle className="text-lg font-semibold truncate" title={agent.name}>
@@ -282,7 +282,7 @@ Please confirm the success of the update, starting with: "SUCCESS: Soul configur
                     <span className="truncate text-xs font-mono" title={agent.endpoint}>{agent.endpoint}</span>
                   </CardDescription>
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                   {agent.status === 'online' ? (
                     <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20 px-2.5">
                       온라인
@@ -323,26 +323,22 @@ Please confirm the success of the update, starting with: "SUCCESS: Soul configur
                   <span>등록일: {new Date(agent.created_at).toLocaleDateString()}</span>
                 </div>
               </CardContent>
-              <CardFooter className="pt-4 border-t flex gap-2">
+              <CardFooter className="pt-4 border-t flex gap-2" onClick={(e) => e.stopPropagation()}>
                 <Button asChild size="sm" className="flex-1 gap-1.5" variant="default">
                   <Link href={`/my-agents/${agent.id}`}>
                     <MessageSquare className="size-3.5" />
                     대화하기
                   </Link>
                 </Button>
-                {agent.web_ui_url ? (
-                  <Button asChild variant="outline" size="sm" className="flex-1 gap-1.5">
-                    <a href={agent.web_ui_url} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="size-3.5" />
-                      웹 UI
-                    </a>
-                  </Button>
-                ) : (
-                  <Button variant="outline" size="sm" className="flex-1 gap-1.5" disabled>
-                    <ExternalLink className="size-3.5" />
-                    웹 UI
-                  </Button>
-                )}
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  className="flex-1 gap-1.5"
+                  onClick={() => setAgentToDelete(agent)}
+                >
+                  <Trash2 className="size-3.5" />
+                  삭제
+                </Button>
               </CardFooter>
             </Card>
           ))}

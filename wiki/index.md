@@ -9,6 +9,7 @@
 
 | 슬러그 | 제목 | 인제스트 날짜 |
 |--------|------|--------------|
+| [2026-07-05-agent-ui-cleanup-and-chat-logger](sources/2026-07-05-agent-ui-cleanup-and-chat-logger.md) | 강좌 및 에이전트 관리 UI 개선 및 에이전트 대화 전체 보존(토큰/시간 로그 기록) | 2026-07-05 |
 | [pennypress-service-plan](sources/pennypress-service-plan.md) | PennyPress 서비스 기획서 | 2026-06-12 |
 | [pennypress-service-spec](sources/pennypress-service-spec.md) | PennyPress 서비스 명세서 (HydraAgent 호스팅 서비스) | 2026-06-20 |
 | [external-hermes-agent-integration](sources/external-hermes-agent-integration.md) | PennyPress External Hermes Agent Integration 구현 계획 및 결과 | 2026-06-20 |

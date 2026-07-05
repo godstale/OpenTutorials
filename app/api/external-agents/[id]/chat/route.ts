@@ -1,11 +1,21 @@
 import { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import fs from 'fs';
+import path from 'path';
+
+function estimateTokenSize(text: string): number {
+  if (!text) return 0;
+  const koreanCharCount = (text.match(/[\uac00-\ud7a3]/g) || []).length;
+  const otherCharCount = text.length - koreanCharCount;
+  return Math.ceil(koreanCharCount * 1.5 + otherCharCount * 0.5);
+}
 
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const startTime = Date.now();
     const { id } = await params;
     const { messages, original_user_message } = await req.json();
 
@@ -103,6 +113,43 @@ export async function POST(
                 
                 // Call RPC function to prune to latest 100 messages
                 await supabase.rpc('prune_external_agent_messages', { p_agent_id: id });
+
+                // 에이전트별 대화 기록 누적 저장 (파일)
+                try {
+                  const durationMs = Date.now() - startTime;
+                  const userContent = original_user_message || lastUserMessage?.content || '';
+                  const inputTokenSize = estimateTokenSize(userContent);
+                  const outputTokenSize = estimateTokenSize(assistantText);
+
+                  const chatLogDir = path.join(process.cwd(), 'public', 'agent-chats');
+                  if (!fs.existsSync(chatLogDir)) {
+                    fs.mkdirSync(chatLogDir, { recursive: true });
+                  }
+
+                  const chatLogPath = path.join(chatLogDir, `${id}.json`);
+                  let chatLogs = [];
+                  if (fs.existsSync(chatLogPath)) {
+                    try {
+                      const fileData = fs.readFileSync(chatLogPath, 'utf8');
+                      chatLogs = JSON.parse(fileData);
+                    } catch (e) {
+                      console.error('Failed to parse existing chat log file, starting fresh:', e);
+                    }
+                  }
+
+                  chatLogs.push({
+                    timestamp: new Date().toISOString(),
+                    duration_ms: durationMs,
+                    input_token_size: inputTokenSize,
+                    output_token_size: outputTokenSize,
+                    user_message: userContent,
+                    assistant_message: assistantText,
+                  });
+
+                  fs.writeFileSync(chatLogPath, JSON.stringify(chatLogs, null, 2), 'utf8');
+                } catch (fileErr) {
+                  console.error('Failed to write chat log to file:', fileErr);
+                }
               }
 
               controller.close();

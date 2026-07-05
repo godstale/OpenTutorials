@@ -30,6 +30,18 @@ Ran lint. See lint-report.md for details.
 
 <!-- Append-only. 최신 항목을 위에 추가. -->
 
+## 2026-07-05
+
+- **[FEATURE/UI] 강좌 및 에이전트 관리 UI 개선 및 에이전트 대화 전체 보존(토큰/시간 로그 기록)**
+  - **수정/생성 파일**:
+    - `app/(user)/courses/manage/page.tsx` — 전체 강좌 목록 카드에서 불필요한 [매니페스트 수정] 버튼 삭제 및 버튼 정렬 레이아웃을 Grid에서 Flex로 최적화.
+    - `app/(user)/my-agents/page.tsx` — 에이전트 카드에서 "지침 설정 완료" 뱃지 제거, 하단 [웹 UI] 버튼 삭제 및 [삭제] 버튼 추가, 카드 body 클릭 시 상세 화면으로 이동하도록 구현. 마운트 시 에이전트 자동 상태 동기화 추가.
+    - `app/(user)/my-agents/[id]/page.tsx` — 상세 화면 탭을 [대화], [설정] 두 개로 축소. 이탈(unmount) 시 5분 연결 종료 타이머를 설정하는 전역 관리 훅 추가 및 머무는 동안 연결 유지.
+    - `app/(user)/learn/[slug]/client.tsx` — 학습 화면 이탈 시 5분 타이머 작동 및 에이전트 연결 종료 명시적 처리.
+    - `components/features/AgentChatTab.tsx` — 대화 탭 헤더에서 Model 정보 노출부 삭제, footer 영역의 매크로 토글 버튼 및 매크로 선택 패널 삭제, input placeholder 가이드 문구 수정.
+    - `app/api/external-agents/[id]/chat/route.ts` — 스트림 완료 시 대화 소요 시간(durationMs), 입력/출력 텍스트의 근사 토큰 크기를 연산하여 `public/agent-chats/<id>.json` 파일에 모든 대화 로그를 누적 보존하도록 고도화.
+    - `lib/utils.ts` — SPA 내 페이지 이동 시 에이전트 이탈 타이머를 지속 관리하기 위한 전역 딕셔너리 `agentLeaveTimers` 추가.
+
 ## 2026-07-04
 
 - **[BUGFIX/UI/UX] 기본 강좌 삭제 잔재 해결, 강좌 관리 아이콘 변경 및 사이드바 활성화 버그 수정, 나의 강좌 섹션 단일화**

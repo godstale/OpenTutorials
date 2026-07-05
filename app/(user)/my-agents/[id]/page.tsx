@@ -10,10 +10,8 @@ import { createClient } from '@/lib/supabase/client';
 import { getExternalAgentById, updateExternalAgent } from '@/lib/api/external-agents';
 import type { UserExternalAgent } from '@/lib/types';
 import AgentChatTab from '@/components/features/AgentChatTab';
-import AgentKanbanTab from '@/components/features/AgentKanbanTab';
 import AgentSettingsTab from '@/components/features/AgentSettingsTab';
-import AgentDashboardTab from '@/components/features/AgentDashboardTab';
-import { cn } from '@/lib/utils';
+import { agentLeaveTimers, cn } from '@/lib/utils';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -35,43 +33,28 @@ function AgentPortalContent({ params }: { params: Promise<{ id: string }> }) {
     };
   }, []);
 
+  // 마운트/언마운트 시 에이전트 이탈 타이머 제어 (학습/상세 화면 이탈 시 5분 타이머 연결 종료)
   useEffect(() => {
-    if (!agent || agent.status !== 'online') return;
-
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
-
-    const resetTimer = () => {
-      if (timeoutId) clearTimeout(timeoutId);
-      timeoutId = setTimeout(async () => {
-        if (!isMountedRef.current) return;
-        try {
-          await updateExternalAgent(id, { status: 'offline' });
-        } catch (e) {
-          console.error('Failed to update agent status to offline on idle timeout:', e);
-        }
-
-        if (!isMountedRef.current) return;
-
-        setAgent(prev => prev ? { ...prev, status: 'offline' } : null);
-        setIsIdleDisconnected(true);
-        window.dispatchEvent(new CustomEvent('agents-updated'));
-      }, 180000);
-    };
-
-    resetTimer();
-
-    const events = ['mousemove', 'keydown', 'click', 'scroll'];
-    events.forEach(event => {
-      window.addEventListener(event, resetTimer, { capture: true, passive: true });
-    });
+    if (agentLeaveTimers[id]) {
+      clearTimeout(agentLeaveTimers[id]);
+      delete agentLeaveTimers[id];
+    }
 
     return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-      events.forEach(event => {
-        window.removeEventListener(event, resetTimer, { capture: true });
-      });
+      // 5분 타이머 작동 (300,000ms)
+      const timer = setTimeout(async () => {
+        try {
+          await updateExternalAgent(id, { status: 'offline' });
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('agents-updated'));
+          }
+        } catch (e) {
+          console.error('Failed to disconnect agent on timeout:', e);
+        }
+      }, 300000);
+      agentLeaveTimers[id] = timer;
     };
-  }, [agent, id]);
+  }, [id]);
 
   useEffect(() => {
     let active = true;
@@ -101,8 +84,27 @@ function AgentPortalContent({ params }: { params: Promise<{ id: string }> }) {
           return;
         }
 
-        // Force connection status to offline initially to ensure a clean offline start
-        setAgent({ ...fetchedAgent, status: 'offline' });
+        setAgent(fetchedAgent);
+
+        // 백그라운드 핑 체크를 해서 연결 상태를 동적으로 확인 및 동기화
+        fetch('/api/external-agents/test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ endpoint: fetchedAgent.endpoint, api_key: fetchedAgent.api_key }),
+        })
+        .then(res => res.json())
+        .then(async (data) => {
+          const newStatus = data.success ? 'online' : 'offline';
+          if (fetchedAgent.status !== newStatus) {
+            await updateExternalAgent(id, { status: newStatus });
+            if (active && isMountedRef.current) {
+              setAgent(prev => prev ? { ...prev, status: newStatus } : null);
+              window.dispatchEvent(new CustomEvent('agents-updated'));
+            }
+          }
+        })
+        .catch(console.error);
+
       } catch (err) {
         if (!active) return;
         console.error('Failed to fetch agent:', err);
@@ -124,7 +126,7 @@ function AgentPortalContent({ params }: { params: Promise<{ id: string }> }) {
   const handleRefreshStatus = async () => {
     if (!agent) return;
     setIsRefreshing(true);
-    setIsIdleDisconnected(false); // Hide the warning banner immediately upon manual connection check
+    setIsIdleDisconnected(false);
     try {
       const res = await fetch('/api/external-agents/test', {
         method: 'POST',
@@ -169,26 +171,6 @@ function AgentPortalContent({ params }: { params: Promise<{ id: string }> }) {
       }
     }
   };
-
-  useEffect(() => {
-    async function initializeStatus() {
-      try {
-        await updateExternalAgent(id, { status: 'offline' });
-        window.dispatchEvent(new CustomEvent('agents-updated'));
-      } catch (e) {
-        console.error('Failed to initialize status to offline:', e);
-      }
-    }
-    initializeStatus();
-
-    return () => {
-      updateExternalAgent(id, { status: 'offline' })
-        .then(() => {
-          window.dispatchEvent(new CustomEvent('agents-updated'));
-        })
-        .catch(console.error);
-    };
-  }, [id]);
 
   if (isLoading) {
     return (
@@ -325,24 +307,12 @@ function AgentPortalContent({ params }: { params: Promise<{ id: string }> }) {
 
       {/* Tabs */}
       <Tabs defaultValue="chat" className="w-full space-y-6">
-        <TabsList className="inline-flex h-11 items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-800/80 p-1 text-muted-foreground w-full sm:max-w-2xl border border-border/40 shadow-sm">
+        <TabsList className="inline-flex h-11 items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-800/80 p-1 text-muted-foreground w-full sm:max-w-md border border-border/40 shadow-sm">
           <TabsTrigger
             value="chat"
             className="flex-1 rounded-lg px-3 py-1.5 text-sm font-semibold ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:text-foreground data-[state=active]:shadow-sm"
           >
             대화 (Chat)
-          </TabsTrigger>
-          <TabsTrigger
-            value="kanban"
-            className="flex-1 rounded-lg px-3 py-1.5 text-sm font-semibold ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-          >
-            칸반 / 웹 UI
-          </TabsTrigger>
-          <TabsTrigger
-            value="remote"
-            className="flex-1 rounded-lg px-3 py-1.5 text-sm font-semibold ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-          >
-            원격 설정
           </TabsTrigger>
           <TabsTrigger
             value="settings"
@@ -354,14 +324,6 @@ function AgentPortalContent({ params }: { params: Promise<{ id: string }> }) {
 
         <TabsContent value="chat" className="border-none p-0 outline-none focus-visible:ring-0">
           <AgentChatTab agent={agent} />
-        </TabsContent>
-
-        <TabsContent value="kanban" className="border-none p-0 outline-none focus-visible:ring-0">
-          <AgentKanbanTab agent={agent} />
-        </TabsContent>
-
-        <TabsContent value="remote" className="border-none p-0 outline-none focus-visible:ring-0">
-          <AgentDashboardTab agentId={agent.id} hasDashboardUrl={!!agent.dashboard_api_url} />
         </TabsContent>
 
         <TabsContent value="settings" className="border-none p-0 outline-none focus-visible:ring-0">

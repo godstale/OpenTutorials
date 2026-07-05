@@ -12,7 +12,7 @@ import { createClient } from '@/lib/supabase/client';
 import { updateExternalAgent } from '@/lib/api/external-agents';
 import { useSidebar } from '@/components/ui/sidebar';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { cn, agentLeaveTimers } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
 
@@ -609,6 +609,34 @@ Please ask the student the question now. Only ask the question itself, do not re
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const [agentId, setAgentId] = useState<string | null>(null);
+  
+  // 이탈 시 5분 연결 종료 타이머 제어
+  useEffect(() => {
+    const currentAgentId = agentId;
+    if (currentAgentId) {
+      if (agentLeaveTimers[currentAgentId]) {
+        clearTimeout(agentLeaveTimers[currentAgentId]);
+        delete agentLeaveTimers[currentAgentId];
+      }
+    }
+    
+    return () => {
+      if (currentAgentId) {
+        const timer = setTimeout(async () => {
+          try {
+            await updateExternalAgent(currentAgentId, { status: 'offline' });
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('agents-updated'));
+            }
+          } catch (e) {
+            console.error('Failed to disconnect agent on timeout from learn screen:', e);
+          }
+        }, 300000); // 5분
+        agentLeaveTimers[currentAgentId] = timer;
+      }
+    };
+  }, [agentId]);
+
   const [agentStatus, setAgentStatus] = useState<'loading' | 'online' | 'offline' | 'none'>('loading');
   const [supabaseResourceUrl, setSupabaseResourceUrl] = useState<string>('');
   const [isResourceUrlLoading, setIsResourceUrlLoading] = useState(true);

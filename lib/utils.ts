@@ -7,4 +7,7 @@ export function cn(...inputs: ClassValue[]) {
 
 export const hasEnvVars = true;
 
+// 전역 에이전트 이탈 타이머 맵 (SPA 내부 페이지 이동 대응)
+export const agentLeaveTimers: { [agentId: string]: any } = {};
+
 

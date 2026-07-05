@@ -440,16 +440,7 @@ export default function AdminCoursesPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 shrink-0 self-end lg:self-center mt-4 lg:mt-0 w-full lg:w-auto min-w-[240px]">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setEditingCourse(course)}
-                      className="gap-1.5 border-zinc-300 w-full text-xs"
-                    >
-                      <Edit className="w-3.5 h-3.5" />
-                      매니페스트 수정
-                    </Button>
+                  <div className="flex flex-wrap items-center gap-2 shrink-0 self-end lg:self-center mt-4 lg:mt-0 w-full lg:w-auto">
                     <Button
                       variant="outline"
                       size="sm"
@@ -460,7 +451,7 @@ export default function AdminCoursesPage() {
                           alert('이 강좌에 포함된 하위 챕터가 없습니다.');
                         }
                       }}
-                      className="gap-1.5 border-zinc-300 w-full text-xs"
+                      className="gap-1.5 border-zinc-300 w-full lg:w-auto text-xs"
                     >
                       <Eye className="w-3.5 h-3.5" />
                       미리보기
@@ -470,7 +461,7 @@ export default function AdminCoursesPage() {
                         variant="default"
                         size="sm"
                         onClick={() => togglePublishedCourse(course)}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold w-full text-xs"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold w-full lg:w-auto text-xs"
                       >
                         공개 전환
                       </Button>
@@ -479,7 +470,7 @@ export default function AdminCoursesPage() {
                       variant="destructive"
                       size="sm"
                       onClick={() => deleteCourse(course)}
-                      className="gap-1.5 w-full text-xs"
+                      className="gap-1.5 w-full lg:w-auto text-xs"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       삭제
