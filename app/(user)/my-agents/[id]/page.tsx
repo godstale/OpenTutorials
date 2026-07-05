@@ -203,7 +203,7 @@ function AgentPortalContent({ params }: { params: Promise<{ id: string }> }) {
   }
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
+    <div className="space-y-4 max-w-6xl mx-auto">
       {/* Breadcrumb / Back Button */}
       <div className="flex flex-col gap-2">
         <div>
@@ -216,7 +216,7 @@ function AgentPortalContent({ params }: { params: Promise<{ id: string }> }) {
         </div>
 
         {/* Portal Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/40 dark:bg-zinc-900/40 p-6 rounded-2xl border border-border/60 backdrop-blur-md shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/40 dark:bg-zinc-900/40 py-4 px-6 rounded-2xl border border-border/60 backdrop-blur-md shadow-sm">
           <div className="flex items-center gap-4">
             <div className="size-12 bg-gradient-to-tr from-primary/20 to-primary/5 dark:from-primary/30 dark:to-primary/10 rounded-2xl flex items-center justify-center border border-primary/20 shadow-inner">
               <Bot className="size-7 text-primary animate-pulse" />
@@ -306,7 +306,7 @@ function AgentPortalContent({ params }: { params: Promise<{ id: string }> }) {
       )}
 
       {/* Tabs */}
-      <Tabs defaultValue="chat" className="w-full space-y-6">
+      <Tabs defaultValue="chat" className="w-full space-y-4">
         <TabsList className="inline-flex h-11 items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-800/80 p-1 text-muted-foreground w-full sm:max-w-md border border-border/40 shadow-sm">
           <TabsTrigger
             value="chat"

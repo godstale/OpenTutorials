@@ -773,6 +773,26 @@
       "completed": false,
       "updated_at": "2026-07-05T01:50:41.716Z",
       "created_at": "2026-07-05T01:50:41.716Z"
+    },
+    {
+      "id": "c99f4f18-5fd9-42c1-bc54-f91d46801ce3",
+      "user_id": "local-user-id",
+      "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T02:50:44.048Z",
+      "created_at": "2026-07-05T02:50:44.048Z"
+    },
+    {
+      "id": "097f399b-6a7c-45c8-a098-c1a56007e333",
+      "user_id": "local-user-id",
+      "course_id": "55e94814-2c2d-443a-b7ac-67dfa6287161",
+      "last_card": 1,
+      "max_card": 1,
+      "completed": false,
+      "updated_at": "2026-07-05T02:50:44.150Z",
+      "created_at": "2026-07-05T02:50:44.150Z"
     }
   ],
   "user_external_agents": [
@@ -785,9 +805,9 @@
       "is_ai_tutor": true,
       "is_tutor_configured": true,
       "user_id": "local-user-id",
-      "status": "offline",
+      "status": "online",
       "created_at": "2026-07-04T10:48:32.215Z",
-      "updated_at": "2026-07-05T02:44:14.536Z"
+      "updated_at": "2026-07-05T02:47:08.507Z"
     }
   ],
   "user_external_agent_messages": [
@@ -934,6 +954,38 @@
       "content": "\n\n상태 확인 결과, 강좌 \"사물이 대화하는 방법, 통신 방법 알아보기\"의 학습 자료는 이미 성공적으로 다운로드되어 분석 완료된 상태입니다.\n\n- **저장 위치**: `/home/ubuntu/workspaces/courses/iot-communication-ch01/resource.md`\n- **파일 크기**: 21,491 바이트 (349줄)\n- **다운로드 일자**: 6월 30일\n- **강좌 구성**: 6개 레슨 (USB, 이더넷, 적외선, RF, 블루투스, WiFi 통신)\n\n별도의 다운로드가 필요하지 않으며, 언제든지 강좌 학습을 시작하실 수 있습니다.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} -->",
       "created_at": "2026-07-05T01:51:03.122Z",
       "updated_at": "2026-07-05T01:51:03.122Z"
+    },
+    {
+      "id": "4ac8d3fb-ba85-48a7-a4af-b941ad9dd936",
+      "agent_id": "eb3f795e-786c-47a3-b9aa-285fabce25a9",
+      "role": "user",
+      "content": "[시스템 점검] 현재 강좌 \"사물이 대화하는 방법, 통신 방법 알아보기\"의 학습 자료가 성공적으로 다운로드되고 분석되었는지 확인해 주세요. \n다운로드 주소: http://localhost:3000/api/courses/iot-communication-ch01/resource\n사용자가 여러 강좌를 동시에 수강할 수 있으므로, 반드시 이 강좌를 위한 개별 폴더(예: workspaces/courses/iot-communication-ch01 또는 이에 상응하는 고유 경로)를 생성하여 그 안에서 다운로드 및 분석 작업을 수행해 주셔야 합니다.\n만약 아직 강좌 파일을 다운로드하고 분석하는 작업이 완료되지 않았다면, 다른 학습 질문에 답하기 전에 이 작업을 가장 우선하여 완료하고 그 결과를 알려주세요.\n\n상태 확인 후, 답변의 마지막에 반드시 다음 형식의 히든 메시지를 포함해 주세요:\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} --> (다운로드 완료 시) 또는\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} --> (미완료 시)}",
+      "created_at": "2026-07-05T02:50:44.254Z",
+      "updated_at": "2026-07-05T02:50:44.254Z"
+    },
+    {
+      "id": "caa84c3e-c404-453f-a16b-0efa2d1b2d0f",
+      "agent_id": "eb3f795e-786c-47a3-b9aa-285fabce25a9",
+      "role": "assistant",
+      "content": "\n\n학습 자료가 이미 성공적으로 다운로드되어 있습니다.\n\n- **경로**: `/home/ubuntu/workspaces/courses/iot-communication-ch01/resource.md`\n- **크기**: 21,491 bytes, 349줄\n- **내용 확인 완료**: 6가지 통신 방법(USB, 이더넷, 적외선, RF, 블루투스, WiFi)에 대한 전체 강좌 자료가 정상적으로 저장되어 있습니다.\n\n이 강좌를 위한 개별 폴더(`courses/iot-communication-ch01/`)에 별도로 관리되고 있으며, 추가 분석이나 재다운로드 없이 바로 학습 안내가 가능한 상태입니다. 궁금하신 내용이 있으시면 언제든 질문해 주세요.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} -->",
+      "created_at": "2026-07-05T02:50:55.039Z",
+      "updated_at": "2026-07-05T02:50:55.039Z"
+    },
+    {
+      "id": "708b9982-69eb-455c-ac22-3d42a7571772",
+      "agent_id": "eb3f795e-786c-47a3-b9aa-285fabce25a9",
+      "role": "user",
+      "content": "OTG 케이블을 아두이노에 사용하면 어떤 장점이 있는가?",
+      "created_at": "2026-07-05T02:51:07.713Z",
+      "updated_at": "2026-07-05T02:51:07.713Z"
+    },
+    {
+      "id": "befec18f-88c2-42ab-a70b-4783293dd2f8",
+      "agent_id": "eb3f795e-786c-47a3-b9aa-285fabce25a9",
+      "role": "assistant",
+      "content": "\n\n이미 강의 자료가 준비되어 있습니다. 질문에 답변드리겠습니다.\n\n---\n\n**OTG(On The Go) 케이블**을 아두이노에 사용하면 다음과 같은 장점이 있습니다.\n\n**1. 스마트폰이 USB Host가 된다**\n원래 스마트폰은 PC에 연결될 때 USB Client 역할을 하지만, OTG 케이블을 사용하면 스마트폰이 **USB Host**로 동작합니다. 즉, 스마트폰이 주도적으로 아두이노와 통신할 수 있습니다.\n\n**2. PC 없이 스마트폰과 직접 통신 가능**\n평소에는 PC와 USB로 연결해서 시리얼 모니터로 데이터를 확인하지만, OTG 케이블만 있으면 PC 없이도 스마트폰과 아두이노가 직접 통신할 수 있습니다. 이는 휴대용 IoT 장치를 만들 때 매우 유용합니다.\n\n**3. Serial.print() 함수를 그대로 사용**\nPC에서 아두이노 상태를 확인할 때 쓰던 `Serial.print()`, `Serial.println()` 함수를 그대로 사용할 수 있습니다. 별도의 통신 라이브러리나 프로토콜을 새로 배울 필요 없이 기존 코드를 재활용할 수 있어 편리합니다.\n\n**4. USB로 전원 공급 — 별도 배터리 불필요**\n아두이노가 USB Client로 유선 연결될 때는 USB 케이블을 통해 전원을 공급받습니다. 따라서 OTG 케이블로 스마트폰에 연결하면 스마트폰 배터리로 아두이노에 전원을 공급할 수 있어, 별도의 배터리나 전원 장치가 필요 없습니다.\n\n요약하자면, OTG 케이블 하나만 있으면 스마트폰을 마치 PC처럼 활용해서 아두이노와 통신할 수 있고, 전원 공급까지 해결된다는 점이 가장 큰 장점입니다.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} -->",
+      "created_at": "2026-07-05T02:51:18.490Z",
+      "updated_at": "2026-07-05T02:51:18.490Z"
     }
   ],
   "macros": []

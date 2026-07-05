@@ -226,7 +226,7 @@ Please confirm the success of the update, starting with: "SUCCESS: Soul configur
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {/* Basic Configuration Card */}
       <Card className="md:col-span-2 border border-border/70 shadow-md rounded-2xl overflow-hidden bg-white/40 dark:bg-zinc-950/40 backdrop-blur-md">
-        <CardHeader className="border-b border-border/60 bg-zinc-50/50 dark:bg-zinc-900/50 flex flex-row items-center justify-between py-4 px-6">
+        <CardHeader className="border-b border-border/60 bg-zinc-50/50 dark:bg-zinc-900/50 flex flex-row items-center justify-between py-3 px-6">
           <div>
             <CardTitle className="text-lg font-bold flex items-center gap-2">
               <Settings className="size-5 text-primary" />
@@ -243,7 +243,7 @@ Please confirm the success of the update, starting with: "SUCCESS: Soul configur
         </CardHeader>
         
         <form onSubmit={handleSave}>
-          <CardContent className="p-6 space-y-5">
+          <CardContent className="py-4 px-6 space-y-4">
             {isEditing ? (
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -399,11 +399,11 @@ Please confirm the success of the update, starting with: "SUCCESS: Soul configur
               </div>
             ) : (
               <div className="divide-y divide-border/60">
-                <div className="flex justify-between py-3">
+                <div className="flex justify-between py-2">
                   <span className="text-sm font-medium text-muted-foreground">에이전트명</span>
                   <span className="text-sm font-semibold text-foreground">{agent.name}</span>
                 </div>
-                <div className="flex justify-between py-3">
+                <div className="flex justify-between py-2">
                   <span className="text-sm font-medium text-muted-foreground">AI 튜터 지정 여부</span>
                   <div className="flex items-center gap-2">
                     {agent.is_ai_tutor ? (
@@ -420,48 +420,48 @@ Please confirm the success of the update, starting with: "SUCCESS: Soul configur
                     )}
                   </div>
                 </div>
-                <div className="flex justify-between py-3">
+                <div className="flex justify-between py-2">
                   <span className="text-sm font-medium text-muted-foreground">활성 모델</span>
                   <span className="text-sm font-mono font-semibold text-primary">
                     {agent.selected_model || 'hermes-agent'}
                   </span>
                 </div>
-                <div className="flex flex-col sm:flex-row sm:justify-between py-3 gap-1">
+                <div className="flex flex-col sm:flex-row sm:justify-between py-2 gap-1">
                   <span className="text-sm font-medium text-muted-foreground shrink-0">API Endpoint URL</span>
                   <span className="text-sm font-mono text-foreground break-all sm:text-right">{agent.endpoint}</span>
                 </div>
-                <div className="flex justify-between py-3">
+                <div className="flex justify-between py-2">
                   <span className="text-sm font-medium text-muted-foreground">API 인증 키 여부</span>
                   <span className="text-sm font-mono font-semibold text-foreground">
                     {agent.api_key ? '********' : '없음'}
                   </span>
                 </div>
-                <div className="flex flex-col sm:flex-row sm:justify-between py-3 gap-1">
+                <div className="flex flex-col sm:flex-row sm:justify-between py-2 gap-1">
                   <span className="text-sm font-medium text-muted-foreground shrink-0">Web UI / Kanban URL</span>
                   <span className="text-sm font-mono text-foreground break-all sm:text-right">
                     {agent.web_ui_url || '미지정'}
                   </span>
                 </div>
-                <div className="flex flex-col sm:flex-row sm:justify-between py-3 gap-1">
+                <div className="flex flex-col sm:flex-row sm:justify-between py-2 gap-1">
                   <span className="text-sm font-medium text-muted-foreground shrink-0">Dashboard API URL</span>
                   <span className="text-sm font-mono text-foreground break-all sm:text-right">
                     {agent.dashboard_api_url || '미설정'}
                   </span>
                 </div>
-                <div className="flex justify-between py-3">
+                <div className="flex justify-between py-2">
                   <span className="text-sm font-medium text-muted-foreground">Dashboard 세션 토큰</span>
                   <span className="text-sm font-mono font-semibold text-foreground">
                     {agent.dashboard_session_token ? '●●●●●●●●' : '없음'}
                   </span>
                 </div>
-                <div className="flex justify-between py-3">
+                <div className="flex justify-between py-2">
                   <span className="text-sm font-medium text-muted-foreground">등록 일시</span>
                   <span className="text-xs text-foreground flex items-center gap-1">
                     <Calendar className="size-3.5 text-muted-foreground" />
                     {new Date(agent.created_at).toLocaleString()}
                   </span>
                 </div>
-                <div className="flex justify-between py-3">
+                <div className="flex justify-between py-2">
                   <span className="text-sm font-medium text-muted-foreground">최근 정보 수정</span>
                   <span className="text-xs text-foreground flex items-center gap-1">
                     <Clock className="size-3.5 text-muted-foreground" />
@@ -489,7 +489,7 @@ Please confirm the success of the update, starting with: "SUCCESS: Soul configur
 
       {/* Model Inquiry Card */}
       <Card className="border border-border/70 shadow-md rounded-2xl overflow-hidden bg-white/40 dark:bg-zinc-950/40 backdrop-blur-md">
-        <CardHeader className="border-b border-border/60 bg-zinc-50/50 dark:bg-zinc-900/50 py-4 px-6 flex flex-row items-center justify-between">
+        <CardHeader className="border-b border-border/60 bg-zinc-50/50 dark:bg-zinc-900/50 py-3 px-6 flex flex-row items-center justify-between">
           <div>
             <CardTitle className="text-sm font-bold flex items-center gap-2">
               <LayoutGrid className="size-4.5 text-primary" />
@@ -509,7 +509,7 @@ Please confirm the success of the update, starting with: "SUCCESS: Soul configur
           </Button>
         </CardHeader>
         
-        <CardContent className="p-6">
+        <CardContent className="py-4 px-6">
           {isLoadingModels ? (
             <div className="flex flex-col items-center justify-center py-12 space-y-2">
               <RefreshCw className="size-6 text-primary animate-spin" />

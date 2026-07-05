@@ -412,7 +412,7 @@ export default function AgentChatTab({ agent }: AgentChatTabProps) {
       </CardHeader>
 
       {/* Chat Messages Panel */}
-      <CardContent className="flex-1 overflow-y-auto p-6 space-y-6">
+      <CardContent className="flex-1 overflow-y-auto py-4 px-6 space-y-4">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center px-4 max-w-lg mx-auto space-y-6">
             <div className="relative">
