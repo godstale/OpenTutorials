@@ -32,6 +32,13 @@ Ran lint. See lint-report.md for details.
 
 ## 2026-07-05
 
+- **[CHORE] 앱 버전 v0.1.0 태깅 및 릴리즈/체인지로그 관리 프로세스 확립**
+  - **수정/생성 파일**:
+    - `package.json` — 버전 필드가 없던 것을 `"version": "0.1.0"`으로 신설.
+    - `CHANGELOG.md` — 기존에 내용 없이 헤더만 있던 `v0.1.0` 항목을 실제 포함 기능(강좌 업로드/Bundler 프로토콜, 동영상 카드, AI 튜터 에이전트, 로컬 데스크탑 전환 등) 요약으로 채우고, 향후 릴리즈를 위한 `[Unreleased]` 섹션을 추가함.
+  - **작업 내용**:
+    - 강좌 제작 프로젝트가 `OpenTutorials-Bundler` GitHub 저장소로 이관됨에 따라 앱 URL을 갱신하는 김에, 이번 PR 머지 시점을 기점으로 앱 버전(`v0.1.0`)과 Course Bundler Protocol 버전(`v1.0.0`)을 각각 git 태그로 고정함. 이후부터는 main 머지 시마다 `CHANGELOG.md`에 버전 항목을 추가/갱신하는 것을 릴리즈 프로세스로 삼기로 함.
+
 - **[CHORE] 로컬 DB 스냅샷 및 에이전트 대화 로그 갱신, `db.json` gitignore 규칙 보강**
   - **수정/생성 파일**:
     - `db.json` — 로컬 실행 중 누적된 강좌/진행률/에이전트 데이터 스냅샷 갱신.
