@@ -1,10 +1,17 @@
+'use client';
+
 import { UserSidebar } from '@/components/layout/UserSidebar';
 import { UserHeader } from '@/components/layout/UserHeader';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { Suspense } from 'react';
 import React from 'react';
+import { usePathname } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 export default function UserLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isLearnPage = pathname?.includes('/learn/');
+
   return (
     <SidebarProvider
       className="bg-muted/20"
@@ -13,12 +20,21 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
       <Suspense fallback={<div className="w-64 border-r border-border bg-white dark:bg-zinc-950" />}>
         <UserSidebar />
       </Suspense>
-      <SidebarInset className="has-[.no-layout-padding]:h-svh has-[.no-layout-padding]:overflow-hidden flex flex-col">
+      <SidebarInset className={cn(
+        "flex flex-col",
+        isLearnPage && "h-svh overflow-hidden"
+      )}>
         <Suspense fallback={<header className="h-16 border-b border-border bg-white" />}>
           <UserHeader />
         </Suspense>
-        <main className="flex-1 w-full min-h-0 has-[.no-layout-padding]:flex has-[.no-layout-padding]:flex-col">
-          <div className="max-w-7xl mx-auto px-10 py-8 has-[.no-layout-padding]:max-w-none has-[.no-layout-padding]:p-0 has-[.no-layout-padding]:flex-1 has-[.no-layout-padding]:flex has-[.no-layout-padding]:flex-col has-[.no-layout-padding]:min-h-0">
+        <main className={cn(
+          "flex-1 w-full min-h-0",
+          isLearnPage && "flex flex-col"
+        )}>
+          <div className={cn(
+            "max-w-7xl mx-auto px-10 py-8",
+            isLearnPage && "max-w-none p-0 flex-1 flex flex-col min-h-0"
+          )}>
             {children}
           </div>
         </main>
@@ -26,3 +42,4 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
     </SidebarProvider>
   );
 }
+

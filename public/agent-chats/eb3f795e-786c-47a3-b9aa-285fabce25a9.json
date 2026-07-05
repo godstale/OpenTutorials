@@ -38,5 +38,13 @@
     "output_token_size": 369,
     "user_message": "이더넷 통신. 이더넷이 인터넷 연결용이기 때문이다. USB 통신은 실상 인터넷과 직접적인 연관성이 없다.",
     "assistant_message": "네, 훌륭한 답변입니다!\n\n정확히 맞추셨습니다. USB 통신은 본질적으로 PC나 스마트폰 같은 호스트와 아두이노가 1:1로 직접 데이터를 주고받는 용도로 설계된 방식이라, 인터넷에 연결하려면 결국 PC를 중간에 끼워야 합니다. 반면 이더넷은 LAN과 인터넷 환경 자체를 대상으로 설계된 네트워크 통신 규격이기 때문에, 아두이노에 이더넷 모듈(또는 쉴드) 하나만 장착하면 곧바로 공유기와 연결되어 인터넷에 접속할 수 있습니다.\n\n두 통신 방식의 목적과 범위를 잘 이해하고 계시네요! 수고하셨습니다.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"checkpoint_evaluation\", \"passed\": true} -->"
+  },
+  {
+    "timestamp": "2026-07-05T08:23:04.549Z",
+    "duration_ms": 10732,
+    "input_token_size": 45,
+    "output_token_size": 565,
+    "user_message": "너가 지금 사용중인 LLM 모델과 선택 가능한 LLM 모델 목록을 알려줘.",
+    "assistant_message": "현재 사용 중인 LLM 모델 정보와 설정된 모델 목록을 확인해 보겠습니다.\n\n현재 제가 사용 중인 LLM 모델과 선택 가능한 모델 정보입니다.\n\n**현재 사용 중인 모델:**\n- `deepseek-v4-flash` (DeepSeek V4 Flash)\n- 제공사: DeepSeek (`https://api.deepseek.com/v1`)\n- API 모드: Chat Completions\n\n**같은 제공사(DeepSeek) 내에서 선택 가능한 모델:**\n| 모델 ID | 표시 이름 |\n|---------|----------|\n| `deepseek-v4-flash` | DeepSeek V4 Flash (현재 사용 중) |\n| `deepseek-v4-pro` | DeepSeek V4 Pro |\n\n**다른 제공사(설정만 되어 있으면 사용 가능):**\nHermes 에이전트는 config.yaml에서 `providers:` 항목만 추가하면 다양한 LLM 제공사로 전환할 수 있습니다. 현재는 DeepSeek만 설정되어 있지만, OpenRouter, OpenAI, Anthropic, Google 등도 API 키와 base_url만 추가하면 사용할 수 있습니다.\n\n`hermes config set model.default <model-id>`와 `hermes config set model.provider <provider-name>`을 통해 전환할 수 있습니다.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} -->"
   }
 ]

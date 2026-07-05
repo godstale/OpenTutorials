@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,7 +14,10 @@ import { useSidebar } from '@/components/ui/sidebar';
 import { Badge } from '@/components/ui/badge';
 import { cn, agentLeaveTimers } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import dynamic from 'next/dynamic';
 
+// react-player renders custom elements (e.g. <youtube-video>) that reference `document` at module load time, so it must be client-only.
+const ReactPlayer = dynamic(() => import('react-player'), { ssr: false });
 
 interface ChatMessage {
   id: string;
@@ -30,6 +33,17 @@ interface LearnPageClientProps {
     title: string;
     mdxSource?: MDXRemoteSerializeResult;
     content?: string;
+    type?: 'video';
+    videoInfo?: {
+      provider: string;
+      video_id: string;
+      duration_seconds?: number;
+      subtitles?: Array<{
+        start: number;
+        end: number;
+        text: string;
+      }>;
+    };
   }>;
   initialCardIndex?: number;
   isUpdated?: boolean;
@@ -444,6 +458,18 @@ export default function LearnPageClient({
   const [showCheckpointDialog, setShowCheckpointDialog] = useState(false);
   const [dismissedCheckpointPopups, setDismissedCheckpointPopups] = useState<Set<string>>(new Set());
 
+  // Video card playback state
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const playerRef = useRef<HTMLVideoElement | null>(null);
+  const lastPlayedCardIndex = useRef<number | null>(null);
+  const playerConfig = useMemo(() => ({
+    youtube: {
+      rel: 0 as const,
+      origin: typeof window !== 'undefined' ? window.location.origin : ''
+    }
+  }), []);
+
   const searchParams = useSearchParams();
   const packageSlug = searchParams ? searchParams.get('package') : null;
   const isReview = searchParams ? searchParams.get('review') === 'true' : false;
@@ -575,6 +601,20 @@ Please ask the student the question now. Only ask the question itself, do not re
   useEffect(() => {
     setOpen(false);
   }, [setOpen]);
+
+  // Reset video playback when switching cards. Only auto-play when the user actually
+  // navigated to a new video card (not on initial mount) to avoid the browser's
+  // autoplay-block error, which requires a prior user interaction.
+  useEffect(() => {
+    setCurrentTime(0);
+    if (lastPlayedCardIndex.current === null) {
+      lastPlayedCardIndex.current = currentCardIndex;
+      setIsPlaying(false);
+    } else if (lastPlayedCardIndex.current !== currentCardIndex) {
+      lastPlayedCardIndex.current = currentCardIndex;
+      setIsPlaying(cards[currentCardIndex]?.type === 'video');
+    }
+  }, [currentCardIndex, cards]);
 
   // MDX custom components to intercept image rendering and resolve relative paths to Supabase Storage
   const mdxComponents = {
@@ -1093,6 +1133,9 @@ Student Question: `;
     sendMessage(userPrompt, messages);
   };
 
+  const activeCard = cards[currentCardIndex];
+  const activeCardSubtitles = activeCard?.videoInfo?.subtitles || [];
+
   return (
     <div className="no-layout-padding flex h-full w-full overflow-hidden">
       {/* Course TOC Panel */}
@@ -1208,10 +1251,58 @@ Student Question: `;
                 {cards[currentCardIndex]?.title || `학습 콘텐츠 (카드 ${currentCardIndex + 1})`}
               </h2>
               <div className="prose dark:prose-invert max-w-none text-muted-foreground space-y-4">
-                {cards[currentCardIndex]?.mdxSource ? (
-                  <MDXRemote {...cards[currentCardIndex].mdxSource} components={mdxComponents} />
+                {activeCard?.type === 'video' ? (
+                  activeCard.videoInfo?.video_id ? (
+                    <div className="not-prose space-y-4">
+                      <div className="w-full aspect-video relative rounded-lg overflow-hidden bg-zinc-950">
+                        <ReactPlayer
+                          ref={playerRef}
+                          src={`https://www.youtube.com/watch?v=${activeCard.videoInfo.video_id}`}
+                          controls
+                          playing={isPlaying}
+                          className="absolute top-0 left-0"
+                          width="100%"
+                          height="100%"
+                          onPlay={() => setIsPlaying(true)}
+                          onPause={() => setIsPlaying(false)}
+                          onTimeUpdate={(e: React.SyntheticEvent<HTMLVideoElement>) => setCurrentTime(e.currentTarget.currentTime)}
+                          config={playerConfig}
+                        />
+                      </div>
+                      {activeCardSubtitles.length > 0 && (
+                        <div className="max-h-64 overflow-y-auto rounded-lg border divide-y">
+                          {activeCardSubtitles.map((sub, idx) => {
+                            const isActiveSubtitle = currentTime >= sub.start && currentTime <= sub.end;
+                            return (
+                              <button
+                                key={idx}
+                                type="button"
+                                onClick={() => {
+                                  if (playerRef.current) {
+                                    playerRef.current.currentTime = sub.start;
+                                  }
+                                  setCurrentTime(sub.start);
+                                  setIsPlaying(true);
+                                }}
+                                className={cn(
+                                  "w-full text-left px-3 py-2 text-sm transition-colors",
+                                  isActiveSubtitle ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted text-foreground"
+                                )}
+                              >
+                                {sub.text}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="whitespace-pre-wrap text-destructive">동영상 정보를 불러올 수 없습니다.</div>
+                  )
+                ) : activeCard?.mdxSource ? (
+                  <MDXRemote {...activeCard.mdxSource} components={mdxComponents} />
                 ) : (
-                  <div className="whitespace-pre-wrap">{cards[currentCardIndex]?.content || '콘텐츠가 없습니다.'}</div>
+                  <div className="whitespace-pre-wrap">{activeCard?.content || '콘텐츠가 없습니다.'}</div>
                 )}
               </div>
             </Card>
