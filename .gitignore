@@ -54,8 +54,11 @@ next-env.d.ts
 .DS_Store
 Thumbs.db
 
-# Etc
-docs/screenshot
+# Docs Configuration
+/docs/*
+!/docs/architecture/
+!/docs/manual/
+!/docs/bundler/
 
 # Local Database
 /db.json
