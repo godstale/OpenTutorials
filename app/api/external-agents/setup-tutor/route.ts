@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { normalizeAgentEndpoint } from '@/lib/utils/agent-endpoint';
+
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,6 +17,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Endpoint and prompt are required' }, { status: 400 });
     }
 
+    const { v1Url } = normalizeAgentEndpoint(endpoint);
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
@@ -23,7 +27,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Call /chat/completions of the external agent
-    const chatResponse = await fetch(`${endpoint}/chat/completions`, {
+    const chatResponse = await fetch(`${v1Url}/chat/completions`, {
       method: 'POST',
       headers,
       body: JSON.stringify({
@@ -64,7 +68,8 @@ export async function POST(req: NextRequest) {
       response: responseText
     });
 
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ success: false, error: errMsg }, { status: 500 });
   }
 }

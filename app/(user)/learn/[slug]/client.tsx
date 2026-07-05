@@ -642,6 +642,8 @@ Please ask the student the question now. Only ask the question itself, do not re
   const [isResourceUrlLoading, setIsResourceUrlLoading] = useState(true);
   const [hasCheckedInit, setHasCheckedInit] = useState(false);
   const [courseDownloadStatus, setCourseDownloadStatus] = useState<'checking' | 'downloaded' | 'not_downloaded'>('checking');
+  const [agentType, setAgentType] = useState<'harness' | 'llm'>('harness');
+  const [wikiContent, setWikiContent] = useState<string>('');
 
   useEffect(() => {
     console.log('[LearnClient] Mounted with props:', {
@@ -664,35 +666,55 @@ Please ask the student the question now. Only ask the question itself, do not re
           .select('*')
           .eq('user_id', user.id);
           
-        const tutorAgent = agents?.find((a: any) => a.is_ai_tutor === true);
-        if (error || !tutorAgent) {
+        let currentAgent = null;
+        if (course.agent_id) {
+          currentAgent = agents?.find((a: any) => a.id === course.agent_id);
+        }
+        if (!currentAgent) {
+          currentAgent = agents?.find((a: any) => a.is_ai_tutor === true);
+        }
+
+        if (error || !currentAgent) {
           setAgentStatus('none');
           setAgentId(null);
         } else {
-          setAgentId(tutorAgent.id);
+          setAgentId(currentAgent.id);
+          setAgentType(currentAgent.agent_type || 'harness');
           // Set initial status from DB
-          setAgentStatus(tutorAgent.status === 'online' ? 'online' : 'offline');
+          setAgentStatus(currentAgent.status === 'online' ? 'online' : 'offline');
 
           // Perform real-time ping to update status
           try {
             const res = await fetch('/api/external-agents/test', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ endpoint: tutorAgent.endpoint, api_key: tutorAgent.api_key }),
+              body: JSON.stringify({ endpoint: currentAgent.endpoint, api_key: currentAgent.api_key }),
             });
             const testData = await res.json();
             const actualStatus = testData.success ? 'online' : 'offline';
             
             setAgentStatus(actualStatus);
-            if (tutorAgent.status !== actualStatus) {
-              await updateExternalAgent(tutorAgent.id, { status: actualStatus });
+            if (currentAgent.status !== actualStatus) {
+              await updateExternalAgent(currentAgent.id, { status: actualStatus });
             }
           } catch (pingErr) {
             console.error('Error checking actual status of agent:', pingErr);
             setAgentStatus('offline');
-            if (tutorAgent.status !== 'offline') {
-              await updateExternalAgent(tutorAgent.id, { status: 'offline' });
+            if (currentAgent.status !== 'offline') {
+              await updateExternalAgent(currentAgent.id, { status: 'offline' });
             }
+          }
+        }
+
+        // Fetch wiki content for this course
+        if (course?.id) {
+          const { data: wikiData } = await supabase
+            .from('course_wiki')
+            .select('content')
+            .eq('course_id', course.id)
+            .maybeSingle();
+          if (wikiData) {
+            setWikiContent(wikiData.content);
           }
         }
       } catch (err) {
@@ -726,6 +748,10 @@ Please ask the student the question now. Only ask the question itself, do not re
   useEffect(() => {
     if (agentStatus === 'online' && agentId && !isResourceUrlLoading && !hasCheckedInit) {
       setHasCheckedInit(true);
+      if (agentType === 'llm') {
+        setCourseDownloadStatus('downloaded');
+        return;
+      }
       const defaultResourceUrl = `${window.location.origin}/api/courses/${encodeURIComponent(slug)}/resource`;
       const finalResourceUrl = supabaseResourceUrl && supabaseResourceUrl.includes('.supabase.co')
         ? supabaseResourceUrl
@@ -764,7 +790,7 @@ Please ask the student the question now. Only ask the question itself, do not re
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [agentStatus, agentId, isResourceUrlLoading, hasCheckedInit, supabaseResourceUrl, course, slug, messages, isUpdated, currentCardIndex]);
+  }, [agentStatus, agentId, isResourceUrlLoading, hasCheckedInit, supabaseResourceUrl, course, slug, messages, isUpdated, currentCardIndex, agentType]);
 
 
 
@@ -858,7 +884,47 @@ Please ask the student the question now. Only ask the question itself, do not re
         fallbackTocText = `\n\n[Fallback Course Table of Contents]\n${tocTreeText}\n\nNote: The resource URL could not be loaded via external storage. Please refer to this Table of Contents to understand the overall course structure.`;
       }
 
-      let systemPrompt = `You are a helpful AI tutor for the course "${course.title}". 
+      let systemPrompt = '';
+      if (agentType === 'llm') {
+        systemPrompt = `You are a helpful AI tutor for the course "${course.title}".
+Use the following information to answer the student's question and guide them through their learning.
+
+[Course Info]
+Title: ${course.title}
+Description: ${course.description || 'No description available.'}
+
+[Current Card Content]
+Title: ${cards[currentCardIndex]?.title || 'Untitled'}
+Content:
+${cards[currentCardIndex]?.content || ''}
+
+${wikiContent ? `[Relevant Course Wiki & Resources]\n${wikiContent}\n` : ''}
+Please guide the student step-by-step using the context above. Keep your answer clear, informative, and formatted in markdown.`;
+
+        if (isCheckpointMode && activeCheckpoint) {
+          systemPrompt += `
+
+[Active Checkpoint QnA Evaluation]
+The student is currently undergoing a checkpoint QnA for the card "${cards[currentCardIndex]?.title}".
+The evaluation instruction is:
+"${activeCheckpoint.prompt}"
+
+You must evaluate the student's response.
+If the student's response satisfies the criteria, respond with praise and details, and you MUST append the following exact HTML comment at the very end of your response:
+<!-- HIDDEN_MESSAGE: {"action": "checkpoint_evaluation", "passed": true} -->
+
+If the student's response does NOT satisfy the criteria, explain why and encourage them to try again, and you MUST append the following exact HTML comment at the very end of your response:
+<!-- HIDDEN_MESSAGE: {"action": "checkpoint_evaluation", "passed": false} -->`;
+        }
+      } else {
+        let fallbackTocText = '';
+        if (isFallback && isFirstQuestion) {
+          const tocItems = course.toc || [];
+          const tocTreeText = generateFallbackTocText(tocItems, 0);
+          fallbackTocText = `\n\n[Fallback Course Table of Contents]\n${tocTreeText}\n\nNote: The resource URL could not be loaded via external storage. Please refer to this Table of Contents to understand the overall course structure.`;
+        }
+
+        systemPrompt = `You are a helpful AI tutor for the course "${course.title}". 
 To minimize context payload, detailed course contents (summaries, chapters, and all card contents) are not sent directly in the chat messages.
 Instead, you must download the complete course materials from the following URL into a course-specific directory in your workspace (e.g. "courses/${slug}") if you don't already have them:
 ${finalResourceUrl}
@@ -872,8 +938,8 @@ Use "downloaded": true if the materials are successfully downloaded/extracted an
  
 Please guide the student using the current card context provided in the user's message.${fallbackTocText}`;
 
-      if (isCheckpointMode && activeCheckpoint) {
-        systemPrompt += `
+        if (isCheckpointMode && activeCheckpoint) {
+          systemPrompt += `
 
 [Active Checkpoint QnA Evaluation]
 The student is currently undergoing a checkpoint QnA for the card "${cards[currentCardIndex]?.title}".
@@ -886,6 +952,7 @@ If the student's response satisfies the criteria, respond with praise and detail
 
 If the student's response does NOT satisfy the criteria, explain why and encourage them to try again, and you MUST append the following exact HTML comment at the very end of your response:
 <!-- HIDDEN_MESSAGE: {"action": "checkpoint_evaluation", "passed": false} -->`;
+        }
       }
 
       const currentCard = cards[currentCardIndex];
@@ -908,8 +975,8 @@ Student Question: `;
           content: m.content
         }));
 
-        // Prepend current card context to the user's question
-        if (apiMessages.length > 0 && apiMessages[apiMessages.length - 1].role === 'user' && !isCheckpointTrigger) {
+        // Prepend current card context to the user's question only for harness agent
+        if (agentType === 'harness' && apiMessages.length > 0 && apiMessages[apiMessages.length - 1].role === 'user' && !isCheckpointTrigger) {
           apiMessages[apiMessages.length - 1].content = `${currentCardContext}${text}`;
         }
 

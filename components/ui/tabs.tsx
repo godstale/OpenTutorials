@@ -26,12 +26,12 @@ function Tabs({
 }
 
 const tabsListVariants = cva(
-  "group/tabs-list inline-flex w-fit items-center justify-center rounded-lg p-[3px] text-muted-foreground group-data-[orientation=horizontal]/tabs:h-9 group-data-[orientation=vertical]/tabs:h-fit group-data-[orientation=vertical]/tabs:flex-col data-[variant=line]:rounded-none",
+  "group/tabs-list inline-flex items-center justify-center rounded-xl p-1 text-zinc-500 dark:text-zinc-400 group-data-[orientation=horizontal]/tabs:h-11 group-data-[orientation=vertical]/tabs:h-fit group-data-[orientation=vertical]/tabs:flex-col data-[variant=line]:rounded-none border border-zinc-200/50 dark:border-zinc-800/80 shadow-sm backdrop-blur-sm",
   {
     variants: {
       variant: {
-        default: "bg-zinc-100/80 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/80",
-        line: "gap-1 bg-transparent",
+        default: "bg-zinc-100/80 dark:bg-zinc-900/80",
+        line: "gap-1 bg-transparent border-none shadow-none",
       },
     },
     defaultVariants: {
@@ -64,12 +64,12 @@ function TabsTrigger({
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
       className={cn(
-        "relative inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-3 py-1 text-sm font-medium whitespace-nowrap transition-all group-data-[orientation=vertical]/tabs:w-full group-data-[orientation=vertical]/tabs:justify-start disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "relative inline-flex h-full flex-1 items-center justify-center gap-1.5 rounded-lg border border-transparent px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-all group-data-[orientation=vertical]/tabs:w-full group-data-[orientation=vertical]/tabs:justify-start disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 cursor-pointer",
         // Inactive styles
         "text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200",
         // Active styles for default variant (pill-style container)
         "group-data-[variant=default]/tabs-list:data-[state=active]:bg-white group-data-[variant=default]/tabs-list:data-[state=active]:text-indigo-600 group-data-[variant=default]/tabs-list:data-[state=active]:shadow-sm group-data-[variant=default]/tabs-list:data-[state=active]:border-zinc-200/50 group-data-[variant=default]/tabs-list:data-[state=active]:font-semibold",
-        "dark:group-data-[variant=default]/tabs-list:data-[state=active]:bg-zinc-950 dark:group-data-[variant=default]/tabs-list:data-[state=active]:text-indigo-400 dark:group-data-[variant=default]/tabs-list:data-[state=active]:border-zinc-800",
+        "dark:group-data-[variant=default]/tabs-list:data-[state=active]:bg-zinc-800 dark:group-data-[variant=default]/tabs-list:data-[state=active]:text-indigo-400 dark:group-data-[variant=default]/tabs-list:data-[state=active]:border-zinc-700/80",
         // Active styles for line variant (underlined style)
         "group-data-[variant=line]/tabs-list:bg-transparent group-data-[variant=line]/tabs-list:data-[state=active]:bg-transparent group-data-[variant=line]/tabs-list:data-[state=active]:text-indigo-600 group-data-[variant=line]/tabs-list:data-[state=active]:font-semibold dark:group-data-[variant=line]/tabs-list:data-[state=active]:text-indigo-400",
         // Bottom border line decoration for active tabs

@@ -33,3 +33,7 @@ sequenceDiagram
 3. **실시간 스트리밍 중계**:
    - SSE(Server-Sent Events) 프로토콜을 사용하며, 브라우저가 대화를 중단하는 경우(`AbortController`) Next.js 서버에서 외부 서버로의 fetch 요청도 함께 중단(`req.signal` 연동)하여 외부 에이전트 서버의 무리한 토큰 사용을 제어합니다.
    - Vercel이나 Nginx 등의 환경에서 프록시 버퍼링을 방지해 글자가 실시간으로 흐르듯 출력되도록 `X-Accel-Buffering: no` 헤더가 추가되었습니다.
+
+## 🔗 관련 개념
+
+- [[LocalLLMAgentIntegration]]: Ollama, LM Studio 등 로컬 LLM 런타임을 동일한 등록 구조로 연동하기 위한 갭 분석 (2026-07-05 리서치).

@@ -2,6 +2,8 @@ import { NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import fs from 'fs';
 import path from 'path';
+import { normalizeAgentEndpoint } from '@/lib/utils/agent-endpoint';
+
 
 function estimateTokenSize(text: string): number {
   if (!text) return 0;
@@ -49,10 +51,33 @@ export async function POST(
         });
     }
 
-    // Force IPv4 loopback (127.0.0.1) instead of localhost to bypass Node.js IPv6 (::1) preference
-    const resolvedEndpoint = agent.endpoint.replace('//localhost', '//127.0.0.1');
-    const cleanEndpoint = resolvedEndpoint.replace(/\/$/, '');
-    const v1Url = cleanEndpoint.endsWith('/v1') ? cleanEndpoint : `${cleanEndpoint}/v1`;
+    // Load accumulated messages from the database for LLM agent type session maintenance
+    let requestMessages = messages;
+    if (agent.agent_type === 'llm') {
+      const { data: dbMessages } = await supabase
+        .from('user_external_agent_messages')
+        .select('*')
+        .eq('agent_id', id)
+        .order('created_at', { ascending: true });
+
+      const systemMsg = messages.find((m: { role: string; content: string }) => m.role === 'system');
+      const tempMessages = [];
+      if (systemMsg) {
+        tempMessages.push({ role: 'system', content: systemMsg.content });
+      }
+
+      if (dbMessages && dbMessages.length > 0) {
+        dbMessages.forEach((msg: { role: string; content: string }) => {
+          tempMessages.push({
+            role: msg.role === 'assistant' ? 'assistant' : 'user',
+            content: msg.content,
+          });
+        });
+        requestMessages = tempMessages;
+      }
+    }
+
+    const { v1Url } = normalizeAgentEndpoint(agent.endpoint);
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
@@ -60,15 +85,17 @@ export async function POST(
       headers['Authorization'] = `Bearer ${agent.api_key}`;
     }
 
-    // Use the model configured in the database, fallback to 'hermes-agent'
-    const targetModel = agent.selected_model || 'hermes-agent';
+    if (!agent.selected_model) {
+      return new Response('모델이 선택되지 않았습니다. 에이전트 상세 설정에서 모델을 설정해 주세요.', { status: 400 });
+    }
+    const targetModel = agent.selected_model;
 
     const response = await fetch(`${v1Url}/chat/completions`, {
       method: 'POST',
       headers,
       body: JSON.stringify({
         model: targetModel,
-        messages,
+        messages: requestMessages,
         stream: true,
       }),
       signal: req.signal,

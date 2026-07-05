@@ -9,6 +9,7 @@
 
 | 슬러그 | 제목 | 인제스트 날짜 |
 |--------|------|--------------|
+| [2026-07-05-local-llm-ollama-lmstudio-integration](sources/2026-07-05-local-llm-ollama-lmstudio-integration.md) | 로컬 LLM(Ollama, LM Studio) 에이전트 연동 리서치 | 2026-07-05 |
 | [2026-07-05-agent-ui-cleanup-and-chat-logger](sources/2026-07-05-agent-ui-cleanup-and-chat-logger.md) | 강좌 및 에이전트 관리 UI 개선 및 에이전트 대화 전체 보존(토큰/시간 로그 기록) | 2026-07-05 |
 | [pennypress-service-plan](sources/pennypress-service-plan.md) | PennyPress 서비스 기획서 | 2026-06-12 |
 | [pennypress-service-spec](sources/pennypress-service-spec.md) | PennyPress 서비스 명세서 (HydraAgent 호스팅 서비스) | 2026-06-20 |
@@ -119,6 +120,7 @@
 | [HiddenMessageParsing](concepts/HiddenMessageParsing.md) | Hidden Message(HTML 주석 JSON) 파싱 및 추출 아키텍처 패턴 |
 | [AITutorExclusivePersonaSetup](concepts/AITutorExclusivePersonaSetup.md) | 외부 에이전트 등록 시 AI 튜터 페르소나(SOUL.md) 자동 주입 및 검증 아키텍처 |
 | [OpenTutorLocalArchitecture](concepts/OpenTutorLocalArchitecture.md) | Mock Supabase 및 local-db-server 기반 오프라인 단독 구동 아키텍처 |
+| [LocalLLMAgentIntegration](concepts/LocalLLMAgentIntegration.md) | Ollama, LM Studio 등 로컬 LLM 런타임을 UserExternalAgent 구조로 연동하기 위한 갭 분석 |
 
 ---
 

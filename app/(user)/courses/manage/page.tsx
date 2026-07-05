@@ -28,6 +28,9 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 
+import { getExternalAgents } from '@/lib/api/external-agents';
+import type { UserExternalAgent } from '@/lib/types';
+
 interface PackageItem {
   id: string;
   slug: string;
@@ -38,10 +41,12 @@ interface PackageItem {
   sequential_play?: boolean;
   force_checkpoint?: boolean;
   created_at: string;
+  github_url?: string | null;
   courses: {
     id: string;
     title: string;
     slug: string;
+    agent_id?: string | null;
   }[];
 }
 
@@ -241,16 +246,22 @@ export default function AdminCoursesPage() {
     }
   }, [showOrphansModal]);
 
+  const [agents, setAgents] = useState<UserExternalAgent[]>([]);
+
   // Fetch Courses
   const fetchCourses = async () => {
     try {
-      const res = await fetch('/api/admin/packages');
+      const [res, agentsData] = await Promise.all([
+        fetch('/api/admin/packages'),
+        getExternalAgents().catch(() => [])
+      ]);
       const data = await res.json();
       if (res.ok && Array.isArray(data)) {
         setCourses(data);
       }
+      setAgents(agentsData);
     } catch (err) {
-      console.error('Failed to fetch courses:', err);
+      console.error('Failed to fetch courses or agents:', err);
     } finally {
       setLoading(false);
     }
@@ -259,6 +270,139 @@ export default function AdminCoursesPage() {
   useEffect(() => {
     fetchCourses();
   }, []);
+
+  const getAssignedAgentsForPackage = (pkg: PackageItem) => {
+    if (!pkg.courses || pkg.courses.length === 0) return '하위 강좌 없음';
+    
+    const agentNames = new Set<string>();
+    let hasMissingAgent = false;
+    
+    pkg.courses.forEach(c => {
+      if (c.agent_id) {
+        const found = agents.find(a => a.id === c.agent_id);
+        if (found) {
+          agentNames.add(found.name);
+        } else {
+          hasMissingAgent = true;
+        }
+      } else {
+        hasMissingAgent = true;
+      }
+    });
+
+    if (agentNames.size > 0) {
+      const namesStr = Array.from(agentNames).join(', ');
+      if (hasMissingAgent) {
+        const defaultAgent = agents.find(a => a.is_ai_tutor);
+        return `${namesStr} (일부 강좌: ${defaultAgent ? defaultAgent.name + ' [기본값]' : '에이전트 없음'})`;
+      }
+      return namesStr;
+    } else {
+      const defaultAgent = agents.find(a => a.is_ai_tutor);
+      return defaultAgent ? `${defaultAgent.name} (기본값)` : '에이전트 없음';
+    }
+  };
+
+  const renderCourseCard = (course: PackageItem) => {
+    const assignedAgentInfo = getAssignedAgentsForPackage(course);
+    const hasErrorAgent = assignedAgentInfo.includes('에이전트 없음');
+
+    return (
+      <div key={course.id} className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-sm hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-700 transition-all p-5 rounded-xl flex flex-col lg:flex-row gap-6 justify-between lg:items-center">
+        <div className="flex gap-4 items-start w-full">
+          <div className="w-24 h-16 rounded-md overflow-hidden shrink-0 border border-zinc-200 dark:border-zinc-700">
+            <CourseIcon thumbnail={course.thumbnail} className="w-full h-full" iconClassName="w-8 h-8" alt={course.title} />
+          </div>
+          <div className="space-y-1 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 
+                className="text-lg font-semibold text-zinc-950 dark:text-zinc-50 hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline cursor-pointer transition-colors"
+                onClick={() => router.push(`/courses/${course.slug}`)}
+              >
+                {course.title}
+              </h3>
+              <Badge variant="outline" className="text-xs text-zinc-500 font-mono">
+                {course.slug}
+              </Badge>
+              <Badge variant={course.published ? 'default' : 'secondary'} className={course.published ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : ''}>
+                {course.published ? '공개됨' : '비공개'}
+              </Badge>
+              {course.sequential_play && (
+                <Badge variant="outline" className="text-amber-600 border-amber-600 dark:text-amber-400">
+                  순차재생
+                </Badge>
+              )}
+              {course.force_checkpoint && (
+                <Badge variant="outline" className="text-rose-600 border-rose-600 dark:text-rose-400">
+                  체크포인트 강제
+                </Badge>
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground line-clamp-2 max-w-2xl">{course.description || '설명이 없습니다.'}</p>
+            
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-zinc-500 mt-2">
+              <div className="flex items-center gap-1">
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>하위 강좌 {course.courses?.length || 0}개</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Calendar className="w-3.5 h-3.5" />
+                <span>{new Date(course.created_at).toLocaleDateString()}</span>
+              </div>
+              {/* 할당된 에이전트 표시 */}
+              <div className="flex items-center gap-1">
+                <span className="font-semibold text-zinc-600 dark:text-zinc-400">할당된 에이전트:</span>
+                <span className={`px-1.5 py-0.5 rounded text-[11px] font-medium ${
+                  hasErrorAgent 
+                    ? 'bg-red-50 text-red-600 dark:bg-red-950/20 dark:text-red-400 border border-red-200/50' 
+                    : 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/30 dark:text-indigo-400 border border-indigo-100/50'
+                }`}>
+                  {assignedAgentInfo}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 shrink-0 self-end lg:self-center mt-4 lg:mt-0 w-full lg:w-auto">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (course.courses && course.courses.length > 0) {
+                router.push(`/learn/${course.courses[0].slug}?preview=true&package=${course.slug}`);
+              } else {
+                alert('이 강좌에 포함된 하위 챕터가 없습니다.');
+              }
+            }}
+            className="gap-1.5 border-zinc-300 w-full lg:w-auto text-xs"
+          >
+            <Eye className="w-3.5 h-3.5" />
+            미리보기
+          </Button>
+          {!course.published && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => togglePublishedCourse(course)}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold w-full lg:w-auto text-xs"
+            >
+              공개 전환
+            </Button>
+          )}
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => deleteCourse(course)}
+            className="gap-1.5 w-full lg:w-auto text-xs"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            삭제
+          </Button>
+        </div>
+      </div>
+    );
+  };
 
   const togglePublishedCourse = async (course: PackageItem) => {
     const nextPublished = !course.published;
@@ -342,7 +486,7 @@ export default function AdminCoursesPage() {
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">강좌 관리</h2>
           <p className="text-muted-foreground mt-2">
-            통합 패키지 매니페스트 기반의 강좌 및 하위 콘텐츠 목록을 관리합니다.
+            로컬에서 직접 제작한 강좌 번들(ZIP) 파일을 업로드하여 등록하거나, Github 저장소의 강좌 소스 코드를 다운로드 및 적재하여 구축한 통합 패키지 강좌 목록 및 하위 콘텐츠를 로컬 DB와 연동하여 관리합니다.
           </p>
         </div>
         <div className="flex gap-4">
@@ -364,15 +508,16 @@ export default function AdminCoursesPage() {
         </div>
       </div>
 
+      {/* 1. 강좌 번들 파일로 등록 섹션 */}
       <Card className="border border-zinc-200 dark:border-zinc-800">
         <CardHeader>
-          <CardTitle className="text-xl font-bold">전체 강좌 ({courses.length})</CardTitle>
-          <CardDescription>플랫폼에 서비스 중인 전체 강좌 목록입니다.</CardDescription>
+          <CardTitle className="text-xl font-bold">강좌 번들 파일로 등록 ({courses.filter(c => !c.github_url).length})</CardTitle>
+          <CardDescription>로컬 번들 ZIP 파일로 업로드하여 로컬 DB에 구축한 강좌 목록입니다.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {loading ? (
-              Array.from({ length: 3 }).map((_, i) => (
+              Array.from({ length: 2 }).map((_, i) => (
                 <div key={i} className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-5 rounded-xl flex flex-col md:flex-row gap-6 items-center animate-pulse">
                   <Skeleton className="w-24 h-16 rounded-md bg-zinc-200 dark:bg-zinc-800 shrink-0" />
                   <div className="flex-1 w-full space-y-2">
@@ -388,96 +533,50 @@ export default function AdminCoursesPage() {
                   </div>
                 </div>
               ))
-            ) : courses.length === 0 ? (
+            ) : courses.filter(c => !c.github_url).length === 0 ? (
               <div className="py-12 text-center text-muted-foreground">
                 <FolderHeart className="w-12 h-12 mx-auto text-zinc-300 dark:text-zinc-700 mb-3" />
-                등록된 강좌가 없습니다.
+                등록된 번들 강좌가 없습니다.
               </div>
             ) : (
-              courses.map((course) => (
-                <div key={course.id} className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-sm hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-700 transition-all p-5 rounded-xl flex flex-col lg:flex-row gap-6 justify-between lg:items-center">
-                  <div className="flex gap-4 items-start w-full">
-                    <div className="w-24 h-16 rounded-md overflow-hidden shrink-0 border border-zinc-200 dark:border-zinc-700">
-                      <CourseIcon thumbnail={course.thumbnail} className="w-full h-full" iconClassName="w-8 h-8" alt={course.title} />
-                    </div>
-                    <div className="space-y-1 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 
-                          className="text-lg font-semibold text-zinc-950 dark:text-zinc-50 hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline cursor-pointer transition-colors"
-                          onClick={() => router.push(`/courses/${course.slug}`)}
-                        >
-                          {course.title}
-                        </h3>
-                        <Badge variant="outline" className="text-xs text-zinc-500 font-mono">
-                          {course.slug}
-                        </Badge>
-                        <Badge variant={course.published ? 'default' : 'secondary'} className={course.published ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : ''}>
-                          {course.published ? '공개됨' : '비공개'}
-                        </Badge>
-                        {course.sequential_play && (
-                          <Badge variant="outline" className="text-amber-600 border-amber-600 dark:text-amber-400">
-                            순차재생
-                          </Badge>
-                        )}
-                        {course.force_checkpoint && (
-                          <Badge variant="outline" className="text-rose-600 border-rose-600 dark:text-rose-400">
-                            체크포인트 강제
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground line-clamp-2 max-w-2xl">{course.description || '설명이 없습니다.'}</p>
-                      
-                      <div className="flex items-center gap-4 text-xs text-zinc-500 mt-2">
-                        <div className="flex items-center gap-1">
-                          <BookOpen className="w-3.5 h-3.5" />
-                          <span>하위 강좌 {course.courses?.length || 0}개</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-3.5 h-3.5" />
-                          <span>{new Date(course.created_at).toLocaleDateString()}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+              courses.filter(c => !c.github_url).map(renderCourseCard)
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
-                  <div className="flex flex-wrap items-center gap-2 shrink-0 self-end lg:self-center mt-4 lg:mt-0 w-full lg:w-auto">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        if (course.courses && course.courses.length > 0) {
-                          router.push(`/learn/${course.courses[0].slug}?preview=true&package=${course.slug}`);
-                        } else {
-                          alert('이 강좌에 포함된 하위 챕터가 없습니다.');
-                        }
-                      }}
-                      className="gap-1.5 border-zinc-300 w-full lg:w-auto text-xs"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      미리보기
-                    </Button>
-                    {!course.published && (
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => togglePublishedCourse(course)}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold w-full lg:w-auto text-xs"
-                      >
-                        공개 전환
-                      </Button>
-                    )}
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => deleteCourse(course)}
-                      className="gap-1.5 w-full lg:w-auto text-xs"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      삭제
-                    </Button>
+      {/* 2. GITHUB 에서 추가 섹션 */}
+      <Card className="border border-zinc-200 dark:border-zinc-800">
+        <CardHeader>
+          <CardTitle className="text-xl font-bold">GITHUB 에서 추가 ({courses.filter(c => !!c.github_url).length})</CardTitle>
+          <CardDescription>Github 저장소 URL을 연결하여 로컬 DB에 동기화한 강좌 목록입니다.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {loading ? (
+              Array.from({ length: 1 }).map((_, i) => (
+                <div key={i} className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-5 rounded-xl flex flex-col md:flex-row gap-6 items-center animate-pulse">
+                  <Skeleton className="w-24 h-16 rounded-md bg-zinc-200 dark:bg-zinc-800 shrink-0" />
+                  <div className="flex-1 w-full space-y-2">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-5 w-48 bg-zinc-200 dark:bg-zinc-800" />
+                      <Skeleton className="h-5 w-12 bg-zinc-200 dark:bg-zinc-800" />
+                    </div>
+                    <Skeleton className="h-4 w-3/4 bg-zinc-200 dark:bg-zinc-800" />
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <Skeleton className="h-9 w-16 bg-zinc-200 dark:bg-zinc-800" />
+                    <Skeleton className="h-9 w-20 bg-zinc-200 dark:bg-zinc-800" />
                   </div>
                 </div>
               ))
+            ) : courses.filter(c => !!c.github_url).length === 0 ? (
+              <div className="py-12 text-center text-muted-foreground">
+                <FolderHeart className="w-12 h-12 mx-auto text-zinc-300 dark:text-zinc-700 mb-3" />
+                등록된 Github 강좌가 없습니다.
+              </div>
+            ) : (
+              courses.filter(c => !!c.github_url).map(renderCourseCard)
             )}
           </div>
         </CardContent>

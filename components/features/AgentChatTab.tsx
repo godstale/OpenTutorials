@@ -385,7 +385,7 @@ export default function AgentChatTab({ agent }: AgentChatTabProps) {
   return (
     <Card className="flex flex-col h-[calc(100vh-270px)] min-h-[550px] max-h-[750px] border border-border/70 shadow-lg rounded-2xl overflow-hidden bg-white/40 dark:bg-zinc-950/40 backdrop-blur-md">
       {/* Chat Tab Header */}
-      <CardHeader className="flex flex-row items-center justify-between py-3 px-6 border-b border-border/60 bg-zinc-50/50 dark:bg-zinc-900/50">
+      <CardHeader className="flex flex-row items-center justify-between pb-4 px-6 border-b border-border/60 bg-zinc-50/50 dark:bg-zinc-900/50">
         <div className="flex items-center gap-2">
           <Badge variant="outline" className={cn(
             "text-xs px-2.5 py-0.5 font-semibold transition-colors duration-300",
@@ -511,7 +511,7 @@ export default function AgentChatTab({ agent }: AgentChatTabProps) {
       </CardContent>
 
       {/* Input panel */}
-      <CardFooter className="p-4 border-t border-border/60 bg-zinc-50/50 dark:bg-zinc-900/50 flex flex-col gap-3">
+      <CardFooter className="px-6 pt-6 border-t border-border/60 bg-zinc-50/50 dark:bg-zinc-900/50 flex flex-col gap-3">
         {isGenerating && (
           <Button
             type="button"

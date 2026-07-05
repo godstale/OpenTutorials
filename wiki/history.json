@@ -1,6 +1,19 @@
 {
   "ingested": [
     {
+      "slug": "2026-07-05-local-llm-ollama-lmstudio-integration",
+      "title": "로컬 LLM(Ollama, LM Studio) 에이전트 연동 리서치",
+      "source_file": "docs/research/2026-07-05-local-llm-ollama-lmstudio-integration.md",
+      "ingested_at": "2026-07-05T00:00:00Z",
+      "last_updated": "2026-07-05T00:00:00Z",
+      "pages_created": [
+        "sources/2026-07-05-local-llm-ollama-lmstudio-integration.md",
+        "concepts/LocalLLMAgentIntegration.md"
+      ],
+      "ingest_mode": "full",
+      "status": "active"
+    },
+    {
       "slug": "2026-07-04-unified-course-bundle-upload-refactoring",
       "title": "PennyPress: 통합 번들(.zip) 기반 강좌 업로드 리팩토링 및 클라이언트 사전 검증 도입",
       "source_file": "wiki/sources/2026-07-04-unified-course-bundle-upload-refactoring.md",

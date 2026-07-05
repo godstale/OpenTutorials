@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { normalizeAgentEndpoint } from '@/lib/utils/agent-endpoint';
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,29 +16,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Endpoint is required' }, { status: 400 });
     }
 
-    // Force IPv4 loopback (127.0.0.1) instead of localhost to bypass Node.js IPv6 (::1) preference
-    const resolvedEndpoint = endpoint.replace('//localhost', '//127.0.0.1');
-    const cleanEndpoint = resolvedEndpoint.replace(/\/$/, '');
-    
-    // Normalize endpoint to extract base URL (without /v1) and v1 URL
-    const baseUrl = cleanEndpoint.endsWith('/v1') 
-      ? cleanEndpoint.substring(0, cleanEndpoint.length - 3) 
-      : cleanEndpoint;
-    const v1Url = cleanEndpoint.endsWith('/v1') 
-      ? cleanEndpoint 
-      : `${cleanEndpoint}/v1`;
+    const { baseUrl, v1Url } = normalizeAgentEndpoint(endpoint);
 
-    // 1. Health check call
+    // 1. Health check call (relaxed)
     const healthRes = await fetch(`${baseUrl}/health`, {
       method: 'GET',
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(3000),
     }).catch(() => null);
 
     if (!healthRes || !healthRes.ok) {
-      return NextResponse.json({ 
-        success: false, 
-        error: '에이전트 서버의 /health 응답이 비정상적이거나 연결할 수 없습니다.' 
-      }, { status: 200 });
+      console.log(`[test-connection] Optional health check failed or not supported at ${baseUrl}/health, proceeding to model check...`);
     }
 
     // 2. Authentication check / models fetch
@@ -79,7 +67,8 @@ export async function POST(req: NextRequest) {
       models: modelsData.data ?? [] 
     });
 
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ success: false, error: errMsg }, { status: 500 });
   }
 }

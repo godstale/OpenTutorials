@@ -26,6 +26,7 @@ export async function GET(
     // 2. 로그인되어 있다면 사용자의 전체 수강 상태 파악을 위해 progress 정보 로드
     let userSubscribed = false;
     let progressesMap: Record<string, any> = {};
+    let externalAgents: any[] = [];
 
     const userClient = await createClient();
     const { data: { user } } = await userClient.auth.getUser();
@@ -46,6 +47,11 @@ export async function GET(
       if (progressList) {
         progressesMap = Object.fromEntries(progressList.map((p: any) => [p.course_id, p]));
       }
+
+      const { data: agentsData } = await userClient
+        .from('user_external_agents')
+        .select('id, name, agent_type, is_ai_tutor');
+      externalAgents = agentsData || [];
     }
 
     // 데이터 포맷 정렬
@@ -67,7 +73,8 @@ export async function GET(
       sequential_play: pkg.sequential_play ?? false,
       force_checkpoint: pkg.force_checkpoint ?? false,
       courses,
-      user_subscribed: userSubscribed
+      user_subscribed: userSubscribed,
+      external_agents: externalAgents
     });
   } catch (err: any) {
     console.error('[CourseDetailAPI] Error:', err);
