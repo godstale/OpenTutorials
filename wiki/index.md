@@ -9,6 +9,9 @@
 
 | 슬러그 | 제목 | 인제스트 날짜 |
 |--------|------|--------------|
+| [2026-07-05-course-enrollment-and-agent-stats-chart](sources/2026-07-05-course-enrollment-and-agent-stats-chart.md) | 강좌 자동 수강/삭제 정합성 + 에이전트 상세 탭/통계 개선 작업 상세 | 2026-07-05 |
+| [2026-07-05-agent-advanced-metadata-and-model-management](sources/2026-07-05-agent-advanced-metadata-and-model-management.md) | 에이전트 상세 정보 고도화 및 하네스 에이전트 모델 수동 관리 기능 구현 결과 | 2026-07-05 |
+| [2026-07-05-agent-stats-real-duration](sources/2026-07-05-agent-stats-real-duration.md) | 에이전트 상세 화면 및 강좌 상세 화면 통계 실데이터(누적 사용 시간 등) 연동 | 2026-07-05 |
 | [2026-07-05-local-llm-ollama-lmstudio-integration](sources/2026-07-05-local-llm-ollama-lmstudio-integration.md) | 로컬 LLM(Ollama, LM Studio) 에이전트 연동 리서치 | 2026-07-05 |
 | [2026-07-05-agent-ui-cleanup-and-chat-logger](sources/2026-07-05-agent-ui-cleanup-and-chat-logger.md) | 강좌 및 에이전트 관리 UI 개선 및 에이전트 대화 전체 보존(토큰/시간 로그 기록) | 2026-07-05 |
 | [pennypress-service-plan](sources/pennypress-service-plan.md) | PennyPress 서비스 기획서 | 2026-06-12 |

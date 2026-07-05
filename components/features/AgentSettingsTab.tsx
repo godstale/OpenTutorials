@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   LayoutGrid, Calendar, Clock, RefreshCw, 
-  CheckCircle2, XCircle, ShieldAlert, Settings, Edit3, Save, X, Eye, EyeOff
+  CheckCircle2, XCircle, ShieldAlert, Settings, Edit3, Save, X, Eye, EyeOff, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,7 +32,16 @@ interface ModelItem {
   object: string;
   created: number;
   owned_by: string;
+  hidden?: boolean;
 }
+
+const programNames = {
+  hermes: 'Hermes',
+  openclaw: 'Open claw',
+  ollama: 'Ollama',
+  lmstudio: 'LM Studio',
+  other: '기타'
+};
 
 export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
   const isMountedRef = useRef(true);
@@ -50,19 +59,91 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
   const [apiKey, setApiKey] = useState('');
   const [agentType, setAgentType] = useState<'harness' | 'llm'>(agent.agent_type || 'harness');
   const [selectedModel, setSelectedModel] = useState<string>(agent.selected_model || 'hermes-agent');
+  const [manualModelInput, setManualModelInput] = useState<string>(agent.selected_model || '');
   const [envType, setEnvType] = useState<'local' | 'cloud'>(agent.env_type || 'local');
-  const [agentProgram, setAgentProgram] = useState<'hermes' | 'openclaw' | 'ollama' | 'lmstudio'>(agent.agent_program || 'hermes');
+
+  const [agentProgram, setAgentProgram] = useState<'hermes' | 'openclaw' | 'ollama' | 'lmstudio' | 'other'>(agent.agent_program || 'hermes');
+
 
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showApiKey, setShowApiKey] = useState(false);
+
+  const [isTesting, setIsTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [detectedModels, setDetectedModels] = useState<string[]>([]);
+
+  const handleTestConnection = async () => {
+    if (!endpoint) return;
+    setIsTesting(true);
+    setTestResult(null);
+    setDetectedModels([]);
+    try {
+      const activeApiKey = apiKey.trim() || agent.api_key || '';
+      const res = await fetch('/api/external-agents/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ endpoint, api_key: activeApiKey }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        const modelsList = Array.isArray(data.models) ? data.models : [];
+        const filteredModels = agentType === 'harness'
+          ? modelsList.filter((m: { id: string; hidden?: boolean }) => !m.hidden)
+          : modelsList;
+        const modelIds = filteredModels.map((m: { id: string }) => m.id);
+
+        if (agentType === 'llm' && modelIds.length === 0) {
+          setTestResult({
+            success: false,
+            message: '연결은 성공했으나 LLM 모델을 찾지 못했습니다. LLM 에이전트는 모델이 반드시 존재해야 합니다.',
+          });
+          return;
+        }
+
+        setDetectedModels(modelIds);
+        setModels(modelsList); // 연결 상태 확인 성공 시 감지된 모델 목록 동적 동기화
+        const initialModel = (agentType === 'harness' && data.current_model)
+          ? data.current_model
+          : (modelIds.length > 0 ? modelIds[0] : '');
+
+        if (initialModel) {
+          setSelectedModel(initialModel);
+        } else {
+          setSelectedModel(agentType === 'harness' ? 'hermes-agent' : '');
+        }
+
+        const modelNames = modelIds.join(', ') || '없음';
+        const currentModelName = initialModel || '미지정';
+        setTestResult({
+          success: true,
+          message: agentType === 'harness'
+            ? `연결 성공! (하네스 에이전트) | 현재 사용 중: ${currentModelName} | 지원 모델 목록: ${modelNames}`
+            : `연결 성공! 감지된 모델: ${modelNames}`,
+        });
+      } else {
+        setTestResult({
+          success: false,
+          message: data.error || '연결 실패',
+        });
+      }
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : '네트워크 연결 오류';
+      setTestResult({
+        success: false,
+        message: errMsg,
+      });
+    } finally {
+      setIsTesting(false);
+    }
+  };
 
   // Models list state
   const [models, setModels] = useState<ModelItem[]>([]);
   const [isLoadingModels, setIsLoadingModels] = useState(false);
   const [modelsError, setModelsError] = useState<string | null>(null);
 
-  const fetchModels = useCallback(async () => {
+  const fetchModels = useCallback(async (isManualRefresh = false) => {
     setIsLoadingModels(true);
     setModelsError(null);
     try {
@@ -74,7 +155,26 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
       const data = await res.json();
       if (isMountedRef.current) {
         if (data.success) {
-          setModels(data.models || []);
+          const modelsList: ModelItem[] = data.models || [];
+          setModels(modelsList);
+
+          // 하네스 에이전트인 경우 에이전트와 연결된 현재 사용 중인 LLM 모델 정보를 저장하고 표시
+          if (agent.agent_type === 'harness') {
+            const actualLLMModels = modelsList.filter(m => !m.hidden);
+            const detectedLLMModel = data.current_model || (actualLLMModels.length > 0 ? actualLLMModels[0].id : null);
+            if (detectedLLMModel) {
+              const isCurrentModelHidden = modelsList.find(m => m.id === agent.selected_model)?.hidden;
+              if (isManualRefresh || isCurrentModelHidden || agent.selected_model !== detectedLLMModel) {
+                try {
+                  await updateExternalAgent(agent.id, { selected_model: detectedLLMModel });
+                  window.location.reload();
+                  return;
+                } catch (e) {
+                  console.error('Failed to auto update harness LLM model:', e);
+                }
+              }
+            }
+          }
         } else {
           setModelsError(data.error || '에이전트 서버로부터 모델 정보를 조회하지 못했습니다.');
         }
@@ -88,11 +188,11 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
         setIsLoadingModels(false);
       }
     }
-  }, [agent.endpoint, agent.api_key]);
+  }, [agent.id, agent.agent_type, agent.selected_model, agent.endpoint, agent.api_key]);
 
   // Fetch models automatically when component mounts
   useEffect(() => {
-    fetchModels();
+    fetchModels(false);
   }, [fetchModels]);
 
   const [isUpdatingModel, setIsUpdatingModel] = useState(false);
@@ -112,11 +212,30 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
   };
 
   const activeModel = agent.selected_model || 'hermes-agent';
+  const hasModelInfo = (!!agent.selected_model && agent.selected_model.trim() !== '') || models.length > 0;
 
+
+  const connectionChanged = 
+    endpoint !== agent.endpoint || 
+    apiKey.trim() !== '' || 
+    agentType !== agent.agent_type ||
+    agentProgram !== agent.agent_program;
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !endpoint) return;
+
+    if (connectionChanged && !testResult?.success) {
+      setSaveError('연결 정보가 변경되었습니다. 변경사항을 저장하려면 먼저 "연결상태 확인"을 성공적으로 완료해야 합니다.');
+      return;
+    }
+
+    const selected_model = selectedModel.trim() || (agentType === 'harness' ? 'hermes-agent' : '');
+    if (agentType === 'llm' && !selected_model) {
+      setSaveError('LLM 에이전트는 활성 모델이 반드시 지정되어야 합니다. 연결상태 확인을 진행해 주세요.');
+      return;
+    }
+
     setIsSaving(true);
     setSaveError(null);
     try {
@@ -124,7 +243,7 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
         name,
         endpoint,
         agent_type: agentType,
-        selected_model: selectedModel,
+        selected_model,
         env_type: envType,
         agent_program: agentProgram,
       };
@@ -158,6 +277,7 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
     setEnvType(agent.env_type || 'local');
     setAgentProgram(agent.agent_program || 'hermes');
     setSaveError(null);
+    setTestResult(null);
     setIsEditing(false);
   };
 
@@ -165,7 +285,7 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {/* Basic Configuration Card */}
       <Card className="md:col-span-2 border border-border/70 shadow-md rounded-2xl overflow-hidden bg-white/40 dark:bg-zinc-950/40 backdrop-blur-md">
-        <CardHeader className="border-b border-border/60 bg-zinc-50/50 dark:bg-zinc-900/50 flex flex-row items-center justify-between py-3 px-6">
+        <CardHeader className="border-b border-border/60 bg-zinc-50/50 dark:bg-zinc-900/50 flex flex-row items-center justify-between pb-5 px-6">
           <div>
             <CardTitle className="text-lg font-bold flex items-center gap-2">
               <Settings className="size-5 text-primary" />
@@ -182,7 +302,7 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
         </CardHeader>
         
         <form onSubmit={handleSave}>
-          <CardContent className="py-4 px-6 space-y-4">
+          <CardContent className="px-6 space-y-4">
             {isEditing ? (
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -264,26 +384,7 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="agent-model" className="text-xs font-bold">활성 모델 선택 *</Label>
-                  <Select value={selectedModel} onValueChange={setSelectedModel}>
-                    <SelectTrigger id="agent-model" className="w-full bg-white dark:bg-zinc-900 h-9">
-                      <SelectValue placeholder="사용할 모델을 선택하세요" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {models.length > 0 ? (
-                        models.map((m) => (
-                          <SelectItem key={m.id} value={m.id}>
-                            {m.id}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value={selectedModel}>{selectedModel} (현재 모델)</SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-[10px] text-muted-foreground">이 에이전트와 통신할 때 사용할 LLM 모델입니다.</p>
-                </div>
+
 
 
 
@@ -318,7 +419,7 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
 
                 <div className="space-y-2">
                   <Label className="text-xs font-bold">에이전트 프로그램 *</Label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     {agentType === 'harness' ? (
                       <>
                         <button
@@ -342,6 +443,17 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
                           }`}
                         >
                           <span className="text-xs">Open claw</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAgentProgram('other')}
+                          className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all ${
+                            agentProgram === 'other'
+                              ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/20 dark:border-indigo-400 font-bold'
+                              : 'border-border bg-transparent hover:bg-zinc-50 dark:hover:bg-zinc-900'
+                          }`}
+                        >
+                          <span className="text-xs">기타</span>
                         </button>
                       </>
                     ) : (
@@ -368,8 +480,67 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
                         >
                           <span className="text-xs">LM Studio</span>
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => setAgentProgram('other')}
+                          className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all ${
+                            agentProgram === 'other'
+                              ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/20 dark:border-indigo-400 font-bold'
+                              : 'border-border bg-transparent hover:bg-zinc-50 dark:hover:bg-zinc-900'
+                          }`}
+                        >
+                          <span className="text-xs">기타</span>
+                        </button>
                       </>
                     )}
+                  </div>
+                </div>
+
+                {/* 연결상태 확인 및 활성 모델 설정 */}
+                <div className="space-y-4 py-4 border-t">
+                  <div className="flex items-center justify-between gap-4">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={handleTestConnection} 
+                      disabled={isTesting || !endpoint}
+                      className="h-9 text-xs"
+                    >
+                      {isTesting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      연결상태 확인
+                    </Button>
+                    
+                    {testResult && (
+                      <div className={`flex items-center gap-1.5 text-xs ${testResult.success ? 'text-emerald-500 font-medium' : 'text-red-500 font-medium'}`}>
+                        {testResult.success ? <CheckCircle2 className="size-3.5 shrink-0" /> : <XCircle className="size-3.5 shrink-0" />}
+                        <span className="line-clamp-2">{testResult.message}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-2 rounded-lg border border-border/85 bg-zinc-50/50 dark:bg-zinc-900/50 p-3 mt-1">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="agent-model" className="text-xs font-bold">
+                        활성 모델 {agentType === 'llm' ? '*' : '(선택 사항)'}
+                      </Label>
+                      <Input 
+                        id="agent-model"
+                        readOnly
+                        disabled
+                        value={selectedModel}
+                        placeholder={
+                          agentType === 'harness'
+                            ? '하네스 에이전트는 모델을 지정하지 않아도 됩니다.'
+                            : '연결상태 확인 버튼을 클릭하면 자동으로 모델을 조회하여 입력합니다.'
+                        }
+                        className="bg-zinc-100 dark:bg-zinc-900/50 h-9 text-sm text-muted-foreground"
+                      />
+                      <p className="text-[10px] text-muted-foreground">
+                        {agentType === 'harness' 
+                          ? '하네스 에이전트의 경우 기본 모델이 사용되므로 입력이 없어도 무방합니다.' 
+                          : '연결상태 확인 시 탐색된 LLM 모델명이 자동으로 입력됩니다.'}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -382,53 +553,49 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
               </div>
             ) : (
               <div className="divide-y divide-border/60">
-                <div className="flex justify-between py-2">
+                <div className="flex justify-between pb-3">
                   <span className="text-sm font-medium text-muted-foreground">에이전트명</span>
                   <span className="text-sm font-semibold text-foreground">{agent.name}</span>
                 </div>
 
-                <div className="flex justify-between py-2">
+                <div className="flex justify-between py-3">
                   <span className="text-sm font-medium text-muted-foreground">에이전트 타입</span>
-                  <Badge variant="secondary" className="font-semibold bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200">
-                    {agent.agent_type === 'llm' ? 'LLM 에이전트' : '하네스 에이전트'}
-                  </Badge>
+                  <div className="flex flex-wrap gap-1.5 justify-end">
+                    <Badge variant="secondary" className="font-semibold bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/20 dark:text-indigo-400 dark:border-indigo-900/40 border">
+                      {agent.agent_type === 'llm' ? 'LLM 에이전트' : '하네스 에이전트'}
+                    </Badge>
+                    <Badge variant="secondary" className="font-semibold bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200">
+                      {agent.env_type === 'cloud' ? '클라우드' : '로컬'}
+                    </Badge>
+                    <Badge variant="secondary" className="font-semibold bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200">
+                      {programNames[agent.agent_program as keyof typeof programNames] || agent.agent_program || '기타'}
+                    </Badge>
+                  </div>
                 </div>
-                <div className="flex justify-between py-2">
+                <div className="flex justify-between py-3">
                   <span className="text-sm font-medium text-muted-foreground">활성 모델</span>
                   <span className="text-sm font-mono font-semibold text-primary">
                     {agent.selected_model || 'hermes-agent'}
                   </span>
                 </div>
-                <div className="flex flex-col sm:flex-row sm:justify-between py-2 gap-1">
+                <div className="flex flex-col sm:flex-row sm:justify-between py-3 gap-1">
                   <span className="text-sm font-medium text-muted-foreground shrink-0">API Endpoint URL</span>
                   <span className="text-sm font-mono text-foreground break-all sm:text-right">{agent.endpoint}</span>
                 </div>
-                <div className="flex justify-between py-2">
+                <div className="flex justify-between py-3">
                   <span className="text-sm font-medium text-muted-foreground">API 인증 키 여부</span>
                   <span className="text-sm font-mono font-semibold text-foreground">
                     {agent.api_key ? '********' : '없음'}
                   </span>
                 </div>
-                <div className="flex justify-between py-2">
-                  <span className="text-sm font-medium text-muted-foreground">실행 환경</span>
-                  <Badge variant="secondary" className="font-semibold bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200">
-                    {agent.env_type === 'cloud' ? '클라우드' : '로컬'}
-                  </Badge>
-                </div>
-                <div className="flex justify-between py-2">
-                  <span className="text-sm font-medium text-muted-foreground">에이전트 프로그램</span>
-                  <span className="text-sm font-semibold capitalize text-foreground">
-                    {agent.agent_program || '-'}
-                  </span>
-                </div>
-                <div className="flex justify-between py-2">
+                <div className="flex justify-between py-3">
                   <span className="text-sm font-medium text-muted-foreground">등록 일시</span>
                   <span className="text-xs text-foreground flex items-center gap-1">
                     <Calendar className="size-3.5 text-muted-foreground" />
                     {new Date(agent.created_at).toLocaleString()}
                   </span>
                 </div>
-                <div className="flex justify-between py-2">
+                <div className="flex justify-between pt-3">
                   <span className="text-sm font-medium text-muted-foreground">최근 정보 수정</span>
                   <span className="text-xs text-foreground flex items-center gap-1">
                     <Clock className="size-3.5 text-muted-foreground" />
@@ -445,7 +612,12 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
                 <X className="size-4" />
                 취소
               </Button>
-              <Button type="submit" size="sm" disabled={isSaving} className="gap-1.5 shadow active:scale-95 transition-all">
+              <Button 
+                type="submit" 
+                size="sm" 
+                disabled={isSaving || (connectionChanged && !testResult?.success)} 
+                className="gap-1.5 shadow active:scale-95 transition-all"
+              >
                 <Save className="size-4" />
                 변경사항 저장
               </Button>
@@ -456,18 +628,22 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
 
       {/* Model Inquiry Card */}
       <Card className="border border-border/70 shadow-md rounded-2xl overflow-hidden bg-white/40 dark:bg-zinc-950/40 backdrop-blur-md">
-        <CardHeader className="border-b border-border/60 bg-zinc-50/50 dark:bg-zinc-900/50 py-3 px-6 flex flex-row items-center justify-between">
+        <CardHeader className="border-b border-border/60 bg-zinc-50/50 dark:bg-zinc-900/50 pb-5 px-6 flex flex-row items-center justify-between">
           <div>
             <CardTitle className="text-sm font-bold flex items-center gap-2">
               <LayoutGrid className="size-4.5 text-primary" />
               지원 모델 조회
             </CardTitle>
-            <CardDescription className="text-[10px]">연결된 Hermes Agent의 지원 LLM 목록입니다.</CardDescription>
+            <CardDescription className="text-[10px]">
+              {agent.agent_type === 'harness' 
+                ? '연결된 하네스 에이전트의 지원 LLM 목록입니다.' 
+                : '연결된 LLM 에이전트의 지원 LLM 목록입니다.'}
+            </CardDescription>
           </div>
           <Button 
             size="icon" 
             variant="outline" 
-            onClick={fetchModels} 
+            onClick={() => fetchModels(true)} 
             disabled={isLoadingModels}
             className="size-8 rounded-lg active:scale-95 transition-all"
             title="모델 정보 갱신"
@@ -476,76 +652,114 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
           </Button>
         </CardHeader>
         
-        <CardContent className="py-4 px-6">
+        <CardContent className="px-6">
           {isLoadingModels ? (
             <div className="flex flex-col items-center justify-center py-12 space-y-2">
               <RefreshCw className="size-6 text-primary animate-spin" />
               <span className="text-xs text-muted-foreground animate-pulse">원격 서버 정보 조회 중...</span>
             </div>
-          ) : modelsError ? (
-            <div className="rounded-xl border border-destructive/20 bg-destructive/5 dark:bg-destructive/10 p-4 space-y-2 shadow-sm text-center">
-              <p className="text-xs text-destructive font-semibold flex items-center justify-center gap-1.5">
+          ) : !hasModelInfo ? (
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 space-y-3 shadow-sm text-center">
+              <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold flex items-center justify-center gap-1.5">
                 <ShieldAlert className="size-4" />
-                조회 실패
+                LLM 모델 정보 없음
               </p>
-              <p className="text-[11px] text-muted-foreground leading-normal">{modelsError}</p>
-              <Button size="sm" variant="outline" onClick={fetchModels} className="mt-1 h-7 text-xs">
-                다시 시도
-              </Button>
-            </div>
-          ) : models.length === 0 ? (
-            <div className="py-12 text-center text-muted-foreground space-y-2">
-              <LayoutGrid className="size-8 mx-auto text-zinc-300 dark:text-zinc-700" />
-              <p className="text-xs">조회된 모델 정보가 없습니다.</p>
+              <p className="text-[11px] text-muted-foreground leading-normal">
+                {agent.agent_type === 'harness' 
+                  ? '하네스 에이전트의 LLM 모델 정보가 감지되지 않았습니다. 우측 상단의 새로고침(refresh) 버튼을 눌러 수동 조회를 시도하거나, 아래에 직접 모델명을 입력해 업데이트하세요.'
+                  : '에이전트 서버로부터 지원 모델을 조회하지 못했습니다. 우측 상단의 새로고침(refresh) 버튼을 눌러 수동 조회를 시도하거나, 아래에 직접 모델명을 입력해 업데이트하세요.'
+                }
+              </p>
+              <div className="flex gap-2 max-w-xs mx-auto pt-1">
+                <Input 
+                  placeholder="예: gemma-2-9b-it" 
+                  value={manualModelInput} 
+                  onChange={(e) => setManualModelInput(e.target.value)} 
+                  className="h-8 text-xs bg-white dark:bg-zinc-900"
+                />
+                <Button 
+                  size="sm" 
+                  onClick={() => handleSelectModel(manualModelInput)} 
+                  disabled={isUpdatingModel || !manualModelInput.trim()}
+                  className="h-8 text-xs shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 border-none"
+                >
+                  업데이트
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="space-y-4">
-              <p className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">지원하는 에이전트 모델 ({models.length})</p>
-              
-              <div className="space-y-1.5">
-                <Label htmlFor="activeModelSelect" className="text-xs text-muted-foreground font-medium">모델 즉시 선택</Label>
-                <Select value={activeModel} onValueChange={handleSelectModel} disabled={isUpdatingModel}>
-                  <SelectTrigger id="activeModelSelect" className="w-full bg-white dark:bg-zinc-900 h-9">
-                    <SelectValue placeholder="모델 변경" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {models.map((model) => (
-                      <SelectItem key={model.id} value={model.id}>
-                        {model.id}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {(() => {
+                let displayModels = agent.agent_type === 'harness' 
+                  ? models.filter(m => !m.hidden) 
+                  : models;
 
-              <div className="flex flex-wrap gap-2 pt-1">
-                {models.map((model) => {
-                  const isActive = model.id === activeModel;
-                  return (
-                    <Badge 
-                      key={model.id} 
-                      variant={isActive ? 'default' : 'secondary'}
-                      onClick={() => !isActive && !isUpdatingModel && handleSelectModel(model.id)}
-                      className={cn(
-                        "px-2.5 py-1 text-xs font-semibold font-mono border transition-colors flex items-center gap-1 select-none",
-                        isActive 
-                          ? "bg-primary border-primary text-primary-foreground cursor-default" 
-                          : cn(
-                              "bg-zinc-100/80 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border-border/40 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50 cursor-pointer hover:border-primary/50",
-                              isUpdatingModel && "opacity-50 cursor-not-allowed"
-                            )
-                      )}
-                    >
-                      {isActive && <CheckCircle2 className="size-3 shrink-0" />}
-                      {model.id}
-                    </Badge>
-                  );
-                })}
-              </div>
-              <div className="flex items-center gap-1.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-500/5 p-2 rounded-lg border border-emerald-500/10">
-                <CheckCircle2 className="size-3.5 shrink-0" />
-                <span>API 호출이 원활하게 작동 중입니다.</span>
-              </div>
+                if (agent.selected_model && !displayModels.some(m => m.id === agent.selected_model)) {
+                  displayModels = [
+                    { id: agent.selected_model, object: 'model', created: 0, owned_by: 'system' },
+                    ...displayModels
+                  ];
+                }
+
+                return (
+                  <>
+                    <p className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">지원하는 LLM 모델 ({displayModels.length})</p>
+                    
+                    <div className="space-y-1.5">
+                      <Label htmlFor="activeModelSelect" className="text-xs text-muted-foreground font-medium">모델 즉시 선택</Label>
+                      <Select value={activeModel} onValueChange={handleSelectModel} disabled={isUpdatingModel}>
+                        <SelectTrigger id="activeModelSelect" className="w-full bg-white dark:bg-zinc-900 h-9">
+                          <SelectValue placeholder="모델 변경" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {displayModels.map((model) => (
+                            <SelectItem key={model.id} value={model.id}>
+                              {model.id}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {displayModels.map((model) => {
+                        const isActive = model.id === activeModel;
+                        return (
+                          <Badge 
+                            key={model.id} 
+                            variant={isActive ? 'default' : 'secondary'}
+                            onClick={() => !isActive && !isUpdatingModel && handleSelectModel(model.id)}
+                            className={cn(
+                              "px-2.5 py-1 text-xs font-semibold font-mono border transition-colors flex items-center gap-1 select-none",
+                              isActive 
+                                ? "bg-primary border-primary text-primary-foreground cursor-default" 
+                                : cn(
+                                    "bg-zinc-100/80 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border-border/40 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50 cursor-pointer hover:border-primary/50",
+                                    isUpdatingModel && "opacity-50 cursor-not-allowed"
+                                  )
+                            )}
+                          >
+                            {isActive && <CheckCircle2 className="size-3 shrink-0" />}
+                            {model.id}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  </>
+                );
+              })()}
+              
+              {modelsError ? (
+                <div className="flex items-center gap-1.5 text-[10px] text-amber-600 dark:text-amber-400 font-semibold bg-amber-500/5 p-2 rounded-lg border border-amber-500/10">
+                  <ShieldAlert className="size-3.5 shrink-0" />
+                  <span>모델 목록 조회 실패: {modelsError}</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-500/5 p-2 rounded-lg border border-emerald-500/10">
+                  <CheckCircle2 className="size-3.5 shrink-0" />
+                  <span>API 호출이 원활하게 작동 중입니다.</span>
+                </div>
+              )}
             </div>
           )}
         </CardContent>

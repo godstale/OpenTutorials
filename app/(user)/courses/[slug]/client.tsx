@@ -10,24 +10,108 @@ import { BookOpen, PlayCircle, CheckCircle2, ArrowLeft, ArrowRight, Bot } from '
 import { Course, UserExternalAgent } from '@/lib/types';
 import { CourseIcon } from '@/components/ui/course-icon';
 
-const getAgentStats = (agentId: string) => {
-  let hash = 0;
-  for (let i = 0; i < agentId.length; i++) {
-    hash = agentId.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const seed = Math.abs(hash);
-  const totalHours = (seed % 40) + 12;
-  const avgResponse = ((seed % 15) / 10 + 1.2).toFixed(1);
-  const totalTokens = (seed % 100) * 1500 + 45000;
-  const avgTokens = Math.round(totalTokens / (totalHours * 10));
+interface ChatLog {
+  timestamp: string;
+  duration_ms: number;
+  input_token_size: number;
+  output_token_size: number;
+  user_message: string;
+  assistant_message: string;
+}
 
-  return {
-    totalHours: `${totalHours}시간`,
-    avgResponse: `${avgResponse}초`,
+function AgentStatsView({ agentId }: { agentId: string }) {
+  const [chatLogs, setChatLogs] = useState<ChatLog[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchLogs() {
+      try {
+        const res = await fetch(`/api/external-agents/${agentId}/chat`);
+        if (res.ok) {
+          const data = await res.json();
+          setChatLogs(data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch chat logs for stats:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchLogs();
+  }, [agentId]);
+
+  const totalLogs = chatLogs.length;
+  const totalMs = chatLogs.reduce((acc, log) => acc + (log.duration_ms || 0), 0);
+  const avgMs = totalLogs > 0 ? totalMs / totalLogs : 0;
+  const totalTokens = chatLogs.reduce((acc, log) => acc + (log.input_token_size || 0) + (log.output_token_size || 0), 0);
+  const avgTokens = totalLogs > 0 ? Math.round(totalTokens / totalLogs) : 0;
+
+  const formatTotalDuration = (ms: number) => {
+    if (ms <= 0) return '0초';
+    const totalSeconds = ms / 1000;
+    if (totalSeconds < 60) {
+      return `${totalSeconds.toFixed(1)}초`;
+    }
+    if (totalSeconds < 3600) {
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = Math.round(totalSeconds % 60);
+      return `${minutes}분 ${seconds}초`;
+    }
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    return `${hours}시간 ${minutes}분`;
+  };
+
+  const formatAvgResponse = (ms: number) => {
+    if (ms <= 0) return '0초';
+    return `${(ms / 1000).toFixed(1)}초`;
+  };
+
+  const stats = {
+    totalHours: formatTotalDuration(totalMs),
+    avgResponse: formatAvgResponse(avgMs),
     totalTokens: `${totalTokens.toLocaleString()} 토큰`,
     avgTokens: `${avgTokens.toLocaleString()} 토큰`
   };
-};
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+      <div className="p-3 bg-zinc-50 dark:bg-zinc-900/40 rounded-lg border">
+        <span className="text-[10px] text-muted-foreground block uppercase font-bold">누적 사용 시간</span>
+        {isLoading ? (
+          <span className="h-5 w-16 bg-zinc-200 dark:bg-zinc-800 animate-pulse rounded mt-1 mx-auto block" />
+        ) : (
+          <span className="text-base font-extrabold text-zinc-900 dark:text-zinc-50 mt-1 block">{stats.totalHours}</span>
+        )}
+      </div>
+      <div className="p-3 bg-zinc-50 dark:bg-zinc-900/40 rounded-lg border">
+        <span className="text-[10px] text-muted-foreground block uppercase font-bold">평균 응답 시간</span>
+        {isLoading ? (
+          <span className="h-5 w-16 bg-zinc-200 dark:bg-zinc-800 animate-pulse rounded mt-1 mx-auto block" />
+        ) : (
+          <span className="text-base font-extrabold text-zinc-900 dark:text-zinc-50 mt-1 block">{stats.avgResponse}</span>
+        )}
+      </div>
+      <div className="p-3 bg-zinc-50 dark:bg-zinc-900/40 rounded-lg border">
+        <span className="text-[10px] text-muted-foreground block uppercase font-bold">누적 사용 토큰</span>
+        {isLoading ? (
+          <span className="h-5 w-16 bg-zinc-200 dark:bg-zinc-800 animate-pulse rounded mt-1 mx-auto block" />
+        ) : (
+          <span className="text-base font-extrabold text-zinc-900 dark:text-zinc-50 mt-1 block">{stats.totalTokens}</span>
+        )}
+      </div>
+      <div className="p-3 bg-zinc-50 dark:bg-zinc-900/40 rounded-lg border">
+        <span className="text-[10px] text-muted-foreground block uppercase font-bold">평균 사용 토큰</span>
+        {isLoading ? (
+          <span className="h-5 w-16 bg-zinc-200 dark:bg-zinc-800 animate-pulse rounded mt-1 mx-auto block" />
+        ) : (
+          <span className="text-base font-extrabold text-zinc-900 dark:text-zinc-50 mt-1 block">{stats.avgTokens}</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 
 interface DetailedCourse extends Course {
   order_index: number;
@@ -277,7 +361,7 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
               <span className="text-zinc-400">등록된 태그 없음</span>
             )}
           </div>
-          <div className="flex items-center gap-4 shrink-0">
+          <div className="flex items-center gap-4 shrink-0 self-start">
             <div className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
               <span>순차학습: <strong className={courseDetail.sequential_play ? "text-indigo-600 dark:text-indigo-400" : "text-zinc-600 dark:text-zinc-400"}>{courseDetail.sequential_play ? "필수" : "선택"}</strong></span>
@@ -293,7 +377,7 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
       {/* 에이전트 카드 및 통계 배치 */}
       {courseDetail.user_subscribed && (
         <Card className="border border-indigo-100 dark:border-indigo-950 bg-white dark:bg-zinc-900 shadow-sm overflow-hidden">
-          <CardHeader className="pb-3 px-6 md:px-8 pt-6">
+          <CardHeader className="pb-3 px-6 md:px-8">
             <CardTitle className="text-lg font-bold flex items-center gap-2">
               <Bot className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
               학습 AI 튜터 설정 및 통계
@@ -302,7 +386,7 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
               이 강좌 전체에 적용될 AI 튜터 에이전트를 지정하고, 해당 에이전트의 수강 학습 통계를 모니터링합니다.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6 px-6 md:px-8 pb-6">
+          <CardContent className="space-y-6 px-6 md:px-8">
             {/* 에이전트 지정 셀렉트 박스 */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-lg bg-zinc-50 dark:bg-zinc-900/50 border">
               <div className="space-y-1">
@@ -328,7 +412,6 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
             {/* 통계 정보 표시 */}
             {courseDetail.agent_id ? (
               (() => {
-                const stats = getAgentStats(courseDetail.agent_id);
                 const assignedAgent = courseDetail.external_agents?.find(a => a.id === courseDetail.agent_id);
                 return (
                   <div className="space-y-4">
@@ -339,24 +422,7 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
                       </Badge>
                     </div>
                     
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                      <div className="p-3 bg-zinc-50 dark:bg-zinc-900/40 rounded-lg border">
-                        <span className="text-[10px] text-muted-foreground block uppercase font-bold">누적 사용 시간</span>
-                        <span className="text-base font-extrabold text-zinc-900 dark:text-zinc-50 mt-1 block">{stats.totalHours}</span>
-                      </div>
-                      <div className="p-3 bg-zinc-50 dark:bg-zinc-900/40 rounded-lg border">
-                        <span className="text-[10px] text-muted-foreground block uppercase font-bold">평균 응답 시간</span>
-                        <span className="text-base font-extrabold text-zinc-900 dark:text-zinc-50 mt-1 block">{stats.avgResponse}</span>
-                      </div>
-                      <div className="p-3 bg-zinc-50 dark:bg-zinc-900/40 rounded-lg border">
-                        <span className="text-[10px] text-muted-foreground block uppercase font-bold">누적 사용 토큰</span>
-                        <span className="text-base font-extrabold text-zinc-900 dark:text-zinc-50 mt-1 block">{stats.totalTokens}</span>
-                      </div>
-                      <div className="p-3 bg-zinc-50 dark:bg-zinc-900/40 rounded-lg border">
-                        <span className="text-[10px] text-muted-foreground block uppercase font-bold">평균 사용 토큰</span>
-                        <span className="text-base font-extrabold text-zinc-900 dark:text-zinc-50 mt-1 block">{stats.avgTokens}</span>
-                      </div>
-                    </div>
+                    <AgentStatsView agentId={courseDetail.agent_id} />
                   </div>
                 );
               })()

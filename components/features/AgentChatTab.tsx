@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { 
-  Send, Bot, User, Trash2, StopCircle, Sparkles, Copy, Check, AlertTriangle 
+  Send, Bot, User, Trash2, StopCircle, Sparkles, Copy, Check, AlertTriangle, X 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,7 +10,8 @@ import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import type { UserExternalAgent, AgentMacro } from '@/lib/types';
+import type { UserExternalAgent } from '@/lib/types';
+import { updateExternalAgent } from '@/lib/api/external-agents';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -19,6 +20,41 @@ interface Message {
 
 interface AgentChatTabProps {
   agent: UserExternalAgent;
+}
+
+// Helper functions for parsing and cleaning hidden messages
+function parseHiddenMessages(text: string): { 
+  cleanText: string; 
+  selectedModel: string | null;
+} {
+  const regex = /<!--\s*HIDDEN_MESSAGE:\s*(\{[\s\S]*?\})\s*-->/g;
+  let cleanText = text;
+  let selectedModel: string | null = null;
+  
+  cleanText = text.replace(regex, (fullMatch, jsonStr) => {
+    try {
+      const data = JSON.parse(jsonStr);
+      if (data.action === 'update_agent_model' || data.action === 'agent_models_update') {
+        selectedModel = data.selected_model || data.current_model || data.model;
+      }
+    } catch (e) {
+      console.error('Failed to parse hidden message JSON:', e);
+    }
+    return '';
+  });
+  
+  return { cleanText, selectedModel };
+}
+
+function cleanStreamingText(text: string): string {
+  const partialIndex = text.indexOf('<!--');
+  if (partialIndex !== -1) {
+    const closeIndex = text.indexOf('-->', partialIndex);
+    if (closeIndex === -1) {
+      return text.substring(0, partialIndex);
+    }
+  }
+  return text;
 }
 
 // Helper function to render text with links (supporting both markdown links [label](url) and plain URLs)
@@ -177,6 +213,16 @@ export default function AgentChatTab({ agent }: AgentChatTabProps) {
   const [input, setInput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notification, setNotification] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -323,6 +369,18 @@ export default function AgentChatTab({ agent }: AgentChatTabProps) {
         }
       }
 
+      // 스트림 완료 후 에이전트 모델 설정 자동 업데이트 체크
+      const { selectedModel: detectedModel } = parseHiddenMessages(assistantContent);
+      if (detectedModel) {
+        try {
+          await updateExternalAgent(agent.id, { selected_model: detectedModel });
+          window.dispatchEvent(new CustomEvent('agents-updated'));
+          setNotification(`에이전트의 활성 모델이 "${detectedModel}"(으)로 자동 업데이트되었습니다.`);
+        } catch (e) {
+          console.error('Failed to auto update agent model:', e);
+        }
+      }
+
     } catch (err: unknown) {
       const errorObject = err as Record<string, unknown> | null;
       if (errorObject && typeof errorObject === 'object' && errorObject.name === 'AbortError') {
@@ -411,6 +469,22 @@ export default function AgentChatTab({ agent }: AgentChatTabProps) {
         )}
       </CardHeader>
 
+      {notification && (
+        <div className="mx-6 mt-4 p-3.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 rounded-xl flex items-center justify-between text-xs font-medium animate-fade-in shadow-sm">
+          <div className="flex items-center gap-2">
+            <Sparkles className="size-4 text-emerald-500 animate-pulse" />
+            <span>{notification}</span>
+          </div>
+          <button 
+            type="button"
+            onClick={() => setNotification(null)}
+            className="text-emerald-700 hover:text-emerald-900 dark:text-emerald-300 dark:hover:text-emerald-100 transition-colors p-1"
+          >
+            <X className="size-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Chat Messages Panel */}
       <CardContent className="flex-1 overflow-y-auto py-4 px-6 space-y-4">
         {messages.length === 0 ? (
@@ -478,17 +552,28 @@ export default function AgentChatTab({ agent }: AgentChatTabProps) {
                         ? "bg-primary text-primary-foreground border-primary/20 rounded-tr-none" 
                         : "bg-white/80 dark:bg-zinc-900/80 border-border/80 text-foreground rounded-tl-none"
                     )}>
-                      {isUser ? (
-                        <p className="whitespace-pre-wrap break-words">{message.content}</p>
-                      ) : message.content === '' && isGenerating && index === messages.length - 1 ? (
-                        <div className="flex items-center gap-1 py-1 px-1">
-                          <span className="size-2 bg-zinc-400 dark:bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                          <span className="size-2 bg-zinc-400 dark:bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                          <span className="size-2 bg-zinc-400 dark:bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                        </div>
-                      ) : (
-                        <ChatMessageContent content={message.content} />
-                      )}
+                      {(() => {
+                        const isLastMessage = index === messages.length - 1;
+                        const rawContent = message.content;
+                        const streamingCleaned = isLastMessage && isGenerating ? cleanStreamingText(rawContent) : rawContent;
+                        const { cleanText } = parseHiddenMessages(streamingCleaned);
+
+                        if (isUser) {
+                          return <p className="whitespace-pre-wrap break-words">{cleanText}</p>;
+                        }
+
+                        if (message.content === '' && isGenerating && isLastMessage) {
+                          return (
+                            <div className="flex items-center gap-1 py-1 px-1">
+                              <span className="size-2 bg-zinc-400 dark:bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                              <span className="size-2 bg-zinc-400 dark:bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                              <span className="size-2 bg-zinc-400 dark:bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                            </div>
+                          );
+                        }
+
+                        return <ChatMessageContent content={cleanText} />;
+                      })()}
                     </div>
                   </div>
                 </div>

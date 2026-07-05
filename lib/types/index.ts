@@ -139,7 +139,7 @@ export interface UserExternalAgent {
   is_tutor_configured?: boolean;
   agent_type?: 'harness' | 'llm';
   env_type?: 'local' | 'cloud';
-  agent_program?: 'hermes' | 'openclaw' | 'ollama' | 'lmstudio';
+  agent_program?: 'hermes' | 'openclaw' | 'ollama' | 'lmstudio' | 'other';
   created_at: string;
   updated_at: string;
 }

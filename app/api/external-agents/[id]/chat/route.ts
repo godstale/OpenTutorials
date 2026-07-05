@@ -1,8 +1,9 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import fs from 'fs';
 import path from 'path';
 import { normalizeAgentEndpoint } from '@/lib/utils/agent-endpoint';
+
 
 
 function estimateTokenSize(text: string): number {
@@ -85,10 +86,10 @@ export async function POST(
       headers['Authorization'] = `Bearer ${agent.api_key}`;
     }
 
-    if (!agent.selected_model) {
+    const targetModel = agent.selected_model || (agent.agent_type === 'harness' ? 'hermes-agent' : '');
+    if (!targetModel) {
       return new Response('모델이 선택되지 않았습니다. 에이전트 상세 설정에서 모델을 설정해 주세요.', { status: 400 });
     }
-    const targetModel = agent.selected_model;
 
     const response = await fetch(`${v1Url}/chat/completions`, {
       method: 'POST',
@@ -228,3 +229,48 @@ export async function POST(
     return new Response(errMsg, { status: 500 });
   }
 }
+
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Verify agent ownership
+    const { data: agent, error } = await supabase
+      .from('user_external_agents')
+      .select('id')
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .single();
+
+    if (error || !agent) {
+      return NextResponse.json({ error: 'Agent not found or access denied' }, { status: 404 });
+    }
+
+    const chatLogDir = path.join(process.cwd(), 'public', 'agent-chats');
+    const chatLogPath = path.join(chatLogDir, `${id}.json`);
+
+    let chatLogs = [];
+    if (fs.existsSync(chatLogPath)) {
+      try {
+        const fileData = fs.readFileSync(chatLogPath, 'utf8');
+        chatLogs = JSON.parse(fileData);
+      } catch (e) {
+        console.error('Failed to parse chat log file:', e);
+      }
+    }
+
+    return NextResponse.json(chatLogs);
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : 'Unknown error';
+    return NextResponse.json({ error: errMsg }, { status: 500 });
+  }
+}
+

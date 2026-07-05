@@ -476,6 +476,21 @@ function UploadForm() {
         }
       }
 
+      // 자동 수강 처리: 강좌 등록이 끝나면 즉시 본인 계정을 수강 상태로 전환한다.
+      // 강좌 검색 화면이 아직 없어 별도의 수강 신청 진입점이 없기 때문.
+      try {
+        const subscribeRes = await fetch('/api/courses/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ package_id: packageId }),
+        });
+        if (!subscribeRes.ok) {
+          console.error('[AdminCoursesUpload] Auto-subscribe failed:', await subscribeRes.text());
+        }
+      } catch (subscribeErr) {
+        console.error('[AdminCoursesUpload] Auto-subscribe request error:', subscribeErr);
+      }
+
       setProgressPercent(100);
       setCurrentStep('모든 강좌 패키지 및 하위 강좌들이 성공적으로 등록되었습니다!');
       

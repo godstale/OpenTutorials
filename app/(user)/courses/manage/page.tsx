@@ -486,7 +486,7 @@ export default function AdminCoursesPage() {
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">강좌 관리</h2>
           <p className="text-muted-foreground mt-2">
-            로컬에서 직접 제작한 강좌 번들(ZIP) 파일을 업로드하여 등록하거나, Github 저장소의 강좌 소스 코드를 다운로드 및 적재하여 구축한 통합 패키지 강좌 목록 및 하위 콘텐츠를 로컬 DB와 연동하여 관리합니다.
+            강좌 번들(ZIP) 파일, Github 저장소를 이용해 강좌를 등록합니다.
           </p>
         </div>
         <div className="flex gap-4">
@@ -512,7 +512,7 @@ export default function AdminCoursesPage() {
       <Card className="border border-zinc-200 dark:border-zinc-800">
         <CardHeader>
           <CardTitle className="text-xl font-bold">강좌 번들 파일로 등록 ({courses.filter(c => !c.github_url).length})</CardTitle>
-          <CardDescription>로컬 번들 ZIP 파일로 업로드하여 로컬 DB에 구축한 강좌 목록입니다.</CardDescription>
+          <CardDescription>강좌 번들 ZIP 파일로 등록한 강좌 목록입니다.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -549,7 +549,7 @@ export default function AdminCoursesPage() {
       <Card className="border border-zinc-200 dark:border-zinc-800">
         <CardHeader>
           <CardTitle className="text-xl font-bold">GITHUB 에서 추가 ({courses.filter(c => !!c.github_url).length})</CardTitle>
-          <CardDescription>Github 저장소 URL을 연결하여 로컬 DB에 동기화한 강좌 목록입니다.</CardDescription>
+          <CardDescription>Github 저장소를 이용하여 등록한 강좌 목록입니다.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">

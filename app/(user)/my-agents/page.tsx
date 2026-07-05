@@ -144,7 +144,7 @@ function MyAgentsContent() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">에이전트 관리</h1>
           <p className="text-muted-foreground mt-2">
-            로컬 또는 외부 가상 서버에 구축한 Hermes Agent 인스턴스를 연결하고 원격으로 대화하거나 제어합니다.
+            AI 튜터로 사용될 에이전트를 관리합니다.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -224,7 +224,7 @@ function MyAgentsContent() {
                     </Badge>
                     {agent.is_ai_tutor && (
                       <Badge variant="default" className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-600 dark:bg-indigo-500 text-white font-bold">
-                        AI 튜터
+                        기본 튜터
                       </Badge>
                     )}
                   </div>
@@ -258,7 +258,7 @@ function MyAgentsContent() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => handleSetDefaultTutor(agent.id, !!agent.is_ai_tutor)}>
-                        {agent.is_ai_tutor ? 'AI 튜터 해제' : '기본 AI 튜터로 설정'}
+                        {agent.is_ai_tutor ? '기본 튜터 해제' : '기본 튜터로 설정'}
                       </DropdownMenuItem>
                       <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => setAgentToDelete(agent)}>
                         삭제
@@ -267,7 +267,7 @@ function MyAgentsContent() {
                   </DropdownMenu>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-3 pb-6">
+              <CardContent className="space-y-3">
                 <div className="grid grid-cols-2 gap-2 text-xs border-b border-border/50 pb-3">
                   <div>
                     <span className="text-muted-foreground">타입:</span>{' '}

@@ -37,7 +37,7 @@ export default function AddAgentModal({ isOpen, onClose, onSuccess }: AddAgentMo
   const [apiKey, setApiKey] = useState('');
   const [agentType, setAgentType] = useState<'harness' | 'llm'>('harness');
   const [envType, setEnvType] = useState<'local' | 'cloud'>('local');
-  const [agentProgram, setAgentProgram] = useState<'hermes' | 'openclaw' | 'ollama' | 'lmstudio'>('hermes');
+  const [agentProgram, setAgentProgram] = useState<'hermes' | 'openclaw' | 'ollama' | 'lmstudio' | 'other'>('hermes');
   
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
@@ -49,7 +49,7 @@ export default function AddAgentModal({ isOpen, onClose, onSuccess }: AddAgentMo
 
   const updateEndpoint = (
     env: 'local' | 'cloud',
-    program: 'hermes' | 'openclaw' | 'ollama' | 'lmstudio',
+    program: 'hermes' | 'openclaw' | 'ollama' | 'lmstudio' | 'other',
     type: 'harness' | 'llm'
   ) => {
     const host = env === 'local' ? 'localhost' : 'YOUR-CLOUD-IP';
@@ -57,12 +57,16 @@ export default function AddAgentModal({ isOpen, onClose, onSuccess }: AddAgentMo
     if (type === 'harness') {
       if (program === 'openclaw') {
         url = `http://${host}:8000/v1`;
+      } else if (program === 'other') {
+        url = `http://${host}:/v1`;
       } else {
         url = `http://${host}:8642/v1`;
       }
     } else {
       if (program === 'lmstudio') {
         url = `http://${host}:1234/v1`;
+      } else if (program === 'other') {
+        url = `http://${host}:/v1`;
       } else {
         url = `http://${host}:11434/v1`;
       }
@@ -93,15 +97,34 @@ export default function AddAgentModal({ isOpen, onClose, onSuccess }: AddAgentMo
       const data = await res.json();
       if (data.success) {
         const modelsList = Array.isArray(data.models) ? data.models : [];
-        const modelIds = modelsList.map((m: { id: string }) => m.id);
-        setDetectedModels(modelIds);
-        if (modelIds.length > 0) {
-          setSelectedModel(modelIds[0]);
+        const filteredModels = agentType === 'harness'
+          ? modelsList.filter((m: { id: string; hidden?: boolean }) => !m.hidden)
+          : modelsList;
+        const modelIds = filteredModels.map((m: { id: string }) => m.id);
+
+        if (agentType === 'llm' && modelIds.length === 0) {
+          setTestResult({
+            success: false,
+            message: '연결은 성공했으나 LLM 모델을 찾지 못했습니다. LLM 에이전트는 모델이 반드시 존재해야 합니다.',
+          });
+          return;
         }
-        const modelNames = modelIds.join(', ') || '기본 모델';
+
+        setDetectedModels(modelIds);
+        const initialModel = (agentType === 'harness' && data.current_model)
+          ? data.current_model
+          : (modelIds.length > 0 ? modelIds[0] : '');
+        if (initialModel) {
+          setSelectedModel(initialModel);
+        } else {
+          setSelectedModel(agentType === 'harness' ? 'hermes-agent' : '');
+        }
+        const modelNames = modelIds.join(', ') || (agentType === 'harness' ? '없음' : '모델 감지 안됨');
         setTestResult({
           success: true,
-          message: `연결 성공! 지원 모델: ${modelNames}`,
+          message: agentType === 'harness'
+            ? `연결 성공! (하네스 에이전트)`
+            : `연결 성공! 감지된 모델: ${modelNames}`,
         });
       } else {
         setTestResult({
@@ -126,7 +149,12 @@ export default function AddAgentModal({ isOpen, onClose, onSuccess }: AddAgentMo
     setIsSaving(true);
     setSaveError(null);
     try {
-      const selected_model = selectedModel || (detectedModels.length > 0 ? detectedModels[0] : 'hermes-agent');
+      const selected_model = selectedModel.trim() || (agentType === 'harness' ? 'hermes-agent' : '');
+      if (agentType === 'llm' && !selected_model) {
+        setSaveError('LLM 에이전트는 활성 모델이 반드시 지정되어야 합니다. 연결상태 확인을 완료해 주세요.');
+        setIsSaving(false);
+        return;
+      }
 
       await createExternalAgent({
         name,
@@ -245,7 +273,7 @@ export default function AddAgentModal({ isOpen, onClose, onSuccess }: AddAgentMo
 
           <div className="space-y-2">
             <Label className="text-sm font-bold">에이전트 프로그램 *</Label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {agentType === 'harness' ? (
                 <>
                   <button
@@ -275,6 +303,20 @@ export default function AddAgentModal({ isOpen, onClose, onSuccess }: AddAgentMo
                     }`}
                   >
                     <span className="text-xs">Open claw</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAgentProgram('other');
+                      updateEndpoint(envType, 'other', 'harness');
+                    }}
+                    className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all ${
+                      agentProgram === 'other'
+                        ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/20 dark:border-indigo-400 font-bold'
+                        : 'border-border bg-transparent hover:bg-zinc-50 dark:hover:bg-zinc-900'
+                    }`}
+                  >
+                    <span className="text-xs">기타</span>
                   </button>
                 </>
               ) : (
@@ -307,6 +349,20 @@ export default function AddAgentModal({ isOpen, onClose, onSuccess }: AddAgentMo
                   >
                     <span className="text-xs">LM Studio</span>
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAgentProgram('other');
+                      updateEndpoint(envType, 'other', 'llm');
+                    }}
+                    className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all ${
+                      agentProgram === 'other'
+                        ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/20 dark:border-indigo-400 font-bold'
+                        : 'border-border bg-transparent hover:bg-zinc-50 dark:hover:bg-zinc-900'
+                    }`}
+                  >
+                    <span className="text-xs">기타</span>
+                  </button>
                 </>
               )}
             </div>
@@ -338,11 +394,11 @@ export default function AddAgentModal({ isOpen, onClose, onSuccess }: AddAgentMo
             </div>
           </div>
 
-          <div className="pt-2 flex flex-col gap-3">
+          <div className="pt-2 flex flex-col gap-4">
             <div className="flex items-center justify-between gap-4">
               <Button type="button" variant="outline" onClick={handleTestConnection} disabled={isTesting || !endpoint}>
                 {isTesting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                연결 테스트
+                연결상태 확인
               </Button>
               
               {testResult && (
@@ -353,24 +409,30 @@ export default function AddAgentModal({ isOpen, onClose, onSuccess }: AddAgentMo
               )}
             </div>
 
-            {testResult?.success && detectedModels.length > 0 && (
-              <div className="space-y-2 rounded-lg border border-border/85 bg-zinc-50/50 dark:bg-zinc-900/50 p-3 mt-1">
-                <Label htmlFor="selectedModel" className="text-xs font-bold">기본 모델 선택 *</Label>
-                <Select value={selectedModel} onValueChange={setSelectedModel}>
-                  <SelectTrigger className="w-full bg-white dark:bg-zinc-900 h-9">
-                    <SelectValue placeholder="사용할 모델을 선택하세요" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {detectedModels.map((model) => (
-                      <SelectItem key={model} value={model}>
-                        {model}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-[10px] text-muted-foreground">연결 테스트 완료 후 에이전트와 통신할 때 사용할 LLM 모델입니다.</p>
+            <div className="space-y-2 rounded-lg border border-border/85 bg-zinc-50/50 dark:bg-zinc-900/50 p-3 mt-1">
+              <div className="space-y-1.5">
+                <Label htmlFor="selectedModel" className="text-xs font-bold">
+                  활성 모델 {agentType === 'llm' ? '*' : '(선택 사항)'}
+                </Label>
+                <Input
+                  id="selectedModel"
+                  readOnly
+                  disabled
+                  placeholder={
+                    agentType === 'harness'
+                      ? '하네스 에이전트는 모델을 지정하지 않아도 됩니다.'
+                      : '연결상태 확인 버튼을 클릭하면 자동으로 모델을 조회하여 입력합니다.'
+                  }
+                  value={selectedModel}
+                  className="bg-zinc-100 dark:bg-zinc-900/50 h-9 text-sm text-muted-foreground"
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  {agentType === 'harness'
+                    ? '하네스 에이전트의 경우 기본 모델(hermes-agent)이 사용되므로 입력이 없어도 무방합니다.'
+                    : '연결상태 확인 시 탐색된 LLM 모델명이 자동으로 입력됩니다.'}
+                </p>
               </div>
-            )}
+            </div>
           </div>
 
           {saveError && (

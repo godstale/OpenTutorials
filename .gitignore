@@ -76,3 +76,6 @@ ENV/
 .idea/
 .history/
 
+# Superpowers subagent-driven-development scratch (progress ledger, task briefs/reports)
+.superpowers/
+
