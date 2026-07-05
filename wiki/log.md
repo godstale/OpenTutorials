@@ -32,6 +32,49 @@ Ran lint. See lint-report.md for details.
 
 ## 2026-07-05
 
+- **[CHORE] 로컬 DB 스냅샷 및 에이전트 대화 로그 갱신, `db.json` gitignore 규칙 보강**
+  - **수정/생성 파일**:
+    - `db.json` — 로컬 실행 중 누적된 강좌/진행률/에이전트 데이터 스냅샷 갱신.
+    - `public/agent-chats/c3111115-c54b-48a3-919a-3cec5ec77627.json` — 에이전트 대화 로그 갱신.
+    - `.gitignore` — 최상위 `/db.json` 규칙 외에 하위 경로에서도 `db.json`이 실수로 추적되지 않도록 규칙을 보강.
+  - **작업 내용**: 로컬 온디바이스 DB 파일 특성상 실행할 때마다 상태가 바뀌므로 기능 변경 없이 스냅샷만 최신화함.
+
+- **[FIX] 학습 화면 이미지가 Supabase Storage 대신 로컬 정적 경로에서 서빙되도록 수정**
+  - **수정/생성 파일**:
+    - `app/(user)/learn/[slug]/client.tsx` — MDX 카드 내 상대 경로 이미지(`images/...`)를 해석할 때 여전히 `NEXT_PUBLIC_SUPABASE_URL` 기반 Supabase Storage 공개 URL을 조립하던 잔재 코드를 제거하고, 데스크탑 로컬 실행 아키텍처(`public/courses/[slug]/images/...` 정적 서빙)에 맞춰 `/courses/[slug]/images/[filename]` 상대 경로로 직접 연결하도록 수정함.
+  - **작업 내용**: 클라우드/Supabase 호스팅 모델을 걷어내고 로컬 파일 시스템 기반으로 전환한 이후에도 남아있던 구 스토리지 참조를 정리함.
+
+- **[FIX] 강좌 업로드 화면의 Bundler 생성기 GitHub 링크를 신규 저장소 주소로 갱신**
+  - **수정/생성 파일**:
+    - `app/(user)/courses/manage/upload/page.tsx` — "강좌 번들 자동 생성기" 배너의 GitHub 바로가기 버튼이 예전 프로젝트 위치(`https://github.com/godstale/pennypress-course-generator`)를 가리키고 있던 것을 실제 이관된 저장소(`https://github.com/godstale/OpenTutorials-Bundler`)로 수정함. `README.md`, `docs/manual/README.md`에는 이미 신규 주소가 반영되어 있었으나 이 화면만 누락되어 있었음.
+  - **작업 내용**:
+    - 강좌 제작용 Bundler 프로젝트가 `OpenTutorials-Bundler` GitHub 저장소로 위치를 옮김에 따라, 앱 내 마지막 남은 구주소 참조를 정리함.
+
+- **[DOCS] 동영상/자막 카드 기능에 맞춰 Bundler 프로토콜 하위 지침 문서 동기화**
+  - **수정/생성 파일**:
+    - `docs/bundler/protocol.md` — `bb1b195`(유튜브 동영상 카드 기능 추가) 커밋에서 4.3절(동영상 카드 JSON 스펙)이 추가될 때 헤딩 레벨이 `####`로 잘못 지정되어 4.1/4.2와 형제 관계가 아닌 것처럼 보이던 문제를 `###`로 수정하고 구분선(`---`)을 추가함. 또한 6절(검증 규칙)에 실제 업로드 API(`app/api/admin/courses/upload/route.ts`)가 수행하는 동영상 카드 스키마 검증(4번 항목: `title`/`type`/`video_info.provider`/`video_info.video_id`/`subtitles` 배열 타입) 내역이 누락되어 있어 추가하고, 서버가 검증하지 않는 자막 `start<end` 순서 정합성은 "권장, 서버 미검증" 항목으로 명시함.
+    - `docs/bundler/ai-agent-instructions.md` — 동영상 카드 기능 추가 이후에도 마크다운 카드 생성 지침만 남아 있어, 원고에 대응하는 유튜브 영상이 있을 때 `cards/*.json` 동영상 카드로 제작하는 핵심 준수 지침(5번 항목)과 작업 프로세스(2/3단계), 자가 검증 체크리스트(4단계)를 추가함. 자막 타임스탬프는 실제 영상 자막/스크립트 근거 없이 임의로 생성하지 말라는 주의사항을 명시함.
+    - `docs/bundler/creator-interview-guide.md` — 강좌 제작자 인터뷰 질문 목록에 동영상 카드 관련 3.3절(유튜브 영상 URL/ID 확인, 원본 자막 유무 확인, 재생 길이 확인)을 신규 추가함. AI가 자막을 추측 생성하지 않도록 명시적으로 안내함.
+  - **작업 내용**:
+    - `bb1b195` 커밋에서 `protocol.md`만 갱신되고 두 하위 지침 문서(`ai-agent-instructions.md`, `creator-interview-guide.md`)는 갱신되지 않아 CLAUDE.md의 "Bundler 프로토콜 수정 시 하위 지침 문서들도 즉시 최신화" 규칙을 완전히 만족하지 못한 상태였음을 발견하고 보완함. 코드(검증 로직, `client.tsx`의 자막 클릭 탐색 UI) 변경은 없으며 문서만 갱신함.
+
+- **[CLEANUP] 나의 강좌 화면에서 개별 강좌 카드 제거 및 테스트 데이터 정리**
+  - **수정/생성 파일**:
+    - `app/(user)/my-courses/page.tsx` — 패키지에 속하지 않은 "개별 강좌" 카드 UI(활성/완료 탭 모두)를 완전히 제거하고 패키지 카드만 표시하도록 변경함. 이에 따라 개별 강좌 카드에서만 쓰이던 담당 에이전트 조회 로직(`getAssignedAgent`, `agents` state, `getExternalAgents` 호출)과 관련 아이콘 import(`PlayCircle`, `AlertCircle`)를 제거했고, 탭 카운트/빈 상태 문구도 패키지 기준으로만 계산하도록 단순화함. `progressList`(및 `/api/courses/progress` 호출)는 패키지 내 강좌의 "이어보기" 대상(`getPackageTargetUrl`)을 계산하는 데 계속 사용되므로 유지함.
+    - `db.json` — 개별 강좌로 등록되어 있던 테스트용 강좌 `video-test-course-id`("동영상 및 자막 연동 테스트 강좌")를 `courses`에서 삭제하고, 관련 `user_progress` 5건, 해당 강좌를 언급하는 테스트용 `user_external_agent_messages` 4건을 함께 삭제함.
+    - `public/courses/video-test-course/` (삭제) — 위 테스트 강좌의 카드/설정 에셋 폴더.
+  - **작업 내용**:
+    - 개별 강좌 카드는 패키지에 속하지 않은 강좌 진행 상태를 보여주던 기능이었으나 실사용 데이터가 없고 테스트용으로만 쓰이고 있어(위 `video-test-course` 사례), 향후 개별 강좌 등록 플로우 자체를 사용하지 않기로 하고 UI와 테스트 데이터를 모두 제거함.
+    - `tsc --noEmit` 확인: 수정한 파일 기준 신규 에러 없음 (기존에 있던 `components/layout/UserHeader.tsx`의 무관한 타입 에러 1건은 이번 변경과 무관).
+
+- **[FEATURE] 영상 학습 화면 자막 UX를 팝업형 "자막 탐색"으로 개편**
+  - **수정/생성 파일**:
+    - `app/(user)/learn/[slug]/client.tsx` — 영상 카드 하단에 항상 펼쳐져 있던 인라인 자막 리스트(스크롤 영역이 좁아 가독성이 나쁘다는 피드백)를 제거하고, 콘텐츠 헤더의 즐겨찾기(Bookmark)/공유(Share2) 아이콘 버튼(미연결 상태였음)을 "자막 탐색" 버튼으로 교체함. 버튼은 영상 타입 카드이고 자막이 있을 때만 노출되며, 클릭 시 좌측 "강좌 목차" 패널 전체를 덮는 오버레이 팝업(`isSubtitlePopupOpen` state)을 띄워 `[mm:ss] 자막` 형식의 리스트를 보여줌. 초를 `mm:ss`로 변환하는 `formatSubtitleTime` 헬퍼를 추가. 자막 항목 클릭 시 기존과 동일하게 `playerRef.current.currentTime` 이동 + 재생하되 팝업은 닫지 않고 유지, 현재 재생 시간과 일치하는 자막은 계속 강조 표시됨. 카드 전환 시 팝업은 자동으로 닫힘.
+    - `docs/superpowers/specs/2026-07-05-subtitle-explorer-popup-design.md` (신규, gitignore 대상) — 설계 스펙 문서
+  - **작업 내용**:
+    - Playwright로 `/learn/video-test-course` 접속 후: 텍스트 카드(1.1)에서는 버튼 미노출, 영상 카드(1.2)에서 버튼 노출을 확인. 버튼 클릭 → 목차 패널이 팝업으로 전환되고 현재 재생 시점 자막(`[00:03]`)이 강조됨을 확인. `[00:14]` 자막 클릭 → 영상 프레임이 해당 시점으로 이동하고 팝업이 유지됨을 확인. X 버튼 클릭 → 팝업이 닫히고 목차 패널이 정상 복귀됨을 확인. 콘솔에 새 에러 없음 (기존에 알려진 무관한 에이전트/이슈 위젯 경고만 존재).
+    - Bundler 프로토콜(카드 JSON 스키마)은 변경되지 않았으므로 `docs/bundler/protocol.md` 동기화는 해당 없음.
+
 - **[BUGFIX] 비디오 카드 컨텐츠 영역에 원본 JSON 텍스트가 출력되던 문제 근본 해결**
   - **수정/생성 파일**:
     - `app/(user)/learn/[slug]/client.tsx` — 비디오 타입 카드(`type: 'video'`)일 때 카드 컨텐츠 영역이 `mdxSource`/`content` 분기만 확인하고 `videoInfo`를 전혀 처리하지 않아, `page.tsx`가 채워준 카드 JSON 원본 텍스트(`content`)가 그대로 화면에 출력되던 근본 원인을 수정함. `next/dynamic(ssr:false)`로 `ReactPlayer`를 동적 임포트하고, 실제 설치된 `react-player@3.4.0`의 `dist/types.d.ts`를 직접 확인하여 v3 API(`src`, `ref`→`HTMLVideoElement`, `onTimeUpdate`, `config.youtube`의 평탄한 스키마)에 맞춰 구현. 카드 이동 시에만 자동재생되도록 `lastPlayedCardIndex` ref로 최초 로드와 구분했고, `playerConfig`는 `useMemo`로 고정하여 리렌더링마다 플레이어가 재생성되지 않도록 함. 자막 목록 클릭 시 `playerRef.current.currentTime`으로 탐색.
