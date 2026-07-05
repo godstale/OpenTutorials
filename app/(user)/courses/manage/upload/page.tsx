@@ -719,7 +719,7 @@ function UploadForm() {
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      onClick={() => window.open('https://github.com/godstale/pennypress-course-generator', '_blank')}
+                      onClick={() => window.open('https://github.com/godstale/OpenTutorials-Bundler', '_blank')}
                       className="text-xs h-8 border-indigo-200 hover:bg-indigo-50/50 hover:border-indigo-300 dark:border-indigo-950 dark:hover:bg-indigo-950/20"
                     >
                       GitHub 리포지토리 바로가기
