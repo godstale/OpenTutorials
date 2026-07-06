@@ -143,9 +143,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'package-manifest.json JSON 문법 에러: ' + err.message }, { status: 400 });
     }
 
-    const { title, slug: rawSlug, description, published, bundler_protocol_version, target_age, category } = manifestData;
+    const { title, slug: rawSlug, description, published, bundler_protocol_version, target_age, category, tags } = manifestData;
     if (!title) {
       return NextResponse.json({ error: 'package-manifest.json에 title 필드가 누락되었습니다.' }, { status: 400 });
+    }
+    if (tags && !Array.isArray(tags)) {
+      return NextResponse.json({ error: 'package-manifest.json의 tags는 문자열 배열(Array) 형태여야 합니다.' }, { status: 400 });
     }
 
     // 3. config JSON 파싱 및 TOC-Cards 매칭 검증
@@ -272,6 +275,7 @@ export async function POST(request: NextRequest) {
         target_age: target_age ?? '전연령',
         category: category ?? '기타',
         agent_id: tutorAgentId,
+        tags: Array.isArray(tags) ? tags : [],
         toc: configJson.toc,
         cards: configJson.cards,
         updated_at: new Date().toISOString()

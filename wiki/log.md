@@ -32,6 +32,16 @@ Ran lint. See lint-report.md for details.
 
 ## 2026-07-06
 
+- **[FEATURE] 강좌 패키지 태그(tags) 기능 도입 및 프로토콜 규격 연동**
+  - **수정 파일**:
+    - [index.ts](file:///C:/Workspace/Projects/OpenTutorials/lib/types/index.ts) — `CoursePackage` 인터페이스에 선택적 배열 속성 `tags?: string[];` 추가.
+    - [route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/admin/packages/upload/route.ts) — `package-manifest.json` 파싱 시 `tags` 필드를 구조 분해 할당으로 추출하고, 해당 값이 존재할 경우 배열 형식 여부를 검증(`Array.isArray`). DB(`db.json` 내 `course_packages` 테이블)에 패키지를 upsert 할 때 `tags` 필드가 정상적으로 저장되도록 파이프라인 연결.
+    - [protocol.md](file:///C:/Workspace/Projects/OpenTutorials/docs/bundler/protocol.md) — `package-manifest.json` 메타데이터 속성 명세 테이블에 `tags` 속성(Array of String, Optional)을 명시하고, 제작 예시인 `package-manifest.json` 예시 파일에 `tags` 필드 사용 사례를 보강.
+    - [protocol-changelog.md](file:///C:/Workspace/Projects/OpenTutorials/docs/bundler/protocol-changelog.md) — (신규 파일) Bundler 프로토콜 v1.0.0 이후의 변경사항들을 명확히 추적하기 위한 전용 체인지로그 문서 작성.
+    - [db.json](file:///C:/Workspace/Projects/OpenTutorials/db.json) — 기존에 등록된 2개의 강좌 패키지("아두이노 IoT 프로젝트 마스터 클래스", "신경망과 LLM 개론")에 수동으로 각각 성격에 맞는 태그 리스트를 매핑하여 상세 화면에 즉각 노출되도록 보완.
+  - **작업 내용**:
+    - 기존에는 강좌 패키지 메타데이터 및 업로드 API 스키마에 `tags` 속성이 구현되어 있지 않아 강좌 상세 화면에서 항상 "등록된 태그 없음"이 노출되던 한계를 해결하고, 프로토콜 명세에 `tags` 필드를 공식 등록 및 업로드 핸들러의 DB 저장 파이프라인에 완벽히 연동하였습니다. 또한 기존 수강 강좌 2개에 태그 데이터를 적재하여 즉각 검증이 가능하도록 처리했습니다. 추가로, 외부 강좌 빌더 및 에이전트 빌더가 프로토콜 스펙 변동을 편하게 적용할 수 있도록 전용 체인지로그 문서를 마련했습니다.
+
 - **[FEATURE] 학습 화면 폰트 개선 및 마크다운 헤더 폰트 크기 최적화 및 시인성 개선**
   - **수정 파일**:
     - [layout.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/layout.tsx) — `next/font/local`을 사용해 로컬 Noto Sans KR 가변 가중치 폰트(`NotoSansKR-VariableFont_wght.ttf`)를 `--font-noto-sans` 변수로 로드하여 HTML에 주입.

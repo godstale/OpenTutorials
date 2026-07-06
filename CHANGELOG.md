@@ -11,6 +11,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v0.3.0] - 2026-07-06
+
+### 강좌 패키지 태그(tags) 기능 도입 및 프로토콜 규격 고도화 (v0.3.0)
+
+강좌 패키지 메타데이터 및 업로드 API 프로세스에 `tags` 필드를 도입하고, 관련 프로토콜 스펙 및 타입을 동기화하여 강좌 상세 화면에 태그 뱃지들이 정상적으로 출력되도록 개선한 릴리즈.
+
+#### Added
+- 강좌 패키지(`CoursePackage`) 타입 정의 및 `package-manifest.json` 메타데이터에 선택적 배열 속성 `tags` 스펙 추가
+- `docs/bundler/protocol.md` 프로토콜 스펙 문서를 `v1.1.0`으로 마이너 업데이트하고, `tags` 속성 명세 및 활용 예제 반영
+
+#### Changed
+- 강좌 패키지 업로드 API(`app/api/admin/packages/upload`)에서 `tags` 필드를 파싱하고, 배열 형식 여부를 검증한 후 `db.json`에 upsert 하도록 파이프라인 연동
+- 기존 로컬 DB(`db.json`)에 수동으로 예시 태그 데이터를 마이그레이션하여 상세 화면에서 태그 뱃지가 즉시 노출되도록 보완
+
+---
+
 ## [v0.2.0] - 2026-07-06
 
 ### 폰트 고도화 및 학습 화면 마크다운 스타일 정밀 튜닝 (v0.2.0)

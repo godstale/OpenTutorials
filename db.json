@@ -656,6 +656,12 @@
         "ch13/04-lesson-4.mdx",
         "ch13/05-lesson-5.mdx",
         "ch13/06-lesson-6.mdx"
+      ],
+      "tags": [
+        "IoT",
+        "아두이노",
+        "하드웨어",
+        "통신"
       ]
     },
     {
@@ -720,6 +726,12 @@
         "02-neural-network-text.mdx",
         "03-llm-video.json",
         "04-llm-text.mdx"
+      ],
+      "tags": [
+        "인공지능",
+        "신경망",
+        "LLM",
+        "Deep Learning"
       ]
     }
   ],
@@ -789,7 +801,7 @@
       "user_id": "local-user-id",
       "status": "offline",
       "created_at": "2026-07-05T05:19:15.147Z",
-      "updated_at": "2026-07-06T14:13:18.250Z",
+      "updated_at": "2026-07-06T14:46:33.152Z",
       "env_type": "local",
       "agent_program": "lmstudio"
     },
@@ -805,9 +817,9 @@
       "env_type": "cloud",
       "agent_program": "hermes",
       "user_id": "local-user-id",
-      "status": "online",
+      "status": "offline",
       "created_at": "2026-07-05T08:37:49.875Z",
-      "updated_at": "2026-07-06T14:32:35.118Z"
+      "updated_at": "2026-07-06T14:44:03.972Z"
     }
   ],
   "user_external_agent_messages": [
