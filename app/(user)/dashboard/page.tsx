@@ -23,65 +23,39 @@ async function DashboardContent() {
     ? await Promise.all([
         getUserSubscriptions(user.id),
         supabase.from('user_external_agents').select('id, status'),
-        adminSupabase.from('user_progress').select('*, course:courses(*, course_package_items(package_id))').eq('user_id', user.id),
-        adminSupabase.from('user_package_subscriptions').select('*, package:course_packages(*, items:course_package_items(course_id))').eq('user_id', user.id)
+        adminSupabase.from('user_progress').select('*, course:course_packages(*)').eq('user_id', user.id),
+        adminSupabase.from('user_package_subscriptions').select('*, package:course_packages(*)').eq('user_id', user.id)
       ])
     : [[], { data: [] }, { data: [] }, { data: [] }];
   
   const externalAgentsCount = externalAgents?.length ?? 0;
   const onlineCount = externalAgents?.filter((a: { status: string }) => a.status === 'online').length ?? 0;
   
-  // Filter out courses that belong to any package so they don't show up as individual courses
+  // Filter out completed courses. In this local platform, each progress entry represents a course/package.
   const activeProgress = (userProgress || []).filter(
-    (p: any) => !p.completed && (!p.course?.course_package_items || p.course.course_package_items.length === 0)
+    (p: any) => !p.completed
   );
   
-  const activePackagesCount = packageSubs?.length ?? 0;
-  
-  // Calculate total active courses count: individual active courses + subscribed packages
-  const totalActiveCoursesCount = activeProgress.length + activePackagesCount;
+  // Calculate total active courses count: individual active courses currently in progress
+  const totalActiveCoursesCount = activeProgress.length;
   
   const completedCoursesCount = userProgress?.filter((p: { completed: boolean }) => p.completed).length ?? 0;
 
-  // Create progress map to check completed courses
-  const progressMap = new Map((userProgress || []).map((p: any) => [p.course_id, p.completed]));
-
-  // Create unified learning items: active individual courses + subscribed packages
-  const unifiedLearningItems = [
-    ...activeProgress.map((p: any) => ({
-      id: `course-${p.id}`,
-      type: 'course' as const,
-      slug: p.course.slug,
-      title: p.course.title,
-      description: p.course.description || '',
-      thumbnail: p.course.thumbnail,
-      currentCard: p.max_card ?? p.last_card ?? 0,
-      totalCards: 10,
-      updatedAt: p.updated_at
-    })),
-    ...(packageSubs || []).map((sub: any) => {
-      const pkg = sub.package;
-      const items = pkg?.items || [];
-      const totalCourses = items.length;
-      const completedCourses = items.filter((item: any) => progressMap.get(item.course_id) === true).length;
-      const percent = totalCourses > 0 ? Math.round((completedCourses / totalCourses) * 100) : 0;
-      return {
-        id: `package-${sub.id}`,
-        type: 'package' as const,
-        slug: pkg.slug,
-        title: pkg.title,
-        description: pkg.description || '',
-        thumbnail: pkg.thumbnail,
-        completedCourses: completedCourses,
-        totalCourses: totalCourses,
-        percent,
-        updatedAt: sub.created_at
-      };
-    })
-  ];
+  // Create unified learning items: active individual courses
+  const unifiedLearningItems: any[] = activeProgress.map((p: any) => ({
+    id: `course-${p.id}`,
+    type: 'course' as const,
+    slug: p.course?.slug || '',
+    title: p.course?.title || '',
+    description: p.course?.description || '',
+    thumbnail: p.course?.thumbnail || null,
+    currentCard: p.max_card ?? p.last_card ?? 0,
+    totalCards: p.course?.cards?.length || 10,
+    updatedAt: p.updated_at
+  }));
 
   // Sort by updatedAt (descending)
-  unifiedLearningItems.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+  unifiedLearningItems.sort((a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
   return (
     <div className="space-y-8">

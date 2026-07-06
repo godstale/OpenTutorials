@@ -21,11 +21,9 @@ export interface SerializedQuery {
 
 // Default initial state matching the old Supabase tables
 const DEFAULT_DB = {
-  courses: [],
   course_cards: [],
   course_wiki: [],
   course_packages: [],
-  course_package_items: [],
   user_package_subscriptions: [],
   user_progress: [],
   user_external_agents: [],
@@ -189,67 +187,23 @@ export function executeLocalQuery(query: SerializedQuery, action: string, data?:
     // Mock Auto Join Resolver for Select query
     if (items.length > 0) {
       if (table === 'user_progress') {
-        const courses = db.courses || [];
-        const packageItems = db.course_package_items || [];
+        const packages = db.course_packages || [];
         items = items.map((item) => {
-          const course = courses.find((c: any) => c.id === item.course_id);
-          const mappedPackageItems = packageItems.filter((pi: any) => pi.course_id === item.course_id);
+          const pkg = packages.find((p: any) => p.id === item.course_id);
           return {
             ...item,
-            course: course ? {
-              ...course,
-              course_package_items: mappedPackageItems
-            } : null
-          };
-        });
-      }
-
-      if (table === 'course_packages') {
-        const packageItems = db.course_package_items || [];
-        const courses = db.courses || [];
-        items = items.map((pkg) => {
-          const matchedItems = packageItems
-            .filter((pi: any) => pi.package_id === pkg.id)
-            .map((pi: any) => {
-              const course = courses.find((c: any) => c.id === pi.course_id);
-              return {
-                ...pi,
-                course: course || null
-              };
-            });
-          return {
-            ...pkg,
-            items: matchedItems
+            course: pkg || null
           };
         });
       }
 
       if (table === 'user_package_subscriptions') {
         const packages = db.course_packages || [];
-        const packageItems = db.course_package_items || [];
-        const courses = db.courses || [];
-        
         items = items.map((sub) => {
           const pkg = packages.find((p: any) => p.id === sub.package_id);
-          let pkgWithItems = null;
-          if (pkg) {
-            const matchedItems = packageItems
-              .filter((pi: any) => pi.package_id === pkg.id)
-              .map((pi: any) => {
-                const course = courses.find((c: any) => c.id === pi.course_id);
-                return {
-                  ...pi,
-                  course: course || null
-                };
-              });
-            pkgWithItems = {
-              ...pkg,
-              items: matchedItems
-            };
-          }
           return {
             ...sub,
-            package: pkgWithItems
+            package: pkg || null
           };
         });
       }
@@ -306,6 +260,10 @@ export function executeLocalQuery(query: SerializedQuery, action: string, data?:
         existingIndex = db[table].findIndex((x: any) => x.id === d.id);
       } else if (d.slug) {
         existingIndex = db[table].findIndex((x: any) => x.slug === d.slug);
+      } else if (table === 'user_progress' && d.user_id && d.course_id) {
+        existingIndex = db[table].findIndex((x: any) => x.user_id === d.user_id && x.course_id === d.course_id);
+      } else if (table === 'user_package_subscriptions' && d.user_id && d.package_id) {
+        existingIndex = db[table].findIndex((x: any) => x.user_id === d.user_id && x.package_id === d.package_id);
       }
 
       if (existingIndex !== -1) {

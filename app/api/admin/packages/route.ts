@@ -11,19 +11,14 @@ export async function GET(request: NextRequest) {
     const supabaseAdmin = createAdminClient();
     const { data: packages, error } = await supabaseAdmin
       .from('course_packages')
-      .select('*, items:course_package_items(course:courses(*))')
+      .select('*')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
 
     const formatted = (packages || []).map((pkg: any) => ({
       ...pkg,
-      courses: pkg.items
-        ? pkg.items
-            .sort((a: any, b: any) => a.order_index - b.order_index)
-            .map((it: any) => it.course)
-            .filter(Boolean)
-        : []
+      courses: [] // courses table was unified into course_packages, return empty array for backwards compatibility
     }));
 
     return NextResponse.json(formatted);

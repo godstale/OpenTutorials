@@ -33,7 +33,7 @@ export async function GET(
     let isDummy = false;
 
     const { data: dbCourse, error: dbError } = await supabase
-      .from('courses')
+      .from('course_packages')
       .select('*')
       .eq('slug', slug)
       .single();

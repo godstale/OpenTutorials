@@ -31,9 +31,8 @@ interface ValidationStep {
 const INITIAL_STEPS: ValidationStep[] = [
   { id: 'manifest-exist', label: 'package-manifest.json 존재 여부 및 형식 검증', status: 'idle' },
   { id: 'manifest-fields', label: '패키지 메타데이터 필수 필드 검증', status: 'idle' },
-  { id: 'child-zips', label: '하위 강좌 ZIP 파일 매핑 검사', status: 'idle' },
-  { id: 'child-structure', label: '하위 강좌 내부 필수 파일 검사 (config.json, wiki.md)', status: 'idle' },
-  { id: 'child-config-toc', label: '하위 강좌 목차(TOC) 및 강의 카드(Cards) 일치성 검사', status: 'idle' },
+  { id: 'package-structure', label: '필수 파일 검사 (config.json, wiki.md)', status: 'idle' },
+  { id: 'package-config-toc', label: '목차(TOC) 및 강의 카드(Cards) 일치성 검사', status: 'idle' },
 ];
 
 function validateTocRecursive(
@@ -188,7 +187,6 @@ function UploadForm() {
 
   const runPreValidation = async (file: File) => {
     setValidationLoading(true);
-    const steps = INITIAL_STEPS.map(s => ({ ...s, status: 'idle' as const }));
     
     const updateStep = (id: string, status: 'running' | 'success' | 'failed', error?: string) => {
       setValidationSteps(prev => prev.map(s => s.id === id ? { ...s, status, error } : s));
@@ -231,9 +229,6 @@ function UploadForm() {
       if (!manifest.title || typeof manifest.title !== 'string' || !manifest.title.trim()) {
         throw { stepId: 'manifest-fields', message: 'package-manifest.json에 title 필드가 누락되었거나 유효하지 않습니다.' };
       }
-      if (!manifest.courses || !Array.isArray(manifest.courses) || manifest.courses.length === 0) {
-        throw { stepId: 'manifest-fields', message: 'package-manifest.json에 courses 배열이 누락되었거나 비어있습니다.' };
-      }
       if (!manifest.bundler_protocol_version || typeof manifest.bundler_protocol_version !== 'string' || !manifest.bundler_protocol_version.trim()) {
         throw { stepId: 'manifest-fields', message: 'package-manifest.json에 bundler_protocol_version (프로토콜 버전) 필드가 누락되었거나 유효하지 않습니다.' };
       }
@@ -247,130 +242,86 @@ function UploadForm() {
       setManifestInfo({
         title: manifest.title,
         slug: manifest.slug || '',
-        coursesCount: manifest.courses.length,
-        courses: manifest.courses.map((c: any) => c.title || c.slug || '이름 없음'),
+        coursesCount: 0,
+        courses: [],
         bundlerProtocolVersion: manifest.bundler_protocol_version,
         targetAge: manifest.target_age,
         category: manifest.category,
       });
       updateStep('manifest-fields', 'success');
 
-      // Step 3: child-zips
-      updateStep('child-zips', 'running');
-      for (const c of manifest.courses) {
-        const childSlug = c.slug;
-        if (!childSlug) {
-          throw { stepId: 'child-zips', message: 'courses 배열 내의 코스에 slug 필드가 없습니다.' };
+      // Step 3: package-structure
+      updateStep('package-structure', 'running');
+      if (!contents.file('config.json')) {
+        throw { stepId: 'package-structure', message: '루트 경로에 config.json 파일이 누락되었습니다.' };
+      }
+      if (!contents.file('wiki.md')) {
+        throw { stepId: 'package-structure', message: '루트 경로에 wiki.md 파일이 누락되었습니다.' };
+      }
+      updateStep('package-structure', 'success');
+
+      // Step 4: package-config-toc
+      updateStep('package-config-toc', 'running');
+      const configFile = contents.file('config.json')!;
+      const configText = await configFile.async('text');
+      let configJson: any;
+      try {
+        configJson = JSON.parse(configText);
+      } catch (e: any) {
+        throw { stepId: 'package-config-toc', message: `config.json JSON 파싱 오류: ${e.message}` };
+      }
+
+      if (!configJson.cards || !Array.isArray(configJson.cards) || configJson.cards.length === 0) {
+        throw { stepId: 'package-config-toc', message: 'config.json 내에 cards(강의 카드) 배열이 누락되었거나 비어있습니다.' };
+      }
+      if (!configJson.toc || !Array.isArray(configJson.toc)) {
+        throw { stepId: 'package-config-toc', message: 'config.json 내에 toc(목차) 트리 배열이 없습니다.' };
+      }
+
+      // Validate TOC recursively
+      const collectedFilenames: string[] = [];
+      const tocValidation = validateTocRecursive(configJson.toc, 'toc', collectedFilenames);
+      if (!tocValidation.valid) {
+        throw { stepId: 'package-config-toc', message: `목차 구조 검증 오류: ${tocValidation.error}` };
+      }
+
+      const cardsSet = new Set<string>(configJson.cards);
+      if (cardsSet.size !== configJson.cards.length) {
+        throw { stepId: 'package-config-toc', message: 'config.json의 cards에 중복된 파일명이 존재합니다.' };
+      }
+
+      const collectedSet = new Set(collectedFilenames);
+      if (collectedSet.size !== collectedFilenames.length) {
+        throw { stepId: 'package-config-toc', message: 'TOC 내에 중복된 filename이 존재합니다.' };
+      }
+
+      if (cardsSet.size !== collectedSet.size) {
+        throw { stepId: 'package-config-toc', message: `cards 개수(${cardsSet.size})와 toc의 최하단 노드 filename 개수(${collectedSet.size})가 일치하지 않습니다.` };
+      }
+
+      // Check if MDX cards actually exist in zip file
+      const actualCardFiles = new Set<string>();
+      contents.forEach((relativePath, fileEntry) => {
+        if (relativePath.startsWith('cards/') && !fileEntry.dir) {
+          actualCardFiles.add(relativePath.substring('cards/'.length));
         }
-        const childZipFile = contents.file(`courses/${childSlug}.zip`);
-        if (!childZipFile) {
-          throw { stepId: 'child-zips', message: `courses/ 디렉토리 내에 하위 강좌 파일 '${childSlug}.zip'이(가) 존재하지 않습니다.` };
+      });
+
+      for (const card of configJson.cards) {
+        if (!collectedSet.has(card)) {
+          throw { stepId: 'package-config-toc', message: `cards 배열에 있는 '${card}' 파일이 toc에 정의되어 있지 않습니다.` };
+        }
+        if (!actualCardFiles.has(card)) {
+          throw { stepId: 'package-config-toc', message: `cards/ 폴더 내에 '${card}' 파일이 실재하지 않습니다.` };
         }
       }
-      updateStep('child-zips', 'success');
-
-      // Step 4: child-structure
-      updateStep('child-structure', 'running');
-      const parsedChildCourses: { slug: string; zipContents: JSZip }[] = [];
-      
-      for (const c of manifest.courses) {
-        const childSlug = c.slug;
-        const childZipFile = contents.file(`courses/${childSlug}.zip`)!;
-        
-        let childZipData: Blob;
-        try {
-          childZipData = await childZipFile.async('blob');
-        } catch (e: any) {
-          throw { stepId: 'child-structure', message: `하위 강좌 '${childSlug}.zip' 데이터를 읽지 못했습니다: ${e.message}` };
-        }
-        
-        const childZip = new JSZip();
-        let childContents: JSZip;
-        try {
-          childContents = await childZip.loadAsync(childZipData);
-        } catch (e: any) {
-          throw { stepId: 'child-structure', message: `하위 강좌 '${childSlug}.zip' 파일을 ZIP으로 파싱하지 못했습니다: ${e.message}` };
-        }
-
-        if (!childContents.file('config.json')) {
-          throw { stepId: 'child-structure', message: `하위 강좌 '${childSlug}.zip'의 루트에 config.json 파일이 누락되었습니다.` };
-        }
-        if (!childContents.file('wiki.md')) {
-          throw { stepId: 'child-structure', message: `하위 강좌 '${childSlug}.zip'의 루트에 wiki.md 파일이 누락되었습니다.` };
-        }
-
-        parsedChildCourses.push({ slug: childSlug, zipContents: childContents });
-      }
-      updateStep('child-structure', 'success');
-
-      // Step 5: child-config-toc
-      updateStep('child-config-toc', 'running');
-      for (const p of parsedChildCourses) {
-        const childSlug = p.slug;
-        const childContents = p.zipContents;
-
-        const configFile = childContents.file('config.json')!;
-        const configText = await configFile.async('text');
-        let configJson: any;
-        try {
-          configJson = JSON.parse(configText);
-        } catch (e: any) {
-          throw { stepId: 'child-config-toc', message: `하위 강좌 '${childSlug}.zip'의 config.json JSON 파싱 오류: ${e.message}` };
-        }
-
-        if (!configJson.cards || !Array.isArray(configJson.cards) || configJson.cards.length === 0) {
-          throw { stepId: 'child-config-toc', message: `하위 강좌 '${childSlug}.zip'의 config.json 내에 cards(강의 카드) 배열이 누락되었거나 비어있습니다.` };
-        }
-        if (!configJson.toc || !Array.isArray(configJson.toc)) {
-          throw { stepId: 'child-config-toc', message: `하위 강좌 '${childSlug}.zip'의 config.json 내에 toc(목차) 트리 배열이 없습니다.` };
-        }
-
-        // Validate TOC recursively
-        const collectedFilenames: string[] = [];
-        const tocValidation = validateTocRecursive(configJson.toc, `${childSlug}.toc`, collectedFilenames);
-        if (!tocValidation.valid) {
-          throw { stepId: 'child-config-toc', message: `하위 강좌 '${childSlug}.zip' 목차 구조 검증 오류: ${tocValidation.error}` };
-        }
-
-        const cardsSet = new Set<string>(configJson.cards);
-        if (cardsSet.size !== configJson.cards.length) {
-          throw { stepId: 'child-config-toc', message: `하위 강좌 '${childSlug}.zip' config.json의 cards에 중복된 파일명이 존재합니다.` };
-        }
-
-        const collectedSet = new Set(collectedFilenames);
-        if (collectedSet.size !== collectedFilenames.length) {
-          throw { stepId: 'child-config-toc', message: `하위 강좌 '${childSlug}.zip'의 TOC 내에 중복된 filename이 존재합니다.` };
-        }
-
-        if (cardsSet.size !== collectedSet.size) {
-          throw { stepId: 'child-config-toc', message: `하위 강좌 '${childSlug}.zip'의 cards 개수(${cardsSet.size})와 toc의 최하단 노드 filename 개수(${collectedSet.size})가 일치하지 않습니다.` };
-        }
-
-        // Check if MDX cards actually exist in zip file
-        const actualCardFiles = new Set<string>();
-        childContents.forEach((relativePath, fileEntry) => {
-          if (relativePath.startsWith('cards/') && !fileEntry.dir) {
-            actualCardFiles.add(relativePath.substring('cards/'.length));
-          }
-        });
-
-        for (const card of configJson.cards) {
-          if (!collectedSet.has(card)) {
-            throw { stepId: 'child-config-toc', message: `하위 강좌 '${childSlug}.zip'의 cards 배열에 있는 '${card}' 파일이 toc에 정의되어 있지 않습니다.` };
-          }
-          if (!actualCardFiles.has(card)) {
-            throw { stepId: 'child-config-toc', message: `하위 강좌 '${childSlug}.zip'의 cards/ 폴더 내에 '${card}' 파일이 실재하지 않습니다.` };
-          }
-        }
-      }
-      updateStep('child-config-toc', 'success');
+      updateStep('package-config-toc', 'success');
 
       setIsValidated(true);
     } catch (err: any) {
       console.error('Validation failed:', err);
       if (err.stepId) {
         updateStep(err.stepId, 'failed', err.message);
-        // Mark subsequent steps as idle
         const failedIdx = INITIAL_STEPS.findIndex(s => s.id === err.stepId);
         setValidationSteps(prev => prev.map((s, idx) => idx > failedIdx ? { ...s, status: 'idle' as const } : s));
       } else {
@@ -399,100 +350,33 @@ function UploadForm() {
     setIsProcessing(true);
     setProcessError('');
     setProgressPercent(0);
-    setCurrentStep('통합 번들 데이터 분석 중...');
+    setCurrentStep('통합 패키지 데이터 등록 중...');
 
     try {
-      const zip = new JSZip();
-      const contents = await zip.loadAsync(selectedFile);
-      
-      // 1. package-manifest.json 및 thumbnail 읽기
-      const manifestFile = contents.file('package-manifest.json');
-      if (!manifestFile) {
-        throw new Error('package-manifest.json 파일이 존재하지 않습니다.');
-      }
-      const manifestText = await manifestFile.async('text');
-      const manifest = JSON.parse(manifestText);
+      setProgressPercent(30);
+      const formData = new FormData();
+      formData.append('file', selectedFile);
 
-      let thumbnailBlob: Blob | null = null;
-      const thumbnailFile = contents.file('thumbnail.png') || 
-                            contents.file('thumbnail.jpg') || 
-                            contents.file('thumbnail.jpeg');
-      if (thumbnailFile) {
-        thumbnailBlob = await thumbnailFile.async('blob');
-      }
-
-      // 2. 패키지 정보 업로드
-      setCurrentStep('통합 패키지 정보 등록 중...');
-      setProgressPercent(10);
-
-      const pkgFormData = new FormData();
-      pkgFormData.append('manifest', manifestText);
-      if (thumbnailBlob) {
-        const ext = thumbnailFile!.name.split('.').pop() || 'png';
-        pkgFormData.append('thumbnail', thumbnailBlob, `thumbnail.${ext}`);
-      }
-
-      const pkgRes = await fetch('/api/admin/courses/upload?type=package', {
+      const res = await fetch('/api/admin/packages/upload', {
         method: 'POST',
-        body: pkgFormData,
+        body: formData,
       });
 
-      if (!pkgRes.ok) {
+      if (!res.ok) {
         let errMsg = '패키지 등록 중 오류가 발생했습니다.';
         try {
-          const errData = await pkgRes.json();
+          const errData = await res.json();
           errMsg = errData.error || errMsg;
-        } catch {
-          // ignore parsing error
-        }
+        } catch {}
         throw new Error(errMsg);
       }
 
-      const pkgResult = await pkgRes.json();
-      const packageId = pkgResult.packageId;
+      const result = await res.json();
+      const packageId = result.packageId;
+      setProgressPercent(70);
+      setCurrentStep('자동 수강 신청 처리 중...');
 
-      // 3. 하위 강좌 ZIP 순차 업로드
-      const totalCourses = manifest.courses.length;
-      for (let i = 0; i < totalCourses; i++) {
-        const course = manifest.courses[i];
-        const childSlug = course.slug;
-        
-        setCurrentStep(`하위 강좌 [${course.title || childSlug}] 업로드 및 처리 중... (${i + 1}/${totalCourses})`);
-        setProgressPercent(Math.floor(10 + (i / totalCourses) * 80));
-
-        const childZipFile = contents.file(`courses/${childSlug}.zip`);
-        if (!childZipFile) {
-          throw new Error(`하위 강좌 파일 'courses/${childSlug}.zip'이 존재하지 않습니다.`);
-        }
-
-        const childZipBlob = await childZipFile.async('blob');
-
-        const courseFormData = new FormData();
-        courseFormData.append('file', childZipBlob, `${childSlug}.zip`);
-        courseFormData.append('packageId', packageId);
-        courseFormData.append('courseSlug', childSlug);
-        courseFormData.append('orderIndex', (i + 1).toString());
-        courseFormData.append('tags', JSON.stringify(course.tags || []));
-
-        const courseRes = await fetch('/api/admin/courses/upload?type=course', {
-          method: 'POST',
-          body: courseFormData,
-        });
-
-        if (!courseRes.ok) {
-          let errMsg = `하위 강좌 [${course.title || childSlug}] 등록 중 오류가 발생했습니다.`;
-          try {
-            const errData = await courseRes.json();
-            errMsg = errData.error || errMsg;
-          } catch {
-            // ignore parsing error
-          }
-          throw new Error(errMsg);
-        }
-      }
-
-      // 자동 수강 처리: 강좌 등록이 끝나면 즉시 본인 계정을 수강 상태로 전환한다.
-      // 강좌 검색 화면이 아직 없어 별도의 수강 신청 진입점이 없기 때문.
+      // 자동 수강 처리
       try {
         const subscribeRes = await fetch('/api/courses/subscribe', {
           method: 'POST',
@@ -507,7 +391,7 @@ function UploadForm() {
       }
 
       setProgressPercent(100);
-      setCurrentStep('모든 강좌 패키지 및 하위 강좌들이 성공적으로 등록되었습니다!');
+      setCurrentStep('모든 강좌 패키지가 성공적으로 등록되었습니다!');
       
       setTimeout(() => {
         setIsProcessing(false);
@@ -679,16 +563,7 @@ function UploadForm() {
                             <span className="text-zinc-700 dark:text-zinc-300">{manifestInfo.category}</span>
                           </div>
                         )}
-                        <div className="flex gap-2 items-start">
-                          <span className="font-semibold text-zinc-500 shrink-0">포함 하위 강좌 ({manifestInfo.coursesCount}개):</span>
-                          <div className="flex flex-wrap gap-1.5">
-                            {manifestInfo.courses.map((title, i) => (
-                              <span key={i} className="px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded font-medium text-[11px] text-zinc-700 dark:text-zinc-300 border">
-                                {title}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
+                        {/* Courses list removed since subcourses concept is deprecated */}
                       </div>
                     </div>
                   )}

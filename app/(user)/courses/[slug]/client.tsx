@@ -138,6 +138,15 @@ interface CourseDetail {
   version?: string;
   changelog?: string;
   external_agents?: UserExternalAgent[];
+  toc?: any[];
+  cards?: string[];
+  tags?: string[];
+  user_progress?: {
+    last_card: number;
+    max_card?: number;
+    completed: boolean;
+    updated_at: string;
+  } | null;
 }
 
 export default function CourseDetailPageClient({ slug }: { slug: string }) {
@@ -248,21 +257,14 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
     );
   }
 
-  const totalSubcourses = courseDetail.courses.length;
-  const completedSubcourses = courseDetail.courses.filter(c => c.user_progress?.completed).length;
-  const progressPercent = totalSubcourses > 0 ? Math.round((completedSubcourses / totalSubcourses) * 100) : 0;
+  const totalSubcourses = courseDetail.cards?.length || 0;
+  const completedSubcourses = courseDetail.user_progress?.completed
+    ? totalSubcourses
+    : (courseDetail.user_progress?.max_card ?? courseDetail.user_progress?.last_card ?? 0);
+  const progressPercent = totalSubcourses > 0 ? Math.min(100, Math.round((completedSubcourses / totalSubcourses) * 100)) : 0;
 
-  // 순차재생이 활성화된 경우, 이전에 완료되지 않은 하위 강좌가 있는지 확인하여 다음 학습할 강좌를 필터링
-  const getNextLearnableSubcourse = () => {
-    if (courseDetail.sequential_play) {
-      // 순차재생 시: 완료되지 않은 첫 번째 코스만 진행 가능
-      return courseDetail.courses.find(c => !c.user_progress?.completed);
-    }
-    // 일반 재생 시: 완료되지 않은 첫 코스 혹은 가장 최근에 진행 중인 코스
-    return courseDetail.courses.find(c => !c.user_progress?.completed) || courseDetail.courses[0];
-  };
-
-  const nextCourse = getNextLearnableSubcourse();
+  const nextCardIndex = completedSubcourses;
+  const hasNextCard = nextCardIndex < totalSubcourses;
 
   return (
     <div className="container max-w-5xl mx-auto py-8 space-y-8">
@@ -318,13 +320,13 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
                 <Progress value={progressPercent} className="h-2.5 bg-zinc-100 dark:bg-zinc-800" />
                 
                 <div className="pt-2 flex flex-col sm:flex-row gap-3">
-                  {nextCourse ? (
+                  {hasNextCard ? (
                     <Button
-                      onClick={() => router.push(`/learn/${nextCourse.slug}?package=${courseDetail.slug}`)}
+                      onClick={() => router.push(`/learn/${courseDetail.slug}?card=${nextCardIndex || 1}`)}
                       className="bg-indigo-600 hover:bg-indigo-700 text-white flex-1 gap-2"
                     >
                       <PlayCircle className="w-4 h-4" />
-                      이어서 학습하기 ({nextCourse.title})
+                      이어서 학습하기
                     </Button>
                   ) : (
                     <Button variant="outline" className="flex-1 border-green-600 text-green-700 hover:bg-green-50 dark:hover:bg-green-950/20 pointer-events-none gap-2">
@@ -351,8 +353,8 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
         <CardFooter className="pt-3 pb-0 px-6 md:px-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs text-zinc-500">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-medium text-zinc-700 dark:text-zinc-300">태그:</span>
-            {Array.from(new Set(courseDetail.courses.flatMap(c => c.tags || []))).length > 0 ? (
-              Array.from(new Set(courseDetail.courses.flatMap(c => c.tags || []))).map(tag => (
+            {courseDetail.tags && courseDetail.tags.length > 0 ? (
+              courseDetail.tags.map(tag => (
                 <Badge key={tag} variant="secondary" className="bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 text-[11px] font-normal px-2 py-0.5">
                   #{tag}
                 </Badge>
@@ -466,117 +468,99 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
       <div className="space-y-6">
         <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
           <BookOpen className="w-5 h-5 text-indigo-600" />
-          커리큘럼 ({totalSubcourses}개 파트)
+          커리큘럼
         </h2>
 
-        <div className="relative border-l-2 border-zinc-200 dark:border-zinc-800 ml-4 pl-6 md:pl-8 space-y-8">
-          {courseDetail.courses.map((subcourse, index) => {
-            const isCompleted = subcourse.user_progress?.completed ?? false;
-            const isStarted = !!subcourse.user_progress;
-            const totalCards = 10;
-            const currentCard = subcourse.user_progress?.max_card ?? subcourse.user_progress?.last_card ?? 0;
-            const progressVal = Math.min(100, Math.round((currentCard / totalCards) * 100));
-
-            // 순차재생 여부에 따라 특정 파트의 잠금 여부 계산
-            // 순차재생(sequential_play)이 활성화되어 있고, 첫 단계를 제외한 이전 단계들이 완료되지 않은 경우 잠금 처리함
-            const isLocked = courseDetail.sequential_play && index > 0 && 
-              !courseDetail.courses.slice(0, index).every(c => c.user_progress?.completed);
-
-            const nextCourseIndex = nextCourse 
-              ? courseDetail.courses.findIndex(c => c.id === nextCourse.id) 
-              : courseDetail.courses.length;
-
-            return (
-              <div key={subcourse.id} className="relative group">
-                {/* Timeline node */}
-                <div className={`absolute -left-[35px] md:-left-[43px] top-1.5 w-6 h-6 md:w-8 md:h-8 rounded-full border-4 flex items-center justify-center font-bold text-xs bg-white dark:bg-zinc-900 transition-colors ${
-                  isCompleted 
-                    ? 'border-green-500 text-green-500' 
-                    : isStarted && !isLocked
-                      ? 'border-indigo-600 text-indigo-600' 
-                      : 'border-zinc-300 text-zinc-400 dark:border-zinc-700'
-                }`}>
+        {courseDetail.toc && courseDetail.toc.length > 0 ? (
+          <div className="relative border-l-2 border-zinc-200 dark:border-zinc-800 ml-4 pl-6 md:pl-8 space-y-8">
+            {courseDetail.toc.map((chapter: any, index: number) => (
+              <div key={index} className="relative group space-y-4">
+                {/* Timeline node (Chapter) */}
+                <div className="absolute -left-[35px] md:-left-[43px] top-1.5 w-6 h-6 md:w-8 md:h-8 rounded-full border-4 flex items-center justify-center font-bold text-xs bg-white dark:bg-zinc-900 border-indigo-600 text-indigo-600">
                   {index + 1}
                 </div>
 
-                <Card className={`border hover:shadow-sm transition-all overflow-hidden bg-white dark:bg-zinc-900 ${
-                  isCompleted 
-                    ? 'border-green-100 bg-green-50/10 dark:border-green-950/20 dark:bg-green-950/5' 
-                    : isStarted && !isLocked
-                      ? 'border-indigo-100 dark:border-indigo-950' 
-                      : 'border-zinc-200 dark:border-zinc-800'
-                } ${isLocked ? 'opacity-60 bg-zinc-50/30' : ''}`}>
-                  <CardContent className="px-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div className="space-y-2 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-semibold text-lg text-zinc-900 dark:text-zinc-50">{subcourse.title}</h3>
-                        {isCompleted ? (
-                          <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-white text-xs">
-                            파트 완료
-                          </Badge>
-                        ) : isLocked ? (
-                          <Badge variant="outline" className="text-zinc-400 border-zinc-200 text-xs">
-                            잠금 (이전 파트 미완료)
-                          </Badge>
-                        ) : (nextCourse && nextCourse.id === subcourse.id) ? (
-                          <Badge variant="secondary" className="bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 hover:bg-indigo-100 text-xs">
-                            학습 중 ({progressVal}%)
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-zinc-400 border-zinc-200 text-xs">
-                            대기 중
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground line-clamp-2 max-w-2xl">{subcourse.description || '이 파트에 대한 설명이 없습니다.'}</p>
-                      
-                      {isStarted && !isCompleted && !isLocked && (
-                        <div className="space-y-1 max-w-xs pt-1">
-                          <Progress value={progressVal} className="h-1.5" />
-                          <span className="text-[10px] text-zinc-400">{currentCard} / {totalCards} 단계 완료</span>
-                        </div>
-                      )}
-                    </div>
+                <div className="pl-2">
+                  <h3 className="font-bold text-lg text-zinc-900 dark:text-zinc-50">{chapter.title}</h3>
+                  <p className="text-sm text-muted-foreground">{chapter.description}</p>
+                </div>
 
-                    <div className="shrink-0 self-end md:self-center flex flex-col items-end gap-2">
-                      {courseDetail.user_subscribed ? (
-                        <>
-                          {(!courseDetail.sequential_play || index <= nextCourseIndex) ? (
-                            <Button
-                              variant={isCompleted ? 'outline' : 'default'}
-                              size="sm"
-                              onClick={() => router.push(`/learn/${subcourse.slug}?package=${courseDetail.slug}${isCompleted ? '&review=true' : ''}`)}
-                              className={isCompleted 
-                                ? 'border-zinc-300 text-zinc-700 hover:bg-zinc-50' 
-                                : 'bg-indigo-600 hover:bg-indigo-700 text-white'
-                              }
-                            >
-                              {isCompleted ? '다시 보기' : isStarted ? '이어서 학습' : '파트 학습 시작'}
-                            </Button>
-                          ) : null}
+                <div className="space-y-3 pl-2">
+                  {chapter.children?.map((section: any, sIdx: number) => {
+                    const cardIndex = courseDetail.cards?.indexOf(section.filename) ?? -1;
+                    const isCompleted = cardIndex !== -1 && cardIndex < completedSubcourses;
+                    const isStarted = cardIndex !== -1 && cardIndex === completedSubcourses;
+                    const isLocked = courseDetail.sequential_play && cardIndex !== -1 && cardIndex > completedSubcourses;
 
-                          <div className="flex items-center gap-1.5 mt-1">
-                            <span className="text-[10px] text-zinc-400">학습 튜터:</span>
-                            <span className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400">
-                              {courseDetail.agent_id 
-                                ? (courseDetail.external_agents?.find(a => a.id === courseDetail.agent_id)?.name || '지정됨') 
-                                : '미지정'
-                              }
-                            </span>
+                    return (
+                      <Card 
+                        key={sIdx} 
+                        className={`border hover:shadow-sm transition-all overflow-hidden bg-white dark:bg-zinc-900 ${
+                          isCompleted 
+                            ? 'border-green-100 bg-green-50/10 dark:border-green-950/20 dark:bg-green-950/5' 
+                            : isStarted && !isLocked
+                              ? 'border-indigo-100 dark:border-indigo-950' 
+                              : 'border-zinc-200 dark:border-zinc-800'
+                        } ${isLocked ? 'opacity-60 bg-zinc-50/30' : ''}`}
+                      >
+                        <CardContent className="px-5 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                          <div className="space-y-1 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="font-semibold text-sm text-zinc-900 dark:text-zinc-50">{section.title}</h4>
+                              {isCompleted ? (
+                                <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-white text-[10px] px-1.5 py-0">
+                                  완료
+                                </Badge>
+                              ) : isLocked ? (
+                                <Badge variant="outline" className="text-zinc-400 border-zinc-200 text-[10px] px-1.5 py-0">
+                                  잠금
+                                </Badge>
+                              ) : isStarted ? (
+                                <Badge variant="secondary" className="bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 hover:bg-indigo-100 text-[10px] px-1.5 py-0">
+                                  학습 중
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-zinc-400 border-zinc-200 text-[10px] px-1.5 py-0">
+                                  대기 중
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground line-clamp-1">{section.description}</p>
                           </div>
-                        </>
-                      ) : (
-                        <Button variant="secondary" size="sm" onClick={handleSubscribe} disabled={registering || isLocked} className="border border-zinc-200">
-                          수강 필요
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+
+                          <div className="shrink-0 self-end sm:self-center">
+                            {courseDetail.user_subscribed ? (
+                              <Button
+                                variant={isCompleted ? 'outline' : 'default'}
+                                size="sm"
+                                onClick={() => cardIndex !== -1 && router.push(`/learn/${courseDetail.slug}?card=${cardIndex + 1}`)}
+                                disabled={isLocked}
+                                className={isCompleted 
+                                  ? 'border-zinc-300 text-zinc-700 hover:bg-zinc-50 text-xs h-8' 
+                                  : 'bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-8'
+                                }
+                              >
+                                {isCompleted ? '다시 보기' : isStarted ? '이어서 학습' : '학습 시작'}
+                              </Button>
+                            ) : (
+                              <Button variant="secondary" size="sm" onClick={handleSubscribe} disabled={registering} className="border border-zinc-200 text-xs h-8">
+                                수강 필요
+                              </Button>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 border border-dashed rounded-lg bg-zinc-50/30">
+            <p className="text-sm text-muted-foreground">등록된 커리큘럼(TOC)이 없습니다.</p>
+          </div>
+        )}
       </div>
     </div>
   );

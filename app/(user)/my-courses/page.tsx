@@ -13,10 +13,10 @@ interface ProgressItem {
   id: string;
   course_id: string;
   last_card: number;
+  max_card?: number;
   completed: boolean;
   course?: {
     slug: string;
-    course_package_items?: { id?: string; package_id?: string }[];
   };
 }
 
@@ -69,17 +69,10 @@ export default function MyCoursesPage() {
   }, []);
 
   const getPackageTargetUrl = (packageId: string, defaultSlug: string) => {
-    const pkgProgresses = progressList.filter(p => 
-      p.course?.course_package_items?.some(item => item.package_id === packageId)
-    );
-    const incomplete = pkgProgresses.filter(p => !p.completed);
-    
-    if (incomplete.length > 0) {
-      const target = incomplete[0];
-      return `/learn/${target.course?.slug}?card=${target.last_card || 0}`;
-    } else if (pkgProgresses.length > 0) {
-      const target = pkgProgresses[0];
-      return `/learn/${target.course?.slug}?card=${target.last_card || 0}`;
+    const pkgProgress = progressList.find(p => p.course_id === packageId);
+    if (pkgProgress) {
+      const currentCard = pkgProgress.max_card ?? pkgProgress.last_card ?? 0;
+      return `/learn/${defaultSlug}?card=${currentCard || 1}`;
     }
     return `/courses/${defaultSlug}`;
   };

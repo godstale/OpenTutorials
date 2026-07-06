@@ -250,14 +250,19 @@ function getLeafNodes(nodes: TocNode[], list: TocNode[] = []): TocNode[] {
   return list;
 }
 
-function isAncestorOfActiveCard(node: TocNode, activeFilename: string): boolean {
-  if (!node.children) return false;
-  for (const child of node.children) {
-    if (child.filename === activeFilename) {
-      return true;
-    }
-    if (isAncestorOfActiveCard(child, activeFilename)) {
-      return true;
+function isAncestorOfActiveCard(
+  node: TocNode,
+  activeCardIndex: number,
+  nodeToIndexMap: Map<TocNode, number>
+): boolean {
+  if (node.filename) {
+    return nodeToIndexMap.get(node) === activeCardIndex;
+  }
+  if (node.children) {
+    for (const child of node.children) {
+      if (isAncestorOfActiveCard(child, activeCardIndex, nodeToIndexMap)) {
+        return true;
+      }
     }
   }
   return false;
@@ -284,32 +289,32 @@ function generateFallbackTocText(nodes: TocNode[], depth: number = 0): string {
 interface LearnTocNodeViewProps {
   node: TocNode;
   depth: number;
-  filenameToIndexMap: Map<string, number>;
+  nodeToIndexMap: Map<TocNode, number>;
   maxUnlockedIndex: number;
   currentCardIndex: number;
-  activeFilename?: string;
   onSelectCard: (index: number) => void;
 }
 
 function LearnTocNodeView({
   node,
   depth,
-  filenameToIndexMap,
+  nodeToIndexMap,
   maxUnlockedIndex,
   currentCardIndex,
-  activeFilename,
   onSelectCard,
 }: LearnTocNodeViewProps) {
   const hasChildren = node.children && node.children.length > 0;
   const isLeaf = !!node.filename;
 
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(() => {
+    return hasChildren && isAncestorOfActiveCard(node, currentCardIndex, nodeToIndexMap);
+  });
 
   useEffect(() => {
-    if (hasChildren && activeFilename && isAncestorOfActiveCard(node, activeFilename)) {
+    if (hasChildren && isAncestorOfActiveCard(node, currentCardIndex, nodeToIndexMap)) {
       setIsExpanded(true);
     }
-  }, [activeFilename, node, hasChildren]);
+  }, [currentCardIndex, node, hasChildren, nodeToIndexMap]);
 
   const toggleExpand = () => {
     if (hasChildren) {
@@ -327,7 +332,7 @@ function LearnTocNodeView({
   };
 
   if (isLeaf) {
-    const idx = filenameToIndexMap.get(node.filename!) ?? 0;
+    const idx = nodeToIndexMap.get(node) ?? 0;
     const isUnlocked = idx <= maxUnlockedIndex;
     const isActive = idx === currentCardIndex;
 
@@ -408,10 +413,9 @@ function LearnTocNodeView({
               key={`${child.title}-${idx}`} 
               node={child} 
               depth={depth + 1}
-              filenameToIndexMap={filenameToIndexMap}
+              nodeToIndexMap={nodeToIndexMap}
               maxUnlockedIndex={maxUnlockedIndex}
               currentCardIndex={currentCardIndex}
-              activeFilename={activeFilename}
               onSelectCard={onSelectCard}
             />
           ))}
@@ -596,11 +600,9 @@ Please ask the student the question now. Only ask the question itself, do not re
 
   const tocItems = course.toc || [];
   const leafNodes = getLeafNodes(tocItems);
-  const filenameToIndexMap = new Map<string, number>();
+  const nodeToIndexMap = new Map<TocNode, number>();
   leafNodes.forEach((node, idx) => {
-    if (node.filename) {
-      filenameToIndexMap.set(node.filename, idx);
-    }
+    nodeToIndexMap.set(node, idx);
   });
 
   const { setOpen } = useSidebar();
@@ -630,19 +632,22 @@ Please ask the student the question now. Only ask the question itself, do not re
     img: (props: React.ImgHTMLAttributes<HTMLImageElement>) => {
       const { src, alt, ...rest } = props;
       if (src && typeof src === 'string') {
-        const imagesMatch = src.match(/(?:\.\.\/|\.\.\\|\/|\\|^)images[\/\\](.+)$/i);
-        if (imagesMatch) {
-          const filename = imagesMatch[1];
-          const publicUrl = `/courses/${encodeURIComponent(slug)}/images/${encodeURIComponent(filename)}`;
-          return (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={publicUrl}
-              alt={alt}
-              className="rounded-lg shadow-md mx-auto max-w-full my-4 border border-zinc-200/50 dark:border-zinc-800/50"
-              {...rest}
-            />
-          );
+        const isRelative = !/^(?:https?:)?\/\/|^data:/i.test(src);
+        if (isRelative) {
+          const imagesMatch = src.match(/(?:\.\.\/|\.\.\\|\/|\\|^)images[\/\\](.+)$/i);
+          if (imagesMatch) {
+            const filename = imagesMatch[1];
+            const publicUrl = `/courses/${encodeURIComponent(slug)}/images/${filename.split('/').map(encodeURIComponent).join('/')}`;
+            return (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={publicUrl}
+                alt={alt}
+                className="rounded-lg shadow-md mx-auto max-w-full my-4 border border-zinc-200/50 dark:border-zinc-800/50"
+                {...rest}
+              />
+            );
+          }
         }
       }
       // eslint-disable-next-line @next/next/no-img-element
@@ -1218,10 +1223,9 @@ Student Question: `;
                     key={`${item.title}-${idx}`}
                     node={item}
                     depth={0}
-                    filenameToIndexMap={filenameToIndexMap}
+                    nodeToIndexMap={nodeToIndexMap}
                     maxUnlockedIndex={isPreview ? totalCards - 1 : maxUnlockedIndex}
                     currentCardIndex={currentCardIndex}
-                    activeFilename={cards[currentCardIndex]?.filename}
                     onSelectCard={(index) => handleSelectCard(index)}
                   />
                 ))}

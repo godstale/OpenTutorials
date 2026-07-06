@@ -29,7 +29,7 @@ async function MyCourseDetailPageContent({ params }: { params: Promise<{ slug: s
 
   try {
     const { data, error } = await adminSupabase
-      .from('courses')
+      .from('course_packages')
       .select('*')
       .eq('slug', slug)
       .single();
