@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin, createAdminClient } from '@/lib/supabase/admin';
+import { requireAdmin, createAdminClient, getOrAssignTutorAgentId } from '@/lib/supabase/admin';
 import AdmZip from 'adm-zip';
 import { TocNode } from '@/lib/types';
 
@@ -428,9 +428,11 @@ export async function POST(request: NextRequest) {
       // 강좌 DB 등록/업데이트
       const { data: existingCourse } = await supabaseAdmin
         .from('courses')
-        .select('id')
+        .select('id, agent_id')
         .eq('slug', courseSlug)
         .maybeSingle();
+
+      const tutorAgentId = await getOrAssignTutorAgentId('local-user-id', existingCourse?.agent_id);
 
       let courseId: string;
       if (existingCourse) {
@@ -442,6 +444,7 @@ export async function POST(request: NextRequest) {
             description: childConfigJson.description || null,
             thumbnail: thumbnailUrl,
             tags,
+            agent_id: tutorAgentId,
             updated_at: new Date().toISOString()
           })
           .eq('slug', courseSlug);
@@ -458,6 +461,7 @@ export async function POST(request: NextRequest) {
               title: childConfigJson.title || courseSlug,
               description: childConfigJson.description || null,
               thumbnail: thumbnailUrl,
+              agent_id: tutorAgentId,
               updated_at: new Date().toISOString()
             })
             .eq('slug', courseSlug);
@@ -476,6 +480,7 @@ export async function POST(request: NextRequest) {
             description: childConfigJson.description || null,
             thumbnail: thumbnailUrl,
             tags,
+            agent_id: tutorAgentId,
             published: true,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
@@ -496,6 +501,7 @@ export async function POST(request: NextRequest) {
               title: childConfigJson.title || courseSlug,
               description: childConfigJson.description || null,
               thumbnail: thumbnailUrl,
+              agent_id: tutorAgentId,
               published: true,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()

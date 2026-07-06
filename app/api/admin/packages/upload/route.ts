@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin, createAdminClient } from '@/lib/supabase/admin';
+import { requireAdmin, createAdminClient, getOrAssignTutorAgentId } from '@/lib/supabase/admin';
 import AdmZip from 'adm-zip';
 
 export async function POST(request: NextRequest) {
@@ -94,9 +94,11 @@ export async function POST(request: NextRequest) {
     for (const item of courseItems) {
       const { data: existing } = await supabaseAdmin
         .from('courses')
-        .select('id')
+        .select('id, agent_id')
         .eq('slug', item.slug)
         .maybeSingle();
+
+      const tutorAgentId = await getOrAssignTutorAgentId('local-user-id', existing?.agent_id);
 
       if (existing) {
         let { error: updateError } = await supabaseAdmin
@@ -105,6 +107,7 @@ export async function POST(request: NextRequest) {
             title: item.title,
             description: item.description || null,
             tags: item.tags,
+            agent_id: tutorAgentId,
             updated_at: new Date().toISOString()
           })
           .eq('slug', item.slug);
@@ -120,6 +123,7 @@ export async function POST(request: NextRequest) {
             .update({
               title: item.title,
               description: item.description || null,
+              agent_id: tutorAgentId,
               updated_at: new Date().toISOString()
             })
             .eq('slug', item.slug);
@@ -137,6 +141,7 @@ export async function POST(request: NextRequest) {
             title: item.title,
             description: item.description || null,
             tags: item.tags,
+            agent_id: tutorAgentId,
             published: true,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
@@ -154,6 +159,7 @@ export async function POST(request: NextRequest) {
               slug: item.slug,
               title: item.title,
               description: item.description || null,
+              agent_id: tutorAgentId,
               published: true,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()

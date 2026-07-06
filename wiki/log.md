@@ -30,6 +30,16 @@ Ran lint. See lint-report.md for details.
 
 <!-- Append-only. 최신 항목을 위에 추가. -->
 
+## 2026-07-06
+
+- **[FEATURE] 강좌 등록/업로드 시 튜터 에이전트 자동 매핑 및 연동 기능 구현**
+  - **수정/생성 파일**:
+    - `lib/supabase/admin.ts` — `getOrAssignTutorAgentId` 공통 헬퍼 함수를 추가하여 강좌 등록 시 기본 튜터(is_ai_tutor: true)가 있으면 기본 튜터로, 없으면 기존 할당된 에이전트 보존 또는 첫 번째 튜터로, 튜터 목록이 아예 비어 있으면 신규 기본 튜터를 생성하여 할당할 수 있도록 구현.
+    - `app/api/admin/courses/upload/route.ts` — 하위 강좌 ZIP 개별 파일 등록/업데이트 시 `getOrAssignTutorAgentId`를 통해 반환된 `agent_id` 값을 함께 `insert`/`update` 필드로 설정해 튜터 에이전트 강제 지정 보장.
+    - `app/api/admin/packages/upload/route.ts` — 매니페스트 기반 하위 강좌 등록/업데이트 시 동일하게 `getOrAssignTutorAgentId`를 통한 튜터 에이전트 매핑이 적용되도록 수정.
+  - **작업 내용**:
+    - "강좌가 등록될 때 튜터 에이전트를 반드시 등록해야 한다. 기본 튜터가 설정되어 있다면 기본 튜터를 설정해야 한다." 요구사항을 반영하여, 강좌 업로드 시점에 자동으로 활성화된 기본 튜터 혹은 에이전트를 `courses.agent_id`에 강제 바인딩하는 로직을 통합함으로써 수동 지정 과정에서의 누락 방지 및 학습 진입 시 원활한 AI 튜터 서비스 보장.
+
 ## 2026-07-05
 
 - **[CHORE] 앱 버전 v0.1.0 태깅 및 릴리즈/체인지로그 관리 프로세스 확립**
