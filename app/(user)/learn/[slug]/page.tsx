@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { connection } from 'next/server';
 import { serialize } from 'next-mdx-remote/serialize';
+import remarkGfm from 'remark-gfm';
 import { dummyCourses } from '@/lib/dummy-data';
 import { createAdminClient } from '@/lib/supabase/admin';
 import LearnPageClient from './client-wrapper';
@@ -19,6 +20,15 @@ function findTocNodeByFilename(nodes: TocNode[], filename: string): TocNode | nu
     }
   }
   return null;
+}
+
+async function serializeWithGfm(text: string) {
+  return serialize(text, {
+    mdxOptions: {
+      remarkPlugins: [remarkGfm],
+      rehypePlugins: [],
+    },
+  });
 }
 
 async function LearnPageContent({ 
@@ -205,8 +215,8 @@ async function LearnPageContent({
             console.log(`[LearnServer] Card ${filename} successfully parsed as video.`);
           } catch (err: any) {
             console.error(`[LearnServer] JSON parse failed for card ${filename}:`, err);
-            const errText = `### 동영상 강좌 에러\n동영상 카드 파일 \`${filename}\`을(를) 파싱하는 중 오류가 발생했습니다.\n\`\`\`\n${err.message}\n\`\`\``;
-            const mdxSource = await serialize(errText);
+            const errText = `### JSON parse failed\n카드 파일 \`${filename}\`을(를) 파싱하는 중 오류가 발생했습니다.\n\`\`\`\n${err.message}\n\`\`\``;
+            const mdxSource = await serializeWithGfm(errText);
             cards.push({
               filename,
               title: cardTitle,
@@ -217,7 +227,7 @@ async function LearnPageContent({
         } else {
           console.log(`[LearnServer] Serializing MDX for card: ${filename}`);
           try {
-            const mdxSource = await serialize(text);
+            const mdxSource = await serializeWithGfm(text);
             cards.push({
               filename,
               title: cardTitle,
@@ -228,7 +238,7 @@ async function LearnPageContent({
           } catch (err: any) {
             console.error(`[LearnServer] MDX serialization failed for card ${filename}:`, err);
             const errText = `### MDX 컴파일 에러\n카드 파일 \`${filename}\`을(를) 빌드하는 중 오류가 발생했습니다.\n\`\`\`\n${err.message}\n\`\`\``;
-            const mdxSource = await serialize(errText);
+            const mdxSource = await serializeWithGfm(errText);
             cards.push({
               filename,
               title: cardTitle,
@@ -247,7 +257,7 @@ async function LearnPageContent({
   if (cards.length === 0) {
     console.warn('[LearnServer] No cards downloaded or compiled. Providing default setup card.');
     const fallbackText = `### ${course.title}\n이 강좌는 준비 중이거나 콘텐츠가 없습니다.`;
-    const mdxSource = await serialize(fallbackText);
+    const mdxSource = await serializeWithGfm(fallbackText);
     cards.push({
       title: "준비 중",
       mdxSource,

@@ -32,6 +32,24 @@ Ran lint. See lint-report.md for details.
 
 ## 2026-07-06
 
+- **[FEATURE] 학습 화면 폰트 개선 및 마크다운 헤더 폰트 크기 최적화 및 시인성 개선**
+  - **수정 파일**:
+    - [layout.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/layout.tsx) — `next/font/local`을 사용해 로컬 Noto Sans KR 가변 가중치 폰트(`NotoSansKR-VariableFont_wght.ttf`)를 `--font-noto-sans` 변수로 로드하여 HTML에 주입.
+    - [tailwind.config.ts](file:///C:/Workspace/Projects/OpenTutorials/tailwind.config.ts) — 기본 폰트 스택(`fontFamily.sans`)에 Noto Sans KR 변수를 추가하여, 영문 폰트(Geist) 적용 이후 한글 폰트로 Noto Sans KR이 자연스럽게 폴백되도록 적용.
+    - [client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx) — 학습 화면 내 MDX 마크다운 렌더러 `mdxComponents`의 heading 크기(h1, h2, h3, h4)를 본문 폰트와 큰 차이가 나지 않도록 최적화. 또한 본문 카드 배경을 라이트 모드에서 완전한 흰색(`bg-white`)으로 변경하고, 흐릿한 `text-muted-foreground` 대신 뚜렷한 `text-foreground`를 적용해 시인성을 대폭 강화.
+  - **작업 내용**:
+    - 학습 화면에서 본문 글씨 크기에 비해 챕터 타이틀(H1) 및 섹션 타이틀(H2, H3, H4)의 폰트 사이즈가 과도하게 크게 렌더링되던 레이아웃 불균형 문제를 해결하여 본문 폰트와 조화로운 크기로 변경하였습니다.
+    - 또한 한글 가독성 향상을 위해 `docs/temp/Noto_Sans_KR`에 준비되어 있던 Noto Sans KR 폰트를 `public/fonts` 디렉토리로 이관하고 Tailwind 및 Next.js 로컬 폰트 레이아웃에 탑재하여, 영문에는 모던한 Geist가 우선 적용되고 한글에는 정갈한 Noto Sans KR 폰트가 적용되도록 멀티 폰트 폴백 아키텍처를 구현하였습니다.
+    - 추가로 본문 카드 영역의 배경을 라이트 모드에서 완전한 흰색(`bg-white`)으로 변경하고 글씨 대비도를 높이기 위해 텍스트 색상을 `text-foreground`로 지정해 흰색 배경 위에서 글자가 훨씬 명확히 읽히도록 시인성을 개선하였으며, 다크 모드 환경에서는 편안한 딥다크 스타일(`bg-zinc-950`/`text-zinc-300`)을 지원하도록 처리했습니다.
+
+- **[FEATURE] 강좌 학습 화면 마크다운 스타일링 대폭 보강 및 GFM 테이블/코드 박스 복사 기능 도입**
+  - **수정 파일**:
+    - [client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx) — MDX 렌더링에 사용되는 `mdxComponents` 매핑에 H1, H2, H3, H4, paragraph, list, blockquote, table 등에 적합한 Tailwind CSS 클래스를 추가하여 가독성과 시인성을 강화. 복사 기능이 내장된 다크 테마 기반 코드 박스(`PreBlock`) 및 인라인 코드용 `InlineCode` 컴포넌트를 설계하여 반영.
+    - [page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/page.tsx) — MDX 직렬화(`serializeWithGfm`) 시 `remark-gfm` 플러그인을 도입하여 마크다운의 파이프 테이블 표가 깨지지 않고 정상적인 HTML 테이블 구조로 파싱될 수 있도록 수정.
+    - [protocol.md](file:///C:/Workspace/Projects/OpenTutorials/docs/bundler/protocol.md) — 강좌 번들러 프로토콜 내에 헤더(H1, H2) 구성 방식, GFM 테이블 스펙, 언어를 명시하는 코드 블록 작성 규칙 등을 구체적으로 기술한 **"7. 학습 카드 마크다운 가이드라인"** 섹션을 추가.
+  - **작업 내용**:
+    - "아두이노 IoT 프로젝트 마스터 클래스"를 포함한 모든 강좌 학습 화면에서 챕터/섹션 타이틀이 H1, H2 헤더로 명확히 시각적 강조를 띄게 되었고, 날것의 마크다운 텍스트로 보였던 비교 표/테이블이 반응형 보더와 헤더가 정돈된 깔끔한 UI 테이블로 자동 렌더링되며, 텍스트 형태였던 소스 코드가 복사하기 버튼이 달린 이쁘고 세련된 다크 코드 박스로 출력되도록 프론트엔드 파서 및 스타일링 구성을 전면 개편했습니다. 아울러 차후 제작될 강좌 번들이 이 형식을 일관되게 채택하도록 번들러 프로토콜 표준 지침 문서에 관련 규칙을 의무화하였습니다.
+
 - **[BUGFIX] 강좌 상세 및 나의 강좌 화면에서 학습 화면 이동 시 카드 인덱스 매핑 오류 해결**
   - **수정 파일**:
     - [client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/[slug]/client.tsx) — 강좌 상세 화면에서 커리큘럼 카드를 클릭할 때 `cardIndex` 0-based 값을 1-based `?card=${cardIndex + 1}`로 전달하게 하여 학습 화면 진입 시 올바른 챕터 카드가 매핑되도록 수정.
@@ -1599,3 +1617,34 @@ Ran lint. See lint-report.md for details.
     - **기존 중복 데이터 클렌징**: `db.json` 내의 중복 생성된 `user_progress` 레코드를 분석하여 `user_id`와 `course_id` 기준으로 최다 진도 레코드만 남기고 삭제(Deduplication) 조치했습니다.
     - **대시보드 진도율 하드코딩 및 중복 노출 제거**: `dashboard/page.tsx`에서 개별 강좌의 `totalCards`를 `10`으로 하드코딩하던 문제를 실제 강좌의 `cards.length`를 사용하도록 수정하여 실제 진도율(예: 76/78 단계)이 표시되도록 개선했으며, 대시보드의 "학습 중인 강좌" 섹션에 패키지 구독(`packageSubs`) 카드가 중복되어 이중으로 표시되던 로직을 제거하고 오직 진행 중인 강좌 진도(`activeProgress`)만 표시되도록 통합했습니다.
   - **Concepts**: [[CompoundKeyUpsert]], [[DbDeduplication]], [[DynamicTotalCards]], [[DashboardCardDeconflict]]
+
+## 2026-07-06 (5th Session)
+
+- **[FEAT/BUGFIX] 강좌 등록 시 AI 튜터 자동 할당 API 연동 및 강좌 목록/이어보기 카드 인덱스 매핑 오류 수정**
+  - **수정 파일**:
+    - [app/api/admin/courses/upload/route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/admin/courses/upload/route.ts)
+    - [app/api/admin/packages/upload/route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/admin/packages/upload/route.ts)
+    - [lib/supabase/admin.ts](file:///C:/Workspace/Projects/OpenTutorials/lib/supabase/admin.ts)
+    - [app/(user)/courses/[slug]/client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/[slug]/client.tsx)
+    - [app/(user)/my-courses/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/my-courses/page.tsx)
+    - [app/(user)/learn/[slug]/client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx)
+  - **작업 내용**:
+    - **튜터 에이전트 자동 할당**: 강좌 패키지가 신규로 등록/업로드 완료될 때 사용 가능한 AI 튜터(Hermes 등) 에이전트를 해당 강좌에 자동으로 매핑하고 기본 튜터로 활성화하는 API 및 DB 트리거 기능을 추가했습니다.
+    - **학습 카드 이동 및 이어보기 복구**: 강좌 검색 페이지 및 '나의 강좌' 페이지에서 학습 이어보기 시, 카드의 인덱스와 learn 페이지 slug 라우팅이 어긋나 엉뚱한 카드가 열리던 오류를 수정하고, UI와 DB의 인덱스를 일치시켰습니다.
+  - **Concepts**: [[AutoAssignTutor]], [[ResumeCardIndexFix]]
+
+## 2026-07-06 (6th Session)
+
+- **[FEAT/UI] Noto Sans KR 폰트 적용 및 학습 화면 마크다운 컴포넌트 프리미엄 스타일링**
+  - **수정 파일**:
+    - [app/layout.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/layout.tsx)
+    - [tailwind.config.ts](file:///C:/Workspace/Projects/OpenTutorials/tailwind.config.ts)
+    - [app/(user)/learn/[slug]/client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx)
+    - [app/(user)/learn/[slug]/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/page.tsx)
+    - [docs/bundler/protocol.md](file:///C:/Workspace/Projects/OpenTutorials/docs/bundler/protocol.md)
+  - **작업 내용**:
+    - **Noto Sans KR 로컬 폰트 탑재**: `public/fonts/Noto_Sans_KR` 경로의 Variable Font를 Next.js `localFont`로 로드하고 tailwind 설정의 `sans` 폰트 패밀리 최우선 순위로 지정하여 앱 전체에 미려한 한글 폰트를 일괄 적용했습니다.
+    - **학습 화면 마크다운 컴포넌트 커스텀 렌더링**: h1~h4 헤더, 본문(p), 목록(ul, ol), 인용구, GFM 테이블을 프리미엄 UI 스타일로 렌더링하도록 `mdxComponents`를 보강했습니다.
+    - **코드 블록 및 인라인 코드 고도화**: 소스 코드 구문 강조를 위한 프리미엄 코드 블록(`PreBlock`, `InlineCode`)을 구현하고 상단 헤더에 언어 레이블 및 1-클릭 클립보드 복사 버튼을 내장했습니다.
+    - **강좌 번들러 프로토콜 문서 업데이트**: `docs/bundler/protocol.md`에 학습 카드 마크다운 가이드라인(헤더 사용법, 테이블 규격, 코드 블록 언어 지정)을 추가하여 제작 프로토콜을 공조 최신화했습니다.
+  - **Concepts**: [[NotoSansKRLocalFont]], [[MDXCustomStyling]], [[CodeBlockClipboardCopy]], [[BundlerProtocolMarkdownGuide]]
