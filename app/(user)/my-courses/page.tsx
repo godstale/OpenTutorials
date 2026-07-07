@@ -85,7 +85,7 @@ export default function MyCoursesPage() {
   );
 
   return (
-    <div className="flex flex-col gap-8 w-full max-w-6xl mx-auto py-8">
+    <div className="flex flex-col gap-8 w-full max-w-6xl mx-auto pt-1 pb-8">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">나의 강좌</h2>

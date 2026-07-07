@@ -30,6 +30,17 @@ Ran lint. See lint-report.md for details.
 
 <!-- Append-only. 최신 항목을 위에 추가. -->
 
+## 2026-07-07
+
+- **[FEATURE] 강좌 상세 페이지 라우팅 통일 및 커리큘럼 챕터 fold/unfold 기능 추가**
+  - **수정/갱신 파일**:
+    - [dashboard/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/dashboard/page.tsx) — 대시보드 내 "학습 중인 강좌" 목록에서 강좌 카드를 클릭할 때 기존 `/my-courses/[slug]`로 이동하던 것을 전체 강좌 상세 페이지인 `/courses/[slug]`로 연결되도록 변경하여 라우팅 경로를 통일했습니다.
+    - [my-courses/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/my-courses/page.tsx) — 수강 중인 강좌 및 패키지의 모든 상세 이동 경로를 `/courses/[slug]`로 유지 및 검증하였습니다.
+    - [courses/[slug]/client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/[slug]/client.tsx) — 전체 강좌 상세 페이지의 커리큘럼(TOC) 섹션 챕터 항목들에 `expandedChapters` 상태 및 토글 제어 인터랙션을 추가하여, 사용자가 각 챕터를 fold/unfold(접기/펼치기) 할 수 있도록 사용성을 대폭 개선했습니다. 이미 학습 완료된 챕터(모든 하위 섹션이 수강 완료됨)는 기본적으로 접힌 상태로 렌더링되도록 기본값 연산 로직을 추가했습니다.
+  - **작업 내용**:
+    - 대시보드의 "학습 중인 강좌" 카드 클릭 시 `/my-courses/[slug]`로 가고, "나의 강좌" 목록에서는 `/courses/[slug]`로 가면서 발생했던 상세 페이지 이동 경로의 불일치를 `/courses/[slug]`로 통일하여 해결하였습니다.
+    - 또한 일원화된 강좌 상세 페이지의 커리큘럼 타임라인에 챕터 클릭 시 하위 섹션이 토글 접힘/펼침 처리되는 기능을 신규 구현하였고, 사용자가 이미 다 학습한 챕터는 기본적으로 접어둠으로써 스크롤 낭비 없이 현재 학습해야 할 위치에 집중할 수 있도록 개선했습니다.
+
 ## 2026-07-06
 
 - **[FEATURE] 강좌 패키지 태그(tags) 기능 도입 및 프로토콜 규격 연동**

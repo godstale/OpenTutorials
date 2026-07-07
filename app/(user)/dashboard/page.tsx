@@ -161,7 +161,7 @@ async function DashboardContent() {
 
             return (
               <Card key={item.id} className="overflow-hidden flex flex-col hover:border-primary/50 transition-all duration-300 bg-white py-0 pb-0">
-                <Link href={isCourse ? `/my-courses/${item.slug}` : `/packages/${item.slug}`} className="flex-1 flex flex-col hover:opacity-95 transition-opacity">
+                <Link href={isCourse ? `/courses/${item.slug}` : `/packages/${item.slug}`} className="flex-1 flex flex-col hover:opacity-95 transition-opacity">
                   <div className="h-32 relative overflow-hidden shrink-0">
                     <CourseIcon thumbnail={item.thumbnail} className="w-full h-full" iconClassName="w-10 h-10" alt={item.title} />
                     <div className="absolute top-2.5 right-2.5">

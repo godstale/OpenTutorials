@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, PlayCircle, CheckCircle2, ArrowLeft, ArrowRight, Bot } from 'lucide-react';
+import { BookOpen, PlayCircle, CheckCircle2, ArrowLeft, ArrowRight, Bot, ChevronDown, ChevronRight } from 'lucide-react';
 import { Course, UserExternalAgent } from '@/lib/types';
 import { CourseIcon } from '@/components/ui/course-icon';
 
@@ -154,6 +154,14 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
   const [courseDetail, setCourseDetail] = useState<CourseDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
+  const [expandedChapters, setExpandedChapters] = useState<Record<number, boolean>>({});
+
+  const toggleChapter = (index: number) => {
+    setExpandedChapters(prev => ({
+      ...prev,
+      [index]: prev[index] === false ? true : false
+    }));
+  };
 
   const fetchCourseDetail = useCallback(async () => {
     try {
@@ -390,7 +398,7 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
           </CardHeader>
           <CardContent className="space-y-6 px-6 md:px-8">
             {/* 에이전트 지정 셀렉트 박스 */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-lg bg-zinc-50 dark:bg-zinc-900/50 border">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-lg bg-green-100 dark:bg-zinc-900/50 border">
               <div className="space-y-1">
                 <span className="text-sm font-semibold block">튜터 에이전트 선택</span>
                 <span className="text-xs text-muted-foreground">강좌 내 모든 질문과 토론은 이 에이전트가 전담합니다.</span>
@@ -465,7 +473,7 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
       </Card>
 
       {/* Curriculum Timeline */}
-      <div className="space-y-6">
+      <div className="space-y-6 pt-8">
         <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
           <BookOpen className="w-5 h-5 text-indigo-600" />
           커리큘럼
@@ -473,88 +481,115 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
 
         {courseDetail.toc && courseDetail.toc.length > 0 ? (
           <div className="relative border-l-2 border-zinc-200 dark:border-zinc-800 ml-4 pl-6 md:pl-8 space-y-8">
-            {courseDetail.toc.map((chapter: any, index: number) => (
-              <div key={index} className="relative group space-y-4">
-                {/* Timeline node (Chapter) */}
-                <div className="absolute -left-[35px] md:-left-[43px] top-1.5 w-6 h-6 md:w-8 md:h-8 rounded-full border-4 flex items-center justify-center font-bold text-xs bg-white dark:bg-zinc-900 border-indigo-600 text-indigo-600">
-                  {index + 1}
+            {courseDetail.toc.map((chapter: any, index: number) => {
+              // 챕터 내 모든 섹션이 완료되었는지 확인
+              const isChapterCompleted = chapter.children && chapter.children.length > 0 && chapter.children.every((section: any) => {
+                const cardIndex = courseDetail.cards?.indexOf(section.filename) ?? -1;
+                return cardIndex !== -1 && cardIndex < completedSubcourses;
+              });
+
+              // 이미 완료된 챕터는 기본적으로 접고(false), 완료되지 않은 챕터는 펼침(true)
+              const isExpanded = expandedChapters[index] !== undefined 
+                ? expandedChapters[index] 
+                : !isChapterCompleted;
+              
+              return (
+                <div key={index} className="relative group space-y-4">
+                  {/* Timeline node (Chapter) */}
+                  <div className="absolute -left-[35px] md:-left-[43px] top-1.5 w-6 h-6 md:w-8 md:h-8 rounded-full border-4 flex items-center justify-center font-bold text-xs bg-white dark:bg-zinc-900 border-indigo-600 text-indigo-600">
+                    {index + 1}
+                  </div>
+
+                  <div 
+                    className="pl-2 cursor-pointer flex items-center justify-between group/header select-none"
+                    onClick={() => toggleChapter(index)}
+                  >
+                    <div className="space-y-1">
+                      <h3 className="font-bold text-lg text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
+                        {chapter.title}
+                        {isExpanded ? (
+                          <ChevronDown className="w-4 h-4 text-zinc-400 group-hover/header:text-indigo-600 transition-colors" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4 text-zinc-400 group-hover/header:text-indigo-600 transition-colors" />
+                        )}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">{chapter.description}</p>
+                    </div>
+                  </div>
+
+                  {isExpanded && chapter.children && chapter.children.length > 0 && (
+                    <div className="space-y-3 pl-2 transition-all duration-200">
+                      {chapter.children.map((section: any, sIdx: number) => {
+                        const cardIndex = courseDetail.cards?.indexOf(section.filename) ?? -1;
+                        const isCompleted = cardIndex !== -1 && cardIndex < completedSubcourses;
+                        const isStarted = cardIndex !== -1 && cardIndex === completedSubcourses;
+                        const isLocked = courseDetail.sequential_play && cardIndex !== -1 && cardIndex > completedSubcourses;
+
+                        return (
+                          <Card 
+                            key={sIdx} 
+                            className={`border hover:shadow-sm transition-all overflow-hidden bg-white dark:bg-zinc-900 ${
+                              isCompleted 
+                                ? 'border-green-100 bg-zinc-50 dark:border-green-950/20 dark:bg-zinc-900/50' 
+                                : isStarted && !isLocked
+                                  ? 'border-indigo-100 dark:border-indigo-950' 
+                                  : 'border-zinc-200 dark:border-zinc-800'
+                            } ${isLocked ? 'opacity-60 bg-zinc-50/30' : ''}`}
+                          >
+                            <CardContent className="px-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                              <div className="space-y-1 flex-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <h4 className="font-semibold text-sm text-zinc-900 dark:text-zinc-50">{section.title}</h4>
+                                  {isCompleted ? (
+                                    <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-white text-[10px] px-1.5 py-0">
+                                      완료
+                                    </Badge>
+                                  ) : isLocked ? (
+                                    <Badge variant="outline" className="text-zinc-400 border-zinc-200 text-[10px] px-1.5 py-0">
+                                      잠금
+                                    </Badge>
+                                  ) : isStarted ? (
+                                    <Badge variant="secondary" className="bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 hover:bg-indigo-100 text-[10px] px-1.5 py-0">
+                                      학습 중
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="text-zinc-400 border-zinc-200 text-[10px] px-1.5 py-0">
+                                      대기 중
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-xs text-muted-foreground line-clamp-1">{section.description}</p>
+                              </div>
+
+                              <div className="shrink-0 self-end sm:self-center">
+                                {courseDetail.user_subscribed ? (
+                                  <Button
+                                    variant={isCompleted ? 'outline' : 'default'}
+                                    size="sm"
+                                    onClick={() => cardIndex !== -1 && router.push(`/learn/${courseDetail.slug}?card=${cardIndex + 1}`)}
+                                    disabled={isLocked}
+                                    className={isCompleted 
+                                      ? 'border-zinc-300 text-zinc-700 hover:bg-zinc-50 text-xs h-8' 
+                                      : 'bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-8'
+                                    }
+                                  >
+                                    {isCompleted ? '다시 보기' : isStarted ? '이어서 학습' : '학습 시작'}
+                                  </Button>
+                                ) : (
+                                  <Button variant="secondary" size="sm" onClick={handleSubscribe} disabled={registering} className="border border-zinc-200 text-xs h-8">
+                                    수강 필요
+                                  </Button>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-
-                <div className="pl-2">
-                  <h3 className="font-bold text-lg text-zinc-900 dark:text-zinc-50">{chapter.title}</h3>
-                  <p className="text-sm text-muted-foreground">{chapter.description}</p>
-                </div>
-
-                <div className="space-y-3 pl-2">
-                  {chapter.children?.map((section: any, sIdx: number) => {
-                    const cardIndex = courseDetail.cards?.indexOf(section.filename) ?? -1;
-                    const isCompleted = cardIndex !== -1 && cardIndex < completedSubcourses;
-                    const isStarted = cardIndex !== -1 && cardIndex === completedSubcourses;
-                    const isLocked = courseDetail.sequential_play && cardIndex !== -1 && cardIndex > completedSubcourses;
-
-                    return (
-                      <Card 
-                        key={sIdx} 
-                        className={`border hover:shadow-sm transition-all overflow-hidden bg-white dark:bg-zinc-900 ${
-                          isCompleted 
-                            ? 'border-green-100 bg-green-50/10 dark:border-green-950/20 dark:bg-green-950/5' 
-                            : isStarted && !isLocked
-                              ? 'border-indigo-100 dark:border-indigo-950' 
-                              : 'border-zinc-200 dark:border-zinc-800'
-                        } ${isLocked ? 'opacity-60 bg-zinc-50/30' : ''}`}
-                      >
-                        <CardContent className="px-5 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                          <div className="space-y-1 flex-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <h4 className="font-semibold text-sm text-zinc-900 dark:text-zinc-50">{section.title}</h4>
-                              {isCompleted ? (
-                                <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-white text-[10px] px-1.5 py-0">
-                                  완료
-                                </Badge>
-                              ) : isLocked ? (
-                                <Badge variant="outline" className="text-zinc-400 border-zinc-200 text-[10px] px-1.5 py-0">
-                                  잠금
-                                </Badge>
-                              ) : isStarted ? (
-                                <Badge variant="secondary" className="bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 hover:bg-indigo-100 text-[10px] px-1.5 py-0">
-                                  학습 중
-                                </Badge>
-                              ) : (
-                                <Badge variant="outline" className="text-zinc-400 border-zinc-200 text-[10px] px-1.5 py-0">
-                                  대기 중
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="text-xs text-muted-foreground line-clamp-1">{section.description}</p>
-                          </div>
-
-                          <div className="shrink-0 self-end sm:self-center">
-                            {courseDetail.user_subscribed ? (
-                              <Button
-                                variant={isCompleted ? 'outline' : 'default'}
-                                size="sm"
-                                onClick={() => cardIndex !== -1 && router.push(`/learn/${courseDetail.slug}?card=${cardIndex + 1}`)}
-                                disabled={isLocked}
-                                className={isCompleted 
-                                  ? 'border-zinc-300 text-zinc-700 hover:bg-zinc-50 text-xs h-8' 
-                                  : 'bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-8'
-                                }
-                              >
-                                {isCompleted ? '다시 보기' : isStarted ? '이어서 학습' : '학습 시작'}
-                              </Button>
-                            ) : (
-                              <Button variant="secondary" size="sm" onClick={handleSubscribe} disabled={registering} className="border border-zinc-200 text-xs h-8">
-                                수강 필요
-                              </Button>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="text-center py-12 border border-dashed rounded-lg bg-zinc-50/30">
