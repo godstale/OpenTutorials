@@ -32,6 +32,13 @@ Ran lint. See lint-report.md for details.
 
 ## 2026-07-07
 
+- **[RELEASE] v0.3.1 버전 릴리즈 처리 (Changelog 및 README 업데이트, package.json 버전 범프)**
+  - **수정/갱신 파일**:
+    - [package.json](file:///C:/Workspace/Projects/OpenTutorials/package.json) - 버전을 0.3.0에서 0.3.1로 갱신했습니다.
+    - [CHANGELOG.md](file:///C:/Workspace/Projects/OpenTutorials/CHANGELOG.md) - v0.3.1 변경 이력과 개선 사항(UI 에메랄드 테마, 레이아웃 토글 등)을 추가했습니다.
+    - [README.md](file:///C:/Workspace/Projects/OpenTutorials/README.md) - 제목에 v0.3.1 버전을 반영하고 핵심 기능 소개 문구를 보완했습니다.
+    - [page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/settings/ui/page.tsx) - UI 설정 페이지의 컬러 테마를 에메랄드로 맞추고 가이드 프레이즈를 제거했습니다.
+
 - **[FEATURE] 강좌 학습 화면에 다중 레이아웃 전환(3단 보기, 목차+본문, 본문+튜터, 본문만) 기능 구현 및 사이드바 토글 버튼 삭제**
   - **수정/갱신 파일**:
     - [LearnLayoutContext.tsx](file:///C:/Workspace/Projects/OpenTutorials/lib/context/LearnLayoutContext.tsx) — 학습 화면 레이아웃 전환 상태를 전역 공유하고 localStorage를 활용하여 개인 설정을 유지하는 컨텍스트(Context)를 신규 생성했습니다.

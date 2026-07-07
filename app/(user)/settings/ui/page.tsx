@@ -26,7 +26,7 @@ export default function SettingsUiPage() {
     <div className="space-y-6 max-w-2xl">
       <Card className="border-zinc-200/80 dark:border-zinc-800 shadow-md">
         <CardHeader className="pb-4">
-          <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
+          <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
             <Palette className="size-5" />
             <CardTitle className="text-xl">UI 설정</CardTitle>
           </div>
@@ -47,7 +47,7 @@ export default function SettingsUiPage() {
                 onClick={() => handleFontChange('default')}
                 className={`flex flex-col items-start justify-between rounded-xl border-2 p-5 bg-popover hover:bg-zinc-50 dark:hover:bg-zinc-900 cursor-pointer transition-all duration-200 ${
                   font === 'default'
-                    ? 'border-indigo-600 dark:border-indigo-500 ring-1 ring-indigo-600/30'
+                    ? 'border-green-700 dark:border-green-300 ring-1 ring-green-700/30'
                     : 'border-zinc-200/80 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'
                 }`}
               >
@@ -56,7 +56,7 @@ export default function SettingsUiPage() {
                     <span className="font-semibold text-sm">기본 글꼴 (Default)</span>
                     <div className={`size-4 rounded-full border flex items-center justify-center transition-colors ${
                       font === 'default'
-                        ? 'border-indigo-600 bg-indigo-600 dark:border-indigo-500 dark:bg-indigo-500 text-white'
+                        ? 'border-green-700 bg-green-700 dark:border-green-300 dark:bg-green-300 text-white'
                         : 'border-zinc-300 dark:border-zinc-700'
                     }`}>
                       {font === 'default' && <div className="size-1.5 rounded-full bg-white" />}
@@ -76,7 +76,7 @@ export default function SettingsUiPage() {
                 onClick={() => handleFontChange('noto')}
                 className={`flex flex-col items-start justify-between rounded-xl border-2 p-5 bg-popover hover:bg-zinc-50 dark:hover:bg-zinc-900 cursor-pointer transition-all duration-200 ${
                   font === 'noto'
-                    ? 'border-indigo-600 dark:border-indigo-500 ring-1 ring-indigo-600/30'
+                    ? 'border-green-700 dark:border-green-300 ring-1 ring-green-700/30'
                     : 'border-zinc-200/80 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'
                 }`}
               >
@@ -85,7 +85,7 @@ export default function SettingsUiPage() {
                     <span className="font-semibold text-sm">노토 산스 (Noto Sans KR)</span>
                     <div className={`size-4 rounded-full border flex items-center justify-center transition-colors ${
                       font === 'noto'
-                        ? 'border-indigo-600 bg-indigo-600 dark:border-indigo-500 dark:bg-indigo-500 text-white'
+                        ? 'border-green-700 bg-green-700 dark:border-green-300 dark:bg-green-300 text-white'
                         : 'border-zinc-300 dark:border-zinc-700'
                     }`}>
                       {font === 'noto' && <div className="size-1.5 rounded-full bg-white" />}
@@ -101,21 +101,6 @@ export default function SettingsUiPage() {
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
-      
-      {/* 폰트 변화 예시 프레이즈 */}
-      <Card className="border-zinc-200/80 dark:border-zinc-800 shadow-sm">
-        <CardHeader className="py-4">
-          <div className="flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300">
-            <Sparkles className="size-4 text-amber-500" />
-            <span className="text-xs font-semibold">글꼴 미리보기 예시</span>
-          </div>
-        </CardHeader>
-        <CardContent className="text-sm border-t p-6 bg-zinc-50/50 dark:bg-zinc-900/30 rounded-b-lg">
-          <p className="leading-relaxed text-zinc-700 dark:text-zinc-300">
-            "인공지능 튜터와 함께하는 새로운 로컬 학습의 경험. Open Tutorials 플랫폼은 오프라인 환경에서도 강력한 학습 콘텐츠와 지능형 에이전트 연동을 통해 지속 가능한 교육 인프라를 제공합니다."
-          </p>
         </CardContent>
       </Card>
     </div>
