@@ -32,6 +32,16 @@ Ran lint. See lint-report.md for details.
 
 ## 2026-07-07
 
+- **[FEATURE] 강좌 학습 화면에 다중 레이아웃 전환(3단 보기, 목차+본문, 본문+튜터, 본문만) 기능 구현 및 사이드바 토글 버튼 삭제**
+  - **수정/갱신 파일**:
+    - [LearnLayoutContext.tsx](file:///C:/Workspace/Projects/OpenTutorials/lib/context/LearnLayoutContext.tsx) — 학습 화면 레이아웃 전환 상태를 전역 공유하고 localStorage를 활용하여 개인 설정을 유지하는 컨텍스트(Context)를 신규 생성했습니다.
+    - [layout.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/layout.tsx) — `UserLayout` 전체를 `LearnLayoutProvider`로 감싸 레이아웃 상태가 전역적으로 동기화되도록 수정했습니다.
+    - [UserHeader.tsx](file:///C:/Workspace/Projects/OpenTutorials/components/layout/UserHeader.tsx) — 강좌 학습 화면에서 기존 사이드바 fold/unfold 버튼(`SidebarTrigger`)을 삭제(숨김 처리)하고, 그 위치에 4가지 방식의 레이아웃 변경 버튼을 렌더링하도록 수정했습니다.
+    - [client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx) — `layout` 상태에 따라 "강좌 목차" 패널 및 "AI 튜터" 패널을 조건부 렌더링하여 dynamic layout을 완성했습니다.
+  - **작업 내용**:
+    - 학습 화면 내 컬럼 배치 편의성을 위해 3가지 컬럼(강좌 목차, 강좌 컨텐츠, AI 튜터)의 노출 조합을 변경하는 4가지 레이아웃 스위치 버튼을 추가했습니다.
+    - 불필요한 기존 최상단 사이드바 토글 버튼을 숨기고 해당 자리에 레이아웃 버튼 그룹을 배치해 UI 사용성을 높였습니다.
+
 - **[STYLE] 나의 강좌 페이지 우측 상단 "새 강좌 찾기" 버튼 색상 통일**
   - **수정/갱신 파일**:
     - [page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/my-courses/page.tsx) — 우측 상단 `[새 강좌 찾기]` 버튼의 클래스명을 `bg-emerald-600 hover:bg-emerald-700`에서 `bg-indigo-600 hover:bg-indigo-700`으로 수정하여 타 페이지와의 일관성을 확보했습니다.

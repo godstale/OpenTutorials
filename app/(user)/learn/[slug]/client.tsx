@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn, agentLeaveTimers } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import dynamic from 'next/dynamic';
+import { useLearnLayout } from '@/lib/context/LearnLayoutContext';
 
 // react-player renders custom elements (e.g. <youtube-video>) that reference `document` at module load time, so it must be client-only.
 const ReactPlayer = dynamic(() => import('react-player'), { ssr: false });
@@ -453,6 +454,7 @@ export default function LearnPageClient({
   coursePackage
 }: LearnPageClientProps) {
   const router = useRouter();
+  const { layout } = useLearnLayout();
   const totalCards = cards.length;
   const [currentCardIndex, setCurrentCardIndex] = useState(initialCardIndex);
   const [maxUnlockedIndex, setMaxUnlockedIndex] = useState<number>(() => {
@@ -1241,7 +1243,8 @@ Student Question: `;
   return (
     <div className="no-layout-padding flex h-full w-full overflow-hidden">
       {/* Course TOC Panel */}
-      <div className="w-64 border-r bg-background flex flex-col h-full shrink-0 min-h-0 relative">
+      {(layout === '3-layout' || layout === 'toc-content') && (
+        <div className="w-64 border-r bg-background flex flex-col h-full shrink-0 min-h-0 relative">
         <div className="p-4 border-b shrink-0 flex items-center justify-between">
           <h3 className="font-bold text-sm text-foreground flex items-center gap-2">
             <BookOpen className="w-4 h-4 text-primary" /> 강좌 목차
@@ -1368,6 +1371,7 @@ Student Question: `;
           </div>
         )}
       </div>
+      )}
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col h-full bg-background relative overflow-hidden border-r">
@@ -1462,7 +1466,8 @@ Student Question: `;
       </main>
 
       {/* AI Agent Chat Area */}
-      <aside className="w-[400px] shrink-0 bg-muted/10 flex flex-col h-full shadow-lg z-10 overflow-hidden min-h-0">
+      {(layout === '3-layout' || layout === 'content-tutor') && (
+        <aside className="w-[400px] shrink-0 bg-muted/10 flex flex-col h-full shadow-lg z-10 overflow-hidden min-h-0">
         {isCheckpointMode && activeCheckpoint && (
           <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2.5 text-xs text-amber-800 dark:text-amber-400 flex items-center justify-between shrink-0">
             <span className="font-medium flex items-center gap-1">⚠️ 강좌 체크포인트 QnA 진행 중</span>
@@ -1600,6 +1605,7 @@ Student Question: `;
             )}
         </div>
       </aside>
+      )}
 
       {/* Checkpoint Notification Dialog */}
       <Dialog open={showCheckpointDialog} onOpenChange={setShowCheckpointDialog}>
