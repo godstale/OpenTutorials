@@ -35,6 +35,22 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko" suppressHydrationWarning className={cn(geistSans.variable, geistMono.variable, montserrat.variable, notoSansKr.variable)}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var font = localStorage.getItem('font-preference');
+                  if (font === 'noto') {
+                    document.documentElement.classList.add('font-noto-sans-active');
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className="min-w-[1024px] font-sans antialiased">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <TooltipProvider>

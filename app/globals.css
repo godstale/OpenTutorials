@@ -85,3 +85,13 @@
     @apply bg-background text-foreground;
   }
 }
+
+.font-noto-sans-active,
+.font-noto-sans-active * {
+  font-family: var(--font-noto-sans), sans-serif !important;
+}
+
+.font-noto-sans-demo,
+.font-noto-sans-demo * {
+  font-family: var(--font-noto-sans), sans-serif !important;
+}

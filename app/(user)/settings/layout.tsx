@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { User, Bot, BookOpen } from 'lucide-react';
+import { User, Bot, BookOpen, Palette } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const SETTINGS_NAV = [
   // { label: '프로필', href: '/settings/profile', icon: User },
   { label: '에이전트', href: '/settings/agent', icon: Bot },
   { label: '강좌', href: '/settings/course', icon: BookOpen },
+  { label: 'UI', href: '/settings/ui', icon: Palette },
 ];
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {

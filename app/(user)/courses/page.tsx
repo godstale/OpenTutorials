@@ -24,7 +24,7 @@ export default function CoursesPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[75vh] w-full max-w-4xl mx-auto px-4 py-8 relative overflow-hidden">
       {/* Background Decorative Gradients */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-indigo-500/10 blur-[100px] rounded-full -z-10 pointer-events-none" />
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-emerald-500/10 blur-[100px] rounded-full -z-10 pointer-events-none" />
       <div className="absolute bottom-1/4 left-1/4 w-[250px] h-[250px] bg-emerald-500/10 blur-[80px] rounded-full -z-10 pointer-events-none" />
 
       <Card className="w-full border border-zinc-200/80 dark:border-zinc-800/80 bg-white/60 dark:bg-zinc-950/60 backdrop-blur-md shadow-xl p-8 md:p-12 text-center rounded-2xl">
@@ -32,19 +32,19 @@ export default function CoursesPage() {
           
           <div className="relative">
             {/* Glowing Icon Wrapper */}
-            <div className="absolute inset-0 bg-indigo-500/20 blur-md rounded-full animate-pulse" />
-            <div className="relative size-16 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
+            <div className="absolute inset-0 bg-emerald-500/20 blur-md rounded-full animate-pulse" />
+            <div className="relative size-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
               <Globe className="size-8 animate-spin" style={{ animationDuration: '8s' }} />
             </div>
           </div>
 
           <div className="pb-7 space-y-3 border-b border-zinc-200/50 dark:border-zinc-800/50">
             <div className="flex justify-center">
-              <Badge variant="outline" className="bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border-indigo-200/50 font-bold px-3 py-1 text-xs uppercase tracking-wider">
+              <Badge variant="outline" className="bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border-emerald-200/50 font-bold px-3 py-1 text-xs uppercase tracking-wider">
                 Coming Soon
               </Badge>
             </div>
-            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-600 via-purple-600 to-violet-600 bg-clip-text text-transparent dark:from-indigo-400 dark:to-violet-400">
+            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-green-700 via-teal-700 to-emerald-700 bg-clip-text text-transparent dark:from-green-300 dark:to-teal-300">
               강좌 검색 기능 준비 중
             </h1>
             <p className="text-sm md:text-base text-muted-foreground max-w-xl mx-auto leading-relaxed">
@@ -57,7 +57,7 @@ export default function CoursesPage() {
               <ArrowLeft className="size-3.5" />
               대시보드로 가기
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => router.push('/my-courses')} className="text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg text-xs">
+            <Button variant="ghost" size="sm" onClick={() => router.push('/my-courses')} className="text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg text-xs">
               내 학습 강좌 확인
             </Button>
           </div>

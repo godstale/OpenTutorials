@@ -110,9 +110,10 @@ export function UserSidebar() {
 
   return (
     <Sidebar variant="sidebar" collapsible="icon">
-      <SidebarHeader className="h-16 flex items-center px-4 justify-center border-b">
-        <Link href="/" className="font-bold text-lg flex items-center w-full overflow-hidden whitespace-nowrap">
-          {mounted && isCollapsed ? "O" : "Open Tutorials"}
+      <SidebarHeader className={cn("h-16 flex flex-row items-center border-b transition-all duration-200", isCollapsed ? "px-2 justify-center" : "px-4 justify-start")}>
+        <Link href="/" className={cn("font-bold text-sm flex items-center gap-2 w-full overflow-hidden whitespace-nowrap", isCollapsed ? "justify-center" : "justify-start")}>
+          <Bot className="size-5 text-primary flex-shrink-0" />
+          {mounted && isCollapsed ? null : <span>Open Tutorials</span>}
         </Link>
       </SidebarHeader>
 
