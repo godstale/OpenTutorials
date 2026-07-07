@@ -34,7 +34,7 @@ export default function MigrationGuidePage() {
       <Card className="border border-zinc-200 dark:border-zinc-800 shadow-lg bg-white dark:bg-zinc-950">
         <CardHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-900">
           <CardTitle className="text-lg font-bold flex items-center gap-2 text-zinc-800 dark:text-zinc-200">
-            <Info className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+            <Info className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
             통합 번들 ZIP 파일 구조 및 마이그레이션 안내
           </CardTitle>
           <CardDescription>
@@ -100,7 +100,7 @@ export default function MigrationGuidePage() {
 
           <div className="p-5 bg-zinc-50 dark:bg-zinc-900/40 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs sm:text-sm space-y-2">
             <p className="font-bold text-zinc-850 dark:text-zinc-100 flex items-center gap-1.5">
-              <Layers className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              <Layers className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               🔍 필수 유효성 검증 규칙 (중요):
             </p>
             <ul className="list-disc pl-5 space-y-1.5 text-zinc-600 dark:text-zinc-400 text-xs leading-relaxed">

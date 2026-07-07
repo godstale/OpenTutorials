@@ -756,20 +756,20 @@
       "id": "84794a50-d3f1-4b89-9dd9-6518318e34b4",
       "user_id": "local-user-id",
       "course_id": "b4409acb-13b0-4985-a2ea-6a0c8d4bd583",
-      "last_card": 17,
+      "last_card": 73,
       "max_card": 77,
       "completed": false,
-      "updated_at": "2026-07-06T15:04:35.345Z",
+      "updated_at": "2026-07-07T14:34:32.616Z",
       "created_at": "2026-07-06T13:32:13.669Z"
     },
     {
       "id": "752aa5f0-e49f-4085-b057-703159aee926",
       "user_id": "local-user-id",
       "course_id": "a7f0a8eb-cd88-408b-b20e-da7f82101528",
-      "last_card": 3,
+      "last_card": 1,
       "max_card": 3,
       "completed": false,
-      "updated_at": "2026-07-06T14:38:51.554Z",
+      "updated_at": "2026-07-07T14:47:01.330Z",
       "created_at": "2026-07-06T13:30:30.235Z"
     }
   ],
@@ -785,7 +785,7 @@
       "user_id": "local-user-id",
       "status": "online",
       "created_at": "2026-07-04T10:48:32.215Z",
-      "updated_at": "2026-07-05T10:05:05.035Z",
+      "updated_at": "2026-07-07T13:30:16.195Z",
       "agent_type": "harness",
       "env_type": "cloud",
       "agent_program": "hermes"
@@ -801,7 +801,7 @@
       "user_id": "local-user-id",
       "status": "offline",
       "created_at": "2026-07-05T05:19:15.147Z",
-      "updated_at": "2026-07-06T14:46:33.152Z",
+      "updated_at": "2026-07-07T14:40:32.929Z",
       "env_type": "local",
       "agent_program": "lmstudio"
     },
@@ -819,7 +819,7 @@
       "user_id": "local-user-id",
       "status": "online",
       "created_at": "2026-07-05T08:37:49.875Z",
-      "updated_at": "2026-07-06T15:02:35.595Z"
+      "updated_at": "2026-07-07T14:35:56.434Z"
     }
   ],
   "user_external_agent_messages": [
@@ -1078,54 +1078,6 @@
       "content": "현재 사용 중인 LLM 모델 정보와 설정된 모델 목록을 확인해 보겠습니다.\n\n현재 제가 사용 중인 LLM 모델과 선택 가능한 모델 정보입니다.\n\n**현재 사용 중인 모델:**\n- `deepseek-v4-flash` (DeepSeek V4 Flash)\n- 제공사: DeepSeek (`https://api.deepseek.com/v1`)\n- API 모드: Chat Completions\n\n**같은 제공사(DeepSeek) 내에서 선택 가능한 모델:**\n| 모델 ID | 표시 이름 |\n|---------|----------|\n| `deepseek-v4-flash` | DeepSeek V4 Flash (현재 사용 중) |\n| `deepseek-v4-pro` | DeepSeek V4 Pro |\n\n**다른 제공사(설정만 되어 있으면 사용 가능):**\nHermes 에이전트는 config.yaml에서 `providers:` 항목만 추가하면 다양한 LLM 제공사로 전환할 수 있습니다. 현재는 DeepSeek만 설정되어 있지만, OpenRouter, OpenAI, Anthropic, Google 등도 API 키와 base_url만 추가하면 사용할 수 있습니다.\n\n`hermes config set model.default <model-id>`와 `hermes config set model.provider <provider-name>`을 통해 전환할 수 있습니다.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} -->",
       "created_at": "2026-07-05T08:23:04.546Z",
       "updated_at": "2026-07-05T08:23:04.547Z"
-    },
-    {
-      "id": "3e2574d5-4611-4b8b-961a-708aacd5ff5b",
-      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
-      "role": "user",
-      "content": "[시스템 점검] 현재 강좌 \"GLM-5.2 분석 강좌\"의 학습 자료가 성공적으로 다운로드되고 분석되었는지 확인해 주세요. \n다운로드 주소: http://localhost:3000/api/courses/glm52-video-course/resource\n사용자가 여러 강좌를 동시에 수강할 수 있으므로, 반드시 이 강좌를 위한 개별 폴더(예: workspaces/courses/glm52-video-course 또는 이에 상응하는 고유 경로)를 생성하여 그 안에서 다운로드 및 분석 작업을 수행해 주셔야 합니다.\n만약 아직 강좌 파일을 다운로드하고 분석하는 작업이 완료되지 않았다면, 다른 학습 질문에 답하기 전에 이 작업을 가장 우선하여 완료하고 그 결과를 알려주세요.\n\n상태 확인 후, 답변의 마지막에 반드시 다음 형식의 히든 메시지를 포함해 주세요:\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} --> (다운로드 완료 시) 또는\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} --> (미완료 시)}",
-      "created_at": "2026-07-05T10:47:28.188Z",
-      "updated_at": "2026-07-05T10:47:28.188Z"
-    },
-    {
-      "id": "ed0c01d4-9c28-425c-bede-ac7759bb5cb8",
-      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
-      "role": "assistant",
-      "content": "강좌 자료 상태를 확인하겠습니다.\n\n디렉토리와 파일은 존재하지만, `resource.md` 파일 크기가 0바이트로 아직 실제 내용이 다운로드되지 않았습니다. 바로 다운로드하겠습니다.\n\n서버에 연결할 수 없습니다 (curl exit code 7). 서버가 아직 실행 중이지 않은 것 같습니다. 상태를 좀 더 확인해 보겠습니다.\n\nlocalhost:3000 서버가 실행 중이지 않아 자료를 다운로드할 수 없습니다. 서버나 다른 소스가 있는지 추가로 확인해 보겠습니다.\n\n현재 상태를 종합해 보고드립니다.\n\n**상태 보고**\n\n1. 강좌 전용 폴더 생성: 완료\n   - 경로: `/home/ubuntu/workspaces/courses/glm52-video-course/`\n\n2. 강좌 자료 다운로드: 실패\n   - `resource.md` 파일은 생성되어 있으나 크기가 0바이트로, 아직 실제 콘텐츠가 다운로드되지 않았습니다.\n   - 다운로드 시도 시 `localhost:3000` 서버에 연결할 수 없었습니다 (Connection refused). 해당 API 서버가 현재 실행 중이지 않습니다.\n\n3. 추가 확인 결과:\n   - 시스템 내에 `glm52` 관련 자료가 다른 곳에 저장되어 있지 않습니다.\n   - `localhost:3000`에서 서비스 중인 Node/Next.js 서버 프로세스도 찾을 수 없습니다.\n\n**필요한 조치:** `localhost:3000`에서 API 서버를 먼저 실행하신 후, 다시 다운로드를 시도해 주시면 자료를 안전하게 받아서 분석할 수 있습니다. 서버 실행 방법을 알려주시면 제가 직접 진행하겠습니다.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} -->",
-      "created_at": "2026-07-05T10:47:55.667Z",
-      "updated_at": "2026-07-05T10:47:55.667Z"
-    },
-    {
-      "id": "9ad947ce-f13f-4e02-9ead-9ebe16bde3b8",
-      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
-      "role": "assistant",
-      "content": "\n\n아직 강좌 자료가 다운로드되지 않았습니다. 지금 바로 진행하겠습니다.\n\n안녕하세요. GLM-5.2 분석 강좌의 학습 자료 다운로드 상태를 확인했습니다.\n\n상태 보고:\n- 강좌 전용 디렉토리 생성 완료: /home/ubuntu/workspaces/courses/glm52-video-course/\n- 다운로드 시도 결과: 실패\n\n문제 원인:\n강좌 자료를 제공하는 API 서버(http://localhost:3000)가 현재 실행 중이지 않습니다. curl 연결 시도 결과 \"Failed to connect to host\" (exit code 7)로, 해당 포트에서 서비스가 리스닝 중이지 않음을 확인했습니다.\n\n현재 실행 중인 서비스들:\n- Hermes API Server (0.0.0.0:8642) -- 실행 중이나 강좌 API를 제공하지 않음 (404)\n- Hermes Dashboard (127.0.0.1:9120)\n- Nginx 리버스 프록시 (0.0.0.0:9119)\n\n포트 3000에서 실행될 코스 관리 API 서버가 별도로 필요합니다. 시스템 어디에서도 GLM-5.2 관련 파일이나 프로젝트가 발견되지 않아, 서버 시작 방법이나 자료의 대체 위치를 알 수 없는 상태입니다.\n\n다음 조치가 필요합니다:\n1. 포트 3000에서 실행될 강좌 API 서버를 시작해 주시거나\n2. 강좌 자료가 있는 다른 경로를 알려주세요\n\n서버가 준비되면 즉시 다운로드 및 분석을 완료하겠습니다.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} -->",
-      "created_at": "2026-07-05T10:48:05.979Z",
-      "updated_at": "2026-07-05T10:48:05.979Z"
-    },
-    {
-      "id": "d781f516-dc65-4890-bd62-9a90a31266aa",
-      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
-      "role": "user",
-      "content": "[시스템 점검] 현재 강좌 \"GLM-5.2 분석 강좌\"의 학습 자료가 성공적으로 다운로드되고 분석되었는지 확인해 주세요. \n다운로드 주소: http://localhost:3000/api/courses/glm52-video-course/resource\n사용자가 여러 강좌를 동시에 수강할 수 있으므로, 반드시 이 강좌를 위한 개별 폴더(예: workspaces/courses/glm52-video-course 또는 이에 상응하는 고유 경로)를 생성하여 그 안에서 다운로드 및 분석 작업을 수행해 주셔야 합니다.\n만약 아직 강좌 파일을 다운로드하고 분석하는 작업이 완료되지 않았다면, 다른 학습 질문에 답하기 전에 이 작업을 가장 우선하여 완료하고 그 결과를 알려주세요.\n\n상태 확인 후, 답변의 마지막에 반드시 다음 형식의 히든 메시지를 포함해 주세요:\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} --> (다운로드 완료 시) 또는\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} --> (미완료 시)}",
-      "created_at": "2026-07-05T10:49:08.700Z",
-      "updated_at": "2026-07-05T10:49:08.700Z"
-    },
-    {
-      "id": "d2795b0c-d164-4902-a0dc-7db6bdca9de5",
-      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
-      "role": "assistant",
-      "content": "Let me check if the course materials have already been downloaded.\n\n`glm52-video-course` 디렉토리가 이미 존재합니다. 안에 무엇이 있는지 확인해 보겠습니다.\n\nresource.md 파일이 존재하지만 0바이트로 비어 있습니다. 아직 실제 다운로드가 완료되지 않은 상태입니다. 지금 다운로드하겠습니다.\n\n서버에 연결할 수 없습니다(exit code 7 - connection refused). 로컬 서버가 실행 중인지 확인해 보겠습니다.\n\n포트 3000에서 서비스가 실행 중이지 않습니다. 강좌 자료를 제공하는 서버가 아직 실행되지 않은 상태입니다. 다른 서비스나 관련 구성을 확인해 보겠습니다.\n\n로그를 보니 Hermes API 서버가 8642 포트에서 실행 중입니다. 해당 포트로 직접 시도해 보겠습니다.\n\n상태 확인 결과를 보고드립니다.\n\n---\n\n강좌 자료 다운로드 상태: 실패\n\n강좌 디렉토리(/home/ubuntu/workspaces/courses/glm52-video-course/)는 존재하지만, resource.md 파일은 실제 내용이 없는 상태(0바이트)입니다.\n\n이유: 강좌 자료를 제공하는 API 서버(http://localhost:3000)가 실행되고 있지 않습니다. 현재 시스템에서 포트 3000을 수신하는 프로세스가 없으며, 연결이 거부(Connection refused)되었습니다.\n\nHermes API 서버(포트 8642)로도 시도해 보았지만 해당 엔드포인트(/api/courses/glm52-video-course/resource)가 존재하지 않아 404 응답을 받았습니다.\n\n따라서 지금은 강좌 자료를 다운로드할 수 없는 상태입니다. 이 문제를 해결하려면:\n1. localhost:3000에서 강좌 API를 제공하는 서버를 먼저 실행해야 합니다.\n2. 또는 강좌 자료를 다른 경로(로컬 파일, 다른 URL 등)로 제공받을 수 있는 방법이 필요합니다.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} -->",
-      "created_at": "2026-07-05T10:49:52.705Z",
-      "updated_at": "2026-07-05T10:49:52.705Z"
-    },
-    {
-      "id": "362e92bc-49f9-4500-beb7-2a9c80047594",
-      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
-      "role": "user",
-      "content": "[시스템 점검] 현재 강좌 \"GLM-5.2 분석 강좌\"의 학습 자료가 성공적으로 다운로드되고 분석되었는지 확인해 주세요. \n다운로드 주소: http://localhost:3000/api/courses/glm52-video-course/resource\n사용자가 여러 강좌를 동시에 수강할 수 있으므로, 반드시 이 강좌를 위한 개별 폴더(예: workspaces/courses/glm52-video-course 또는 이에 상응하는 고유 경로)를 생성하여 그 안에서 다운로드 및 분석 작업을 수행해 주셔야 합니다.\n만약 아직 강좌 파일을 다운로드하고 분석하는 작업이 완료되지 않았다면, 다른 학습 질문에 답하기 전에 이 작업을 가장 우선하여 완료하고 그 결과를 알려주세요.\n\n상태 확인 후, 답변의 마지막에 반드시 다음 형식의 히든 메시지를 포함해 주세요:\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} --> (다운로드 완료 시) 또는\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} --> (미완료 시)}",
-      "created_at": "2026-07-05T10:51:10.634Z",
-      "updated_at": "2026-07-05T10:51:10.634Z"
     },
     {
       "id": "616cf215-fca9-45ca-beda-ec1863a1eb78",
@@ -1878,6 +1830,54 @@
       "content": "\n\n리소스 파일이 아직 다운로드되지 않은 것으로 보입니다. status.md 파일만 있고 resource.md 파일이 없습니다. 지금 다운로드 및 분석을 진행하겠습니다.\n\n## 시스템 점검 결과 — 신경망과 LLM 개론\n\n**상태: 다운로드 실패**\n\n**강좌 디렉토리**: `/home/ubuntu/workspaces/courses/neutral-network-and-llm/`\n\n**점검 시각**: 2026-07-06 (금일)\n\n**문제**: 학습 자료 API 서버(`http://localhost:3000`)에 연결할 수 없습니다.\n- `curl` exit code 7 — Connection refused\n- 호스트는 해결됨 (127.0.0.1 / ::1) but 해당 포트에서 수신 중인 프로세스 없음\n- 현재 수신 중인 포트: Hermes API (8642), Hermes Dashboard (9120), Nginx (9119)\n- 3000번 포트는 어느 프로세스도 점유하고 있지 않음\n\n**조치 필요**: 강좌 자료를 제공하는 API 서버를 로컬호스트 3000번 포트에서 먼저 구동해야 합니다. 서버가 가동되면 즉시 다운로드 및 분석을 완료하겠습니다.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} -->",
       "created_at": "2026-07-06T14:38:43.125Z",
       "updated_at": "2026-07-06T14:38:43.125Z"
+    },
+    {
+      "id": "66aa4f1e-7a17-413d-9f6f-c2744cdb0fc0",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "user",
+      "content": "[시스템 점검] 현재 강좌 \"신경망과 LLM 개론\"의 학습 자료가 성공적으로 다운로드되고 분석되었는지 확인해 주세요. \n다운로드 주소: http://localhost:3000/api/courses/neutral-network-and-llm/resource\n사용자가 여러 강좌를 동시에 수강할 수 있으므로, 반드시 이 강좌를 위한 개별 폴더(예: workspaces/courses/neutral-network-and-llm 또는 이에 상응하는 고유 경로)를 생성하여 그 안에서 다운로드 및 분석 작업을 수행해 주셔야 합니다.\n만약 아직 강좌 파일을 다운로드하고 분석하는 작업이 완료되지 않았다면, 다른 학습 질문에 답하기 전에 이 작업을 가장 우선하여 완료하고 그 결과를 알려주세요.\n\n상태 확인 후, 답변의 마지막에 반드시 다음 형식의 히든 메시지를 포함해 주세요:\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} --> (다운로드 완료 시) 또는\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} --> (미완료 시)}",
+      "created_at": "2026-07-07T13:14:16.241Z",
+      "updated_at": "2026-07-07T13:14:16.241Z"
+    },
+    {
+      "id": "b6ed04a1-a7d7-4baa-9d00-fd194f91bf82",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "assistant",
+      "content": "\n\n아직 강좌 자료가 다운로드되지 않았습니다. 지금 다운로드 및 분석을 진행하겠습니다.\n\n로컬호스트 3000번 포트에 연결할 수 없습니다 — 해당 API 서버가 실행 중이지 않습니다.\n\n상태 점검 결과입니다.\n\n강좌 폴더: /home/ubuntu/workspaces/courses/neutral-network-and-llm/ 는 생성되어 있으나, 학습 자료(resource.md)는 아직 다운로드되지 않았습니다.\n\n원인: 강좌 자료를 제공하는 API 서버(http://localhost:3000)가 현재 실행 중이지 않습니다. connection refused 상태로, 3000번 포트에서 수신 중인 프로세스가 없습니다. (현재 열린 포트는 Hermes API 8642, Dashboard 9120, Nginx 9119 뿐입니다.)\n\n이 API 서버가 구동되어야 curl로 resource.md를 다운로드하고 분석할 수 있습니다. 서버를 시작해 주시면 즉시 다운로드 및 분석을 완료하겠습니다.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} -->",
+      "created_at": "2026-07-07T13:14:43.832Z",
+      "updated_at": "2026-07-07T13:14:43.833Z"
+    },
+    {
+      "id": "1cd04e32-d897-416a-914f-b0672b37f1f8",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "user",
+      "content": "[시스템 점검] 현재 강좌 \"신경망과 LLM 개론\"의 학습 자료가 성공적으로 다운로드되고 분석되었는지 확인해 주세요. \n다운로드 주소: http://localhost:3000/api/courses/neutral-network-and-llm/resource\n사용자가 여러 강좌를 동시에 수강할 수 있으므로, 반드시 이 강좌를 위한 개별 폴더(예: workspaces/courses/neutral-network-and-llm 또는 이에 상응하는 고유 경로)를 생성하여 그 안에서 다운로드 및 분석 작업을 수행해 주셔야 합니다.\n만약 아직 강좌 파일을 다운로드하고 분석하는 작업이 완료되지 않았다면, 다른 학습 질문에 답하기 전에 이 작업을 가장 우선하여 완료하고 그 결과를 알려주세요.\n\n상태 확인 후, 답변의 마지막에 반드시 다음 형식의 히든 메시지를 포함해 주세요:\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} --> (다운로드 완료 시) 또는\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} --> (미완료 시)}",
+      "created_at": "2026-07-07T14:27:29.491Z",
+      "updated_at": "2026-07-07T14:27:29.491Z"
+    },
+    {
+      "id": "2a2f1200-fed8-4201-a0f5-107e42faede1",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "assistant",
+      "content": "네, 시스템 점검을 시작합니다. 강좌 자료의 다운로드 상태를 확인하겠습니다.\n\n상태 파일을 확인했습니다. 이전 시도에서 다운로드에 실패했었습니다. 지금 다시 서버가 가동 중인지 확인해 보겠습니다.\n\n여전히 localhost:3000에 연결할 수 없습니다. 현재 가동 중인 포트를 확인해 볼게요.\n\n현재 상태를 종합하면:\n\n**강좌 \"신경망과 LLM 개론\" — 다운로드 상태: 실패**\n\n- 강좌 전용 폴더는 생성되어 있습니다: `/home/ubuntu/workspaces/courses/neutral-network-and-llm/`\n- 학습 자료를 제공하는 API 서버(`http://localhost:3000`)가 현재 **실행 중이지 않습니다**.\n- 현재 가동 중인 포트: Hermes API(8642), Nginx(9119), Hermes Dashboard(9120) — 3000번 포트는 없습니다.\n\n**조치 필요**: 강좌 자료를 호스팅하는 API 서버를 3000번 포트에서 먼저 구동해 주셔야 합니다. 서버가 가동되면 말씀해 주시면 즉시 다운로드 및 분석을 진행하겠습니다.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} -->",
+      "created_at": "2026-07-07T14:27:42.657Z",
+      "updated_at": "2026-07-07T14:27:42.657Z"
+    },
+    {
+      "id": "9ef35937-80ea-47fa-baa5-b358ff1256a3",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "user",
+      "content": "[시스템 점검] 현재 강좌 \"신경망과 LLM 개론\"의 학습 자료가 성공적으로 다운로드되고 분석되었는지 확인해 주세요. \n다운로드 주소: http://localhost:3000/api/courses/neutral-network-and-llm/resource\n사용자가 여러 강좌를 동시에 수강할 수 있으므로, 반드시 이 강좌를 위한 개별 폴더(예: workspaces/courses/neutral-network-and-llm 또는 이에 상응하는 고유 경로)를 생성하여 그 안에서 다운로드 및 분석 작업을 수행해 주셔야 합니다.\n만약 아직 강좌 파일을 다운로드하고 분석하는 작업이 완료되지 않았다면, 다른 학습 질문에 답하기 전에 이 작업을 가장 우선하여 완료하고 그 결과를 알려주세요.\n\n상태 확인 후, 답변의 마지막에 반드시 다음 형식의 히든 메시지를 포함해 주세요:\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} --> (다운로드 완료 시) 또는\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} --> (미완료 시)}",
+      "created_at": "2026-07-07T14:47:01.426Z",
+      "updated_at": "2026-07-07T14:47:01.426Z"
+    },
+    {
+      "id": "75d0d90b-0f86-429d-a684-c1ccb3472283",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "assistant",
+      "content": "네, 시스템 점검을 수행하겠습니다. 강좌 전용 폴더와 다운로드 상태를 먼저 확인하겠습니다.\n\n디렉터리는 존재하지만, 파일이 하나만 있습니다. 상태를 확인해 보겠습니다.\n\n상태 파일을 확인했습니다. 이전 시도에서 다운로드가 실패했었다고 기록되어 있습니다. 현재 상태를 재확인해 보겠습니다.\n\n---\n\n**시스템 점검 결과 — 신경망과 LLM 개론 강좌 자료**\n\n상태: 미완료 (다운로드 불가)\n\n**상세 내역:**\n- 전용 디렉터리: `/home/ubuntu/workspaces/courses/neutral-network-and-llm/` ✅ (생성되어 있음)\n- 강좌 자료 파일: 없음 (status.md만 존재)\n- 다운로드 URL: `http://localhost:3000/api/courses/neutral-network-and-llm/resource`\n- 장애 원인: **localhost:3000 포트에서 수신 중인 서버가 없음** (connection refused)\n\n**현재 수신 중인 포트 목록:**\n| 포트 | 서비스 | 상태 |\n|------|--------|------|\n| 3000 | 강좌 API 서버 | ❌ 미실행 |\n| 8642 | Hermes API | ✅ 실행 중 |\n| 9120 | Hermes Dashboard | ✅ 실행 중 |\n| 9119 | Nginx (리버스 프록시) | ✅ 실행 중 |\n\n3000번 포트에서 강좌 자료를 제공하는 API 서버가 실행되고 있지 않습니다. 이전 점검(2026-07-07)과 동일한 상태로, 아직 서버가 구동되지 않았습니다.\n\n**필요한 조치:** 강좌 자료 API 서버(localhost:3000)를 먼저 구동해 주시면, 즉시 다운로드 및 분석을 완료하겠습니다.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} -->",
+      "created_at": "2026-07-07T14:47:20.047Z",
+      "updated_at": "2026-07-07T14:47:20.047Z"
     }
   ],
   "macros": []

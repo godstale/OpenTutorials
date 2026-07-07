@@ -22,7 +22,7 @@ async function DashboardContent() {
   const [subscriptions, { data: externalAgents }, { data: userProgress }, { data: packageSubs }] = user
     ? await Promise.all([
         getUserSubscriptions(user.id),
-        supabase.from('user_external_agents').select('id, status'),
+        supabase.from('user_external_agents').select('id, name, status'),
         adminSupabase.from('user_progress').select('*, course:course_packages(*)').eq('user_id', user.id),
         adminSupabase.from('user_package_subscriptions').select('*, package:course_packages(*)').eq('user_id', user.id)
       ])
@@ -40,7 +40,7 @@ async function DashboardContent() {
   const totalActiveCoursesCount = activeProgress.length;
   
   const completedCoursesCount = userProgress?.filter((p: { completed: boolean }) => p.completed).length ?? 0;
-
+ 
   // Create unified learning items: active individual courses
   const unifiedLearningItems: any[] = activeProgress.map((p: any) => ({
     id: `course-${p.id}`,
@@ -51,7 +51,8 @@ async function DashboardContent() {
     thumbnail: p.course?.thumbnail || null,
     currentCard: p.max_card ?? p.last_card ?? 0,
     totalCards: p.course?.cards?.length || 10,
-    updatedAt: p.updated_at
+    updatedAt: p.updated_at,
+    agentId: p.course?.agent_id || null
   }));
 
   // Sort by updatedAt (descending)
@@ -158,6 +159,7 @@ async function DashboardContent() {
             const isCourse = item.type === 'course';
             const coursePercent = isCourse ? Math.min(100, Math.round((item.currentCard! / item.totalCards!) * 100)) : 0;
             const percentValue = isCourse ? coursePercent : item.percent!;
+            const assignedAgent = externalAgents?.find((a: any) => a.id === item.agentId);
 
             return (
               <Card key={item.id} className="overflow-hidden flex flex-col hover:border-primary/50 transition-all duration-300 bg-white py-0 pb-0">
@@ -165,7 +167,7 @@ async function DashboardContent() {
                   <div className="h-32 relative overflow-hidden shrink-0">
                     <CourseIcon thumbnail={item.thumbnail} className="w-full h-full" iconClassName="w-10 h-10" alt={item.title} />
                     <div className="absolute top-2.5 right-2.5">
-                      <Badge variant={isCourse ? 'secondary' : 'default'} className={isCourse ? 'bg-background/80 backdrop-blur-sm text-xs' : 'bg-indigo-600 text-white text-xs'}>
+                      <Badge variant={isCourse ? 'secondary' : 'default'} className={isCourse ? 'bg-white backdrop-blur-sm text-xs' : 'bg-indigo-600 text-white text-xs'}>
                         {isCourse ? '진행 중' : '강좌 패키지'}
                       </Badge>
                     </div>
@@ -175,6 +177,12 @@ async function DashboardContent() {
                     <CardDescription className="line-clamp-1 text-xs">{item.description}</CardDescription>
                   </CardHeader>
                   <CardContent className="flex-1 pb-4 pt-1 space-y-3 flex flex-col justify-end">
+                    {assignedAgent && (
+                      <div className="flex items-center gap-1.5 text-xs font-medium text-green-700 dark:text-green-300">
+                        <Bot className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">{assignedAgent.name}</span>
+                      </div>
+                    )}
                     <div className="space-y-1.5">
                       <div className="flex justify-between text-xs font-semibold text-muted-foreground">
                         <span>{isCourse ? '학습 진도율' : '패키지 달성도'}</span>

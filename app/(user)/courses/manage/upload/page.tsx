@@ -414,7 +414,7 @@ function UploadForm() {
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[9999] flex items-center justify-center text-white select-none">
           <Card className="w-full max-w-md border-none bg-slate-950/90 text-slate-100 shadow-2xl p-8">
             <div className="flex flex-col items-center gap-6 text-center">
-              <Loader2 className="w-12 h-12 text-indigo-500 animate-spin" />
+              <Loader2 className="w-12 h-12 text-emerald-500 animate-spin" />
               <div className="space-y-2 w-full">
                 <h3 className="text-xl font-bold tracking-tight">통합 번들 등록 중</h3>
                 <p className="text-sm text-slate-400">데이터가 손상되지 않도록 완료 시까지 브라우저 창을 닫지 마세요.</p>
@@ -452,7 +452,7 @@ function UploadForm() {
           onClick={() => window.open('/courses/manage/upload/guide', '_blank')}
           className="border-zinc-300 hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
         >
-          <Info className="w-4 h-4 mr-2 text-indigo-600 dark:text-indigo-400" />
+          <Info className="w-4 h-4 mr-2 text-emerald-600 dark:text-emerald-400" />
           구조 및 마이그레이션 가이드
           <ExternalLink className="w-3.5 h-3.5 ml-1.5 text-muted-foreground" />
         </Button>
@@ -467,7 +467,7 @@ function UploadForm() {
           <Card className="flex flex-col border border-zinc-200 dark:border-zinc-800 shadow-sm flex-1">
             <CardHeader className="pb-4">
               <CardTitle className="text-lg flex items-center gap-2">
-                <FileArchive className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                <FileArchive className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                 통합 번들 ZIP 업로드
               </CardTitle>
               <CardDescription>
@@ -485,8 +485,8 @@ function UploadForm() {
                   className={`
                     border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center text-center cursor-pointer min-h-[260px] transition-all
                     ${dragOver 
-                      ? 'border-indigo-500 bg-indigo-50/20 dark:border-indigo-400 dark:bg-indigo-950/10' 
-                      : 'border-zinc-200 hover:border-indigo-500/50 hover:bg-zinc-50/50 dark:border-zinc-800 dark:hover:border-zinc-700'}
+                      ? 'border-emerald-500 bg-emerald-50/20 dark:border-emerald-400 dark:bg-emerald-950/10' 
+                      : 'border-zinc-200 hover:border-emerald-500/50 hover:bg-zinc-50/50 dark:border-zinc-800 dark:hover:border-zinc-700'}
                   `}
                 >
                   <UploadCloud className="w-14 h-14 text-zinc-400 mb-4 animate-pulse" />
@@ -509,7 +509,7 @@ function UploadForm() {
                 <div className="border rounded-xl p-6 bg-zinc-50/50 dark:bg-zinc-900/20 space-y-4">
                   <div className="flex justify-between items-start gap-4">
                     <div className="flex gap-3 items-center">
-                      <div className="p-3 bg-indigo-600/10 text-indigo-600 rounded-lg dark:text-indigo-400 shrink-0">
+                      <div className="p-3 bg-emerald-600/10 text-emerald-600 rounded-lg dark:text-emerald-400 shrink-0">
                         <FileArchive className="w-6 h-6" />
                       </div>
                       <div className="space-y-0.5">
@@ -573,13 +573,13 @@ function UploadForm() {
           </Card>
 
           {/* GitHub Generator AI Agent Helper Card */}
-          <Card className="border border-indigo-100 dark:border-indigo-950 bg-gradient-to-r from-indigo-50/40 via-white to-background dark:from-indigo-950/10 dark:via-zinc-900 dark:to-background overflow-hidden relative shadow-sm">
+          <Card className="border border-emerald-100 dark:border-emerald-950 bg-gradient-to-r from-emerald-50/40 via-white to-background dark:from-emerald-950/10 dark:via-zinc-900 dark:to-background overflow-hidden relative shadow-sm">
             <div className="absolute right-3 top-3 opacity-5 pointer-events-none">
               <Github className="w-24 h-24" />
             </div>
             <CardContent className="p-6">
               <div className="flex gap-4 items-start">
-                <div className="p-3 bg-indigo-500/10 text-indigo-600 rounded-xl shrink-0 dark:text-indigo-400">
+                <div className="p-3 bg-emerald-500/10 text-emerald-600 rounded-xl shrink-0 dark:text-emerald-400">
                   <Github className="w-6 h-6" />
                 </div>
                 <div className="space-y-2">
@@ -595,7 +595,7 @@ function UploadForm() {
                       variant="outline" 
                       size="sm" 
                       onClick={() => window.open('https://github.com/godstale/OpenTutorials-Bundler', '_blank')}
-                      className="text-xs h-8 border-indigo-200 hover:bg-indigo-50/50 hover:border-indigo-300 dark:border-indigo-950 dark:hover:bg-indigo-950/20"
+                      className="text-xs h-8 border-emerald-200 hover:bg-emerald-50/50 hover:border-emerald-300 dark:border-emerald-950 dark:hover:bg-emerald-950/20"
                     >
                       GitHub 리포지토리 바로가기
                       <ExternalLink className="w-3.5 h-3.5 ml-1.5 text-muted-foreground" />
@@ -612,7 +612,7 @@ function UploadForm() {
           <Card className="flex flex-col border border-zinc-200 dark:border-zinc-800 shadow-sm flex-1">
             <CardHeader className="pb-4">
               <CardTitle className="text-lg flex items-center gap-2">
-                <Layers className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                <Layers className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                 번들 사전 유효성 검증
               </CardTitle>
               <CardDescription>
@@ -635,14 +635,14 @@ function UploadForm() {
                         p-3 rounded-lg border text-xs flex gap-3 transition-colors
                         ${isSuccess ? 'bg-emerald-50/40 border-emerald-100 dark:bg-emerald-950/5 dark:border-emerald-950' : ''}
                         ${isFailed ? 'bg-rose-50/40 border-rose-100 dark:bg-rose-950/5 dark:border-rose-950' : ''}
-                        ${isRunning ? 'bg-indigo-50/20 border-indigo-100 dark:bg-indigo-950/5 dark:border-indigo-950 animate-pulse' : ''}
+                        ${isRunning ? 'bg-emerald-50/20 border-emerald-100 dark:bg-emerald-950/5 dark:border-emerald-950 animate-pulse' : ''}
                         ${isIdle ? 'bg-zinc-50/50 border-zinc-100 dark:bg-zinc-900/10 dark:border-zinc-900' : ''}
                       `}
                     >
                       <div className="shrink-0 mt-0.5">
                         {isSuccess && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
                         {isFailed && <XCircle className="w-4 h-4 text-rose-500" />}
-                        {isRunning && <Loader2 className="w-4 h-4 text-indigo-500 animate-spin" />}
+                        {isRunning && <Loader2 className="w-4 h-4 text-emerald-500 animate-spin" />}
                         {isIdle && <div className="w-4 h-4 rounded-full border-2 border-zinc-300 dark:border-zinc-700" />}
                       </div>
                       <div className="space-y-1 flex-1">
@@ -662,7 +662,7 @@ function UploadForm() {
 
               {validationLoading && (
                 <div className="text-center py-2 text-xs text-muted-foreground flex items-center justify-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin text-indigo-500" />
+                  <Loader2 className="w-4 h-4 animate-spin text-emerald-500" />
                   번들 내부 파일 구조 분석 중...
                 </div>
               )}
@@ -709,7 +709,7 @@ function UploadForm() {
         <Button 
           onClick={handleSubmit} 
           disabled={isProcessing || !isValidated || !selectedFile}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-sm px-6"
+          className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-sm px-6"
         >
           {isProcessing ? (
             <>

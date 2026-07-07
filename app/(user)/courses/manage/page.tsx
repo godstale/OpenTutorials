@@ -48,6 +48,8 @@ interface PackageItem {
     slug: string;
     agent_id?: string | null;
   }[];
+  cards?: string[];
+  agent_id?: string | null;
 }
 
 export default function AdminCoursesPage() {
@@ -272,35 +274,18 @@ export default function AdminCoursesPage() {
   }, []);
 
   const getAssignedAgentsForPackage = (pkg: PackageItem) => {
-    if (!pkg.courses || pkg.courses.length === 0) return '하위 강좌 없음';
+    const totalCourses = pkg.cards?.length || 0;
+    if (totalCourses === 0) return '하위 강좌 없음';
     
-    const agentNames = new Set<string>();
-    let hasMissingAgent = false;
-    
-    pkg.courses.forEach(c => {
-      if (c.agent_id) {
-        const found = agents.find(a => a.id === c.agent_id);
-        if (found) {
-          agentNames.add(found.name);
-        } else {
-          hasMissingAgent = true;
-        }
-      } else {
-        hasMissingAgent = true;
+    if (pkg.agent_id) {
+      const found = agents.find(a => a.id === pkg.agent_id);
+      if (found) {
+        return found.name;
       }
-    });
-
-    if (agentNames.size > 0) {
-      const namesStr = Array.from(agentNames).join(', ');
-      if (hasMissingAgent) {
-        const defaultAgent = agents.find(a => a.is_ai_tutor);
-        return `${namesStr} (일부 강좌: ${defaultAgent ? defaultAgent.name + ' [기본값]' : '에이전트 없음'})`;
-      }
-      return namesStr;
-    } else {
-      const defaultAgent = agents.find(a => a.is_ai_tutor);
-      return defaultAgent ? `${defaultAgent.name} (기본값)` : '에이전트 없음';
     }
+    
+    const defaultAgent = agents.find(a => a.is_ai_tutor);
+    return defaultAgent ? `${defaultAgent.name} (기본값)` : '에이전트 없음';
   };
 
   const renderCourseCard = (course: PackageItem) => {
@@ -321,11 +306,8 @@ export default function AdminCoursesPage() {
               >
                 {course.title}
               </h3>
-              <Badge variant="outline" className="text-xs text-zinc-500 font-mono">
+              <Badge variant={course.published ? 'default' : 'secondary'} className={course.published ? 'bg-green-700 text-white' : ''}>
                 {course.slug}
-              </Badge>
-              <Badge variant={course.published ? 'default' : 'secondary'} className={course.published ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : ''}>
-                {course.published ? '공개됨' : '비공개'}
               </Badge>
               {course.sequential_play && (
                 <Badge variant="outline" className="text-amber-600 border-amber-600 dark:text-amber-400">
@@ -343,7 +325,7 @@ export default function AdminCoursesPage() {
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-zinc-500 mt-2">
               <div className="flex items-center gap-1">
                 <BookOpen className="w-3.5 h-3.5" />
-                <span>하위 강좌 {course.courses?.length || 0}개</span>
+                <span>하위 강좌 {course.cards?.length || 0}개</span>
               </div>
               <div className="flex items-center gap-1">
                 <Calendar className="w-3.5 h-3.5" />
@@ -355,7 +337,7 @@ export default function AdminCoursesPage() {
                 <span className={`px-1.5 py-0.5 rounded text-[11px] font-medium ${
                   hasErrorAgent 
                     ? 'bg-red-50 text-red-600 dark:bg-red-950/20 dark:text-red-400 border border-red-200/50' 
-                    : 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/30 dark:text-indigo-400 border border-indigo-100/50'
+                    : 'bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-300 border border-green-100/50'
                 }`}>
                   {assignedAgentInfo}
                 </span>
@@ -369,8 +351,8 @@ export default function AdminCoursesPage() {
             variant="outline"
             size="sm"
             onClick={() => {
-              if (course.courses && course.courses.length > 0) {
-                router.push(`/learn/${course.courses[0].slug}?preview=true&package=${course.slug}`);
+              if (course.cards && course.cards.length > 0) {
+                router.push(`/learn/${course.slug}?card=1&preview=true`);
               } else {
                 alert('이 강좌에 포함된 하위 챕터가 없습니다.');
               }
@@ -500,7 +482,7 @@ export default function AdminCoursesPage() {
           </Button>
           <Button 
             onClick={() => router.push('/courses/manage/upload')} 
-            className="gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-sm transition-all"
+            className="gap-2 bg-green-700 hover:bg-green-600 text-white font-semibold shadow-sm transition-all"
           >
             <PlusCircle className="w-4 h-4" />
             새 강좌 등록

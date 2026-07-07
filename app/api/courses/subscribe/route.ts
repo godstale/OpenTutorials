@@ -112,6 +112,7 @@ export async function GET(request: NextRequest) {
           published: pkg?.published,
           sequential_play: pkg?.sequential_play ?? false,
           force_checkpoint: pkg?.force_checkpoint ?? false,
+          agent_id: pkg?.agent_id,
         }
       };
     });

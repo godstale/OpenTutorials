@@ -5,9 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BookOpen, Award, Compass, FolderOpen } from 'lucide-react';
+import { BookOpen, Award, Compass, FolderOpen, Bot } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { createClient } from '@/lib/supabase/client';
 
 interface ProgressItem {
   id: string;
@@ -33,6 +34,7 @@ interface PackageSubscriptionItem {
     title: string;
     description: string;
     thumbnail: string | null;
+    agent_id?: string | null;
   };
 }
 
@@ -40,6 +42,7 @@ export default function MyCoursesPage() {
   const router = useRouter();
   const [progressList, setProgressList] = useState<ProgressItem[]>([]);
   const [packageSubscriptions, setPackageSubscriptions] = useState<PackageSubscriptionItem[]>([]);
+  const [agents, setAgents] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -59,8 +62,14 @@ export default function MyCoursesPage() {
           const packagesData = await packagesRes.json();
           setPackageSubscriptions(packagesData);
         }
+
+        const supabase = createClient();
+        const { data: agentsData } = await supabase.from('user_external_agents').select('id, name');
+        if (agentsData) {
+          setAgents(agentsData);
+        }
       } catch (err) {
-        console.error('Failed to fetch user progress or packages:', err);
+        console.error('Failed to fetch user progress, packages, or agents:', err);
       } finally {
         setLoading(false);
       }
@@ -91,7 +100,7 @@ export default function MyCoursesPage() {
           <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">나의 강좌</h2>
           <p className="text-muted-foreground mt-2">수강 중인 강좌의 진도와 완료 상태를 확인하세요.</p>
         </div>
-        <Button onClick={() => router.push('/courses')} className="bg-emerald-600 hover:bg-emerald-700 text-white border-none shadow-sm">
+        <Button onClick={() => router.push('/courses')} className="text-white shadow-sm">
           <BookOpen className="w-4 h-4 mr-2" />
           새 강좌 찾기
         </Button>
@@ -122,11 +131,12 @@ export default function MyCoursesPage() {
                   const pkg = sub.package;
                   if (!pkg) return null;
                   const percent = sub.total_courses > 0 ? Math.round((sub.completed_courses / sub.total_courses) * 100) : 0;
+                  const assignedAgent = agents.find(a => a.id === pkg.agent_id);
                   
                   return (
                     <Card 
                       key={sub.id} 
-                      className="border border-indigo-100 dark:border-indigo-950 bg-gradient-to-br from-indigo-50/40 via-white to-white dark:from-indigo-950/10 dark:via-zinc-900 dark:to-zinc-900 overflow-hidden shadow-sm flex flex-col justify-between p-5 gap-4 cursor-pointer hover:border-primary/50 transition-colors"
+                      className="border border-emerald-100 dark:border-emerald-950 bg-gradient-to-br from-emerald-50/40 via-white to-white dark:from-emerald-950/10 dark:via-zinc-900 dark:to-zinc-900 overflow-hidden shadow-sm flex flex-col justify-between p-5 gap-4 cursor-pointer hover:border-primary/50 transition-colors"
                       onClick={() => router.push(`/courses/${pkg.slug}`)}
                     >
                       <div>
@@ -134,6 +144,12 @@ export default function MyCoursesPage() {
                           <h4 className="font-semibold text-zinc-900 dark:text-zinc-50 line-clamp-1">{pkg.title}</h4>
                         </div>
                         <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{pkg.description}</p>
+                        {assignedAgent && (
+                          <div className="flex items-center gap-1.5 mt-2.5 text-xs font-medium text-green-700 dark:text-green-300">
+                            <Bot className="w-3.5 h-3.5 shrink-0" />
+                            <span className="truncate">{assignedAgent.name}</span>
+                          </div>
+                        )}
                       </div>
 
                       <div className="space-y-2 mt-2">
@@ -146,7 +162,7 @@ export default function MyCoursesPage() {
 
                       <Button 
                         size="sm" 
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white mt-1.5"
+                        className="w-full text-white mt-1.5"
                         onClick={(e) => {
                           e.stopPropagation();
                           const targetUrl = getPackageTargetUrl(sub.package_id, pkg.slug);
@@ -181,6 +197,7 @@ export default function MyCoursesPage() {
                   const pkg = sub.package;
                   if (!pkg) return null;
                   const percent = 100;
+                  const assignedAgent = agents.find(a => a.id === pkg.agent_id);
                   
                   return (
                     <Card 
@@ -199,6 +216,12 @@ export default function MyCoursesPage() {
                           </div>
                         </div>
                         <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{pkg.description}</p>
+                        {assignedAgent && (
+                          <div className="flex items-center gap-1.5 mt-2.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                            <Bot className="w-3.5 h-3.5 shrink-0" />
+                            <span className="truncate">{assignedAgent.name}</span>
+                          </div>
+                        )}
                       </div>
 
                       <div className="space-y-2 mt-2">
