@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await request.json();
-    const package_id = body.package_id || body.course_id; // course_id로도 받을 수 있도록 하위호환성 유지
+    const package_id = body.package_id || body.course_id; // Support both package_id and course_id
     if (!package_id) return NextResponse.json({ error: 'package_id 또는 course_id가 필요합니다.' }, { status: 400 });
 
     const adminClient = createAdminClient();
@@ -23,42 +23,37 @@ export async function POST(request: NextRequest) {
 
     if (subErr) throw subErr;
 
-    // 2. 강좌 하위 장/챕터들 ID 조회
-    const { data: items, error: itemsErr } = await adminClient
-      .from('course_package_items')
-      .select('course_id')
-      .eq('package_id', package_id);
-
-    if (itemsErr) throw itemsErr;
-
-    // 3. 각 하위 강좌의 수강기록(user_progress) 일괄 자동 생성 (기존 건은 보존)
-    if (items && items.length > 0) {
-      const progressInserts = items.map((item: any) => ({
+    // 2. 패키지 자체의 수강기록(user_progress) 자동 생성 (기존 건은 보존)
+    await adminClient
+      .from('user_progress')
+      .upsert({
         user_id: user.id,
-        course_id: item.course_id,
+        course_id: package_id, // course_id 컬럼에 package_id 값을 대입하여 호환 유지
         last_card: 0,
         completed: false,
         updated_at: new Date().toISOString()
-      }));
+      }, { onConflict: 'user_id,course_id' });
 
-      await adminClient
-        .from('user_progress')
-        .upsert(progressInserts, { onConflict: 'user_id,course_id' });
+    // 당시 활성화되어 있는 기본(Default) 에이전트의 ID를 해당 패키지의 agent_id에 자동으로 연결
+    const { data: defaultAgent } = await adminClient
+      .from('user_external_agents')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('is_ai_tutor', true)
+      .maybeSingle();
 
-      // 당시 활성화되어 있는 기본(Default) 에이전트의 ID를 해당 강좌의 agent_id에 자동으로 연결
-      const { data: defaultAgent } = await adminClient
-        .from('user_external_agents')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('is_ai_tutor', true)
+    if (defaultAgent?.id) {
+      const { data: currentPkg } = await adminClient
+        .from('course_packages')
+        .select('agent_id')
+        .eq('id', package_id)
         .maybeSingle();
 
-      if (defaultAgent?.id) {
-        const courseIds = items.map((item: any) => item.course_id);
+      if (!currentPkg?.agent_id) {
         await adminClient
-          .from('courses')
+          .from('course_packages')
           .update({ agent_id: defaultAgent.id })
-          .in('id', courseIds);
+          .eq('id', package_id);
       }
     }
 
@@ -78,15 +73,15 @@ export async function GET(request: NextRequest) {
 
     const adminClient = createAdminClient();
 
-    // 1. 사용자의 강좌 구독 정보 페치
+    // 1. Fetch user subscriptions with package details
     const { data: subs, error: subsErr } = await adminClient
       .from('user_package_subscriptions')
-      .select('*, package:course_packages(*, items:course_package_items(course_id))')
+      .select('*, package:course_packages(*)')
       .eq('user_id', user.id);
 
     if (subsErr) throw subsErr;
 
-    // 2. 각 하위 강좌들의 수강완료 여부 체크를 위해 user_progress 리스트 페치
+    // 2. Fetch all user progress records for progress check
     const { data: progressList, error: progressErr } = await adminClient
       .from('user_progress')
       .select('course_id, completed')
@@ -98,9 +93,8 @@ export async function GET(request: NextRequest) {
 
     const formatted = (subs || []).map((sub: any) => {
       const pkg = sub.package;
-      const items = pkg?.items || [];
-      const totalCourses = items.length;
-      const completedCourses = items.filter((item: any) => progressMap.get(item.course_id) === true).length;
+      const totalCourses = 1;
+      const completedCourses = progressMap.get(sub.package_id) === true ? 1 : 0;
 
       return {
         id: sub.id,

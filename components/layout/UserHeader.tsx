@@ -12,7 +12,8 @@ export function UserHeader() {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then((res: any) => {
+      const data = res?.data;
       if (data?.user) {
         setUser(data.user);
       }

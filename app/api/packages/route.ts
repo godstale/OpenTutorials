@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const supabase = createAdminClient();
     const { data: packages, error } = await supabase
       .from('course_packages')
-      .select('*, items:course_package_items(course:courses(*))')
+      .select('*')
       .eq('published', true)
       .order('created_at', { ascending: false });
 
@@ -17,12 +17,7 @@ export async function GET(request: NextRequest) {
     // 데이터 가공하여 하위 강좌 정보 주입
     const formatted = (packages || []).map((pkg: any) => ({
       ...pkg,
-      courses: pkg.items
-        ? pkg.items
-            .sort((a: any, b: any) => a.order_index - b.order_index)
-            .map((it: any) => it.course)
-            .filter(Boolean)
-        : []
+      courses: [] // courses table was unified into course_packages, return empty array for backwards compatibility
     }));
 
     return NextResponse.json(formatted);

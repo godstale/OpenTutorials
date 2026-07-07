@@ -44,8 +44,15 @@ function MyAgentsContent() {
       setAgents(data);
 
       const supabase = createClient();
-      const { data: coursesData } = await supabase.from('courses').select('id, title, agent_id');
-      setCourses(coursesData || []);
+      const { data: packagesData } = await supabase.from('course_packages').select('id, title, agent_id');
+      
+      const uniqueCombined = (packagesData || []).map((p: any) => ({
+        id: p.id,
+        title: p.title,
+        agent_id: p.agent_id
+      }));
+
+      setCourses(uniqueCombined);
 
       if (triggerSidebarRefresh && typeof window !== 'undefined') {
         window.dispatchEvent(new Event('agents-updated'));

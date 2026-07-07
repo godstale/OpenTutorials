@@ -60,18 +60,18 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       }
     }
 
-    // 1. Fetch associated courses and their slugs
-    const { data: items, error: itemsError } = await supabaseAdmin
-      .from('course_package_items')
-      .select('course_id, courses(slug)')
-      .eq('package_id', id);
+    // 1. Fetch package detail to get the slug for storage cleanup
+    const { data: pkg, error: fetchPkgError } = await supabaseAdmin
+      .from('course_packages')
+      .select('slug')
+      .eq('id', id)
+      .maybeSingle();
 
-    if (itemsError) {
-      console.error('Fetch package items error:', itemsError);
+    if (fetchPkgError) {
+      console.error('Fetch package error before delete:', fetchPkgError);
     }
 
-    const courseIds = items ? items.map((item: any) => item.course_id).filter(Boolean) as string[] : [];
-    const courseSlugs = items ? items.map((item: any) => (item.courses as any)?.slug).filter(Boolean) as string[] : [];
+    const slug = pkg?.slug;
 
     // 2. Delete package itself
     const { error } = await supabaseAdmin
@@ -84,60 +84,35 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // 3. Delete associated courses from DB
-    if (courseIds.length > 0) {
-      const { error: coursesDelError } = await supabaseAdmin
-        .from('courses')
-        .delete()
-        .in('id', courseIds);
+    // 3. Clean up files in Supabase Storage for the package slug
+    if (slug) {
+      try {
+        const { data: files, error: listError } = await supabaseAdmin
+          .storage
+          .from('courses')
+          .list(slug);
 
-      if (coursesDelError) {
-        console.error('Failed to delete associated courses from database:', coursesDelError);
-      }
-
-      // 4. Clean up files in Supabase Storage for each course slug
-      for (const slug of courseSlugs) {
-        try {
-          const { data: files, error: listError } = await supabaseAdmin
+        if (listError) {
+          console.error(`Failed to list storage files for slug ${slug}:`, listError);
+        } else if (files && files.length > 0) {
+          const filesToRemove = files.map((f: any) => `${slug}/${f.name}`);
+          const { error: removeError } = await supabaseAdmin
             .storage
             .from('courses')
-            .list(slug);
+            .remove(filesToRemove);
 
-          if (listError) {
-            console.error(`Failed to list storage files for slug ${slug}:`, listError);
-            continue;
+          if (removeError) {
+            console.error(`Failed to remove storage files for slug ${slug}:`, removeError);
+          } else {
+            console.log(`Successfully cleaned up storage for slug ${slug}`);
           }
-
-          if (files && files.length > 0) {
-            const filesToRemove = files.map((f: any) => `${slug}/${f.name}`);
-            const { error: removeError } = await supabaseAdmin
-              .storage
-              .from('courses')
-              .remove(filesToRemove);
-
-            if (removeError) {
-              console.error(`Failed to remove storage files for slug ${slug}:`, removeError);
-            } else {
-              console.log(`Successfully cleaned up storage for slug ${slug}`);
-            }
-          }
-        } catch (storageErr) {
-          console.error(`Error deleting storage folder for slug ${slug}:`, storageErr);
         }
+      } catch (storageErr) {
+        console.error(`Error deleting storage folder for slug ${slug}:`, storageErr);
       }
     }
 
-    // 5. 패키지-강좌 매핑, 수강 구독, 진행 기록을 함께 정리한다.
-    //    (안내 문구는 이미 "진행 정보가 완전히 삭제됩니다"라고 안내하고 있었으나
-    //     실제로는 정리되지 않던 버그를 수정한다.)
-    const { error: itemsDelError } = await supabaseAdmin
-      .from('course_package_items')
-      .delete()
-      .eq('package_id', id);
-    if (itemsDelError) {
-      console.error('Failed to delete course_package_items:', itemsDelError);
-    }
-
+    // 4. 패키지 수강 구독, 진행 기록을 함께 정리한다.
     const { error: subsDelError } = await supabaseAdmin
       .from('user_package_subscriptions')
       .delete()
@@ -146,14 +121,12 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       console.error('Failed to delete user_package_subscriptions:', subsDelError);
     }
 
-    if (courseIds.length > 0) {
-      const { error: progressDelError } = await supabaseAdmin
-        .from('user_progress')
-        .delete()
-        .in('course_id', courseIds);
-      if (progressDelError) {
-        console.error('Failed to delete user_progress:', progressDelError);
-      }
+    const { error: progressDelError } = await supabaseAdmin
+      .from('user_progress')
+      .delete()
+      .eq('course_id', id); // user_progress.course_id now maps directly to package_id
+    if (progressDelError) {
+      console.error('Failed to delete user_progress:', progressDelError);
     }
 
     return NextResponse.json({ success: true });

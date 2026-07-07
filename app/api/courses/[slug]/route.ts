@@ -12,10 +12,10 @@ export async function GET(
   try {
     const supabase = createAdminClient();
     
-    // 1. 통합 패키지(강좌) 데이터 조회 (sequential_play, force_checkpoint 포함)
+    // 1. 통합 패키지(강좌) 데이터 조회 (sequential_play, force_checkpoint, toc, cards 포함)
     const { data: pkg, error } = await supabase
       .from('course_packages')
-      .select('*, items:course_package_items(order_index, course:courses(*))')
+      .select('*')
       .eq('slug', slug)
       .single();
 
@@ -25,7 +25,7 @@ export async function GET(
 
     // 2. 로그인되어 있다면 사용자의 전체 수강 상태 파악을 위해 progress 정보 로드
     let userSubscribed = false;
-    let progressesMap: Record<string, any> = {};
+    let userProgress = null;
     let externalAgents: any[] = [];
 
     const userClient = await createClient();
@@ -39,14 +39,13 @@ export async function GET(
         .maybeSingle();
       userSubscribed = !!subData;
 
-      const { data: progressList } = await userClient
+      const { data: progressData } = await userClient
         .from('user_progress')
         .select('*')
-        .in('course_id', pkg.items.map((it: any) => it.course?.id).filter(Boolean));
-
-      if (progressList) {
-        progressesMap = Object.fromEntries(progressList.map((p: any) => [p.course_id, p]));
-      }
+        .eq('course_id', pkg.id)
+        .maybeSingle();
+      
+      userProgress = progressData || null;
 
       const { data: agentsData } = await userClient
         .from('user_external_agents')
@@ -54,27 +53,15 @@ export async function GET(
       externalAgents = agentsData || [];
     }
 
-    // 데이터 포맷 정렬
-    const courses = pkg.items
-      .sort((a: any, b: any) => a.order_index - b.order_index)
-      .map((it: any) => {
-        const course = it.course;
-        if (!course) return null;
-        return {
-          ...course,
-          order_index: it.order_index,
-          user_progress: progressesMap[course.id] || null
-        };
-      })
-      .filter(Boolean);
-
     return NextResponse.json({
       ...pkg,
       sequential_play: pkg.sequential_play ?? false,
       force_checkpoint: pkg.force_checkpoint ?? false,
-      courses,
       user_subscribed: userSubscribed,
-      external_agents: externalAgents
+      user_progress: userProgress,
+      external_agents: externalAgents,
+      // 하위 호환성을 위한 courses 빈 배열 폴백
+      courses: []
     });
   } catch (err: any) {
     console.error('[CourseDetailAPI] Error:', err);

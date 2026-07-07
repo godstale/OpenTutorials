@@ -250,14 +250,19 @@ function getLeafNodes(nodes: TocNode[], list: TocNode[] = []): TocNode[] {
   return list;
 }
 
-function isAncestorOfActiveCard(node: TocNode, activeFilename: string): boolean {
-  if (!node.children) return false;
-  for (const child of node.children) {
-    if (child.filename === activeFilename) {
-      return true;
-    }
-    if (isAncestorOfActiveCard(child, activeFilename)) {
-      return true;
+function isAncestorOfActiveCard(
+  node: TocNode,
+  activeCardIndex: number,
+  nodeToIndexMap: Map<TocNode, number>
+): boolean {
+  if (node.filename) {
+    return nodeToIndexMap.get(node) === activeCardIndex;
+  }
+  if (node.children) {
+    for (const child of node.children) {
+      if (isAncestorOfActiveCard(child, activeCardIndex, nodeToIndexMap)) {
+        return true;
+      }
     }
   }
   return false;
@@ -284,32 +289,32 @@ function generateFallbackTocText(nodes: TocNode[], depth: number = 0): string {
 interface LearnTocNodeViewProps {
   node: TocNode;
   depth: number;
-  filenameToIndexMap: Map<string, number>;
+  nodeToIndexMap: Map<TocNode, number>;
   maxUnlockedIndex: number;
   currentCardIndex: number;
-  activeFilename?: string;
   onSelectCard: (index: number) => void;
 }
 
 function LearnTocNodeView({
   node,
   depth,
-  filenameToIndexMap,
+  nodeToIndexMap,
   maxUnlockedIndex,
   currentCardIndex,
-  activeFilename,
   onSelectCard,
 }: LearnTocNodeViewProps) {
   const hasChildren = node.children && node.children.length > 0;
   const isLeaf = !!node.filename;
 
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(() => {
+    return hasChildren && isAncestorOfActiveCard(node, currentCardIndex, nodeToIndexMap);
+  });
 
   useEffect(() => {
-    if (hasChildren && activeFilename && isAncestorOfActiveCard(node, activeFilename)) {
+    if (hasChildren && isAncestorOfActiveCard(node, currentCardIndex, nodeToIndexMap)) {
       setIsExpanded(true);
     }
-  }, [activeFilename, node, hasChildren]);
+  }, [currentCardIndex, node, hasChildren, nodeToIndexMap]);
 
   const toggleExpand = () => {
     if (hasChildren) {
@@ -327,7 +332,7 @@ function LearnTocNodeView({
   };
 
   if (isLeaf) {
-    const idx = filenameToIndexMap.get(node.filename!) ?? 0;
+    const idx = nodeToIndexMap.get(node) ?? 0;
     const isUnlocked = idx <= maxUnlockedIndex;
     const isActive = idx === currentCardIndex;
 
@@ -408,10 +413,9 @@ function LearnTocNodeView({
               key={`${child.title}-${idx}`} 
               node={child} 
               depth={depth + 1}
-              filenameToIndexMap={filenameToIndexMap}
+              nodeToIndexMap={nodeToIndexMap}
               maxUnlockedIndex={maxUnlockedIndex}
               currentCardIndex={currentCardIndex}
-              activeFilename={activeFilename}
               onSelectCard={onSelectCard}
             />
           ))}
@@ -596,11 +600,9 @@ Please ask the student the question now. Only ask the question itself, do not re
 
   const tocItems = course.toc || [];
   const leafNodes = getLeafNodes(tocItems);
-  const filenameToIndexMap = new Map<string, number>();
+  const nodeToIndexMap = new Map<TocNode, number>();
   leafNodes.forEach((node, idx) => {
-    if (node.filename) {
-      filenameToIndexMap.set(node.filename, idx);
-    }
+    nodeToIndexMap.set(node, idx);
   });
 
   const { setOpen } = useSidebar();
@@ -624,25 +626,117 @@ Please ask the student the question now. Only ask the question itself, do not re
     }
   }, [currentCardIndex, cards]);
 
+  // Custom MDX Components for beautiful styling
+  const PreBlock = ({ children }: { children: React.ReactNode }) => {
+    const [copied, setCopied] = useState(false);
+    const [language, setLanguage] = useState('code');
+    const codeRef = useRef<string>('');
+
+    useEffect(() => {
+      if (React.isValidElement(children)) {
+        const codeProps = children.props as any;
+        if (codeProps && codeProps.children) {
+          codeRef.current = String(codeProps.children).trim();
+        }
+        if (codeProps && codeProps.className) {
+          const match = codeProps.className.match(/language-(\w+)/);
+          if (match) {
+            setLanguage(match[1]);
+          }
+        }
+      }
+    }, [children]);
+
+    const handleCopy = () => {
+      navigator.clipboard.writeText(codeRef.current);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    };
+
+    const codeText = React.isValidElement(children) 
+      ? String((children.props as any).children).trim()
+      : '';
+
+    return (
+      <div className="my-5 overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-950 text-zinc-100 shadow-sm font-mono text-xs max-w-full">
+        <div className="flex items-center justify-between px-4 py-2 bg-zinc-900 border-b border-zinc-800 text-[10px] text-zinc-400 font-semibold tracking-wider uppercase">
+          <span>{language}</span>
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="flex items-center gap-1 hover:text-zinc-100 transition-colors p-1 rounded"
+          >
+            {copied ? (
+              <>
+                <Check className="size-3 text-emerald-500" />
+                <span className="text-emerald-500 text-[10px]">Copied</span>
+              </>
+            ) : (
+              <>
+                <Copy className="size-3" />
+                <span>Copy</span>
+              </>
+            )}
+          </button>
+        </div>
+        <pre className="p-4 overflow-x-auto text-left leading-normal max-w-full m-0 bg-transparent">
+          <code className="text-zinc-100 p-0 bg-transparent border-0 font-mono text-xs sm:text-sm">{codeText}</code>
+        </pre>
+      </div>
+    );
+  };
+
+  const InlineCode = ({ children, className, ...props }: any) => {
+    const isInline = !className;
+    if (isInline) {
+      return (
+        <code className="px-1.5 py-0.5 rounded bg-muted/80 text-primary dark:text-zinc-200 font-mono text-xs border border-zinc-200/50 dark:border-zinc-700/50 break-words" {...props}>
+          {children}
+        </code>
+      );
+    }
+    return <code className={className} {...props}>{children}</code>;
+  };
+
   // MDX custom components to intercept image rendering and resolve relative paths to the local
   // static course assets served from public/courses/[slug]/images/ (see lib/supabase/mock-client.ts).
   const mdxComponents = {
+    h1: (props: any) => <h1 className="text-lg sm:text-xl font-bold text-foreground mt-8 mb-4 border-b pb-2 tracking-tight" {...props} />,
+    h2: (props: any) => <h2 className="text-base sm:text-lg font-bold text-foreground mt-6 mb-3 tracking-tight" {...props} />,
+    h3: (props: any) => <h3 className="text-sm sm:text-base font-bold text-foreground mt-5 mb-2 tracking-tight" {...props} />,
+    h4: (props: any) => <h4 className="text-sm font-semibold text-foreground mt-4 mb-2 tracking-tight" {...props} />,
+    p: (props: any) => <p className="leading-7 text-foreground/80 [&:not(:first-child)]:mt-4 text-sm sm:text-base font-normal" {...props} />,
+    ul: (props: any) => <ul className="my-4 ml-6 list-disc [&>li]:mt-2 text-sm sm:text-base text-foreground/80" {...props} />,
+    ol: (props: any) => <ol className="my-4 ml-6 list-decimal [&>li]:mt-2 text-sm sm:text-base text-foreground/80" {...props} />,
+    li: (props: any) => <li className="leading-7" {...props} />,
+    blockquote: (props: any) => <blockquote className="mt-4 border-l-4 border-primary/40 pl-4 italic text-muted-foreground bg-muted/20 py-2 rounded-r-md" {...props} />,
+    table: (props: any) => <div className="my-6 w-full overflow-x-auto rounded-lg border border-border"><table className="w-full text-sm border-collapse text-left" {...props} /></div>,
+    thead: (props: any) => <thead className="bg-muted text-muted-foreground font-semibold border-b" {...props} />,
+    tbody: (props: any) => <tbody className="divide-y divide-border" {...props} />,
+    tr: (props: any) => <tr className="hover:bg-muted/50 transition-colors" {...props} />,
+    th: (props: any) => <th className="px-4 py-3 font-semibold text-xs uppercase" {...props} />,
+    td: (props: any) => <td className="px-4 py-3 text-sm text-foreground/90 font-normal align-middle" {...props} />,
+    pre: PreBlock,
+    code: InlineCode,
     img: (props: React.ImgHTMLAttributes<HTMLImageElement>) => {
       const { src, alt, ...rest } = props;
       if (src && typeof src === 'string') {
-        const imagesMatch = src.match(/(?:\.\.\/|\.\.\\|\/|\\|^)images[\/\\](.+)$/i);
-        if (imagesMatch) {
-          const filename = imagesMatch[1];
-          const publicUrl = `/courses/${encodeURIComponent(slug)}/images/${encodeURIComponent(filename)}`;
-          return (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={publicUrl}
-              alt={alt}
-              className="rounded-lg shadow-md mx-auto max-w-full my-4 border border-zinc-200/50 dark:border-zinc-800/50"
-              {...rest}
-            />
-          );
+        const isRelative = !/^(?:https?:)?\/\/|^data:/i.test(src);
+        if (isRelative) {
+          const imagesMatch = src.match(/(?:\.\.\/|\.\.\\|\/|\\|^)images[\/\\](.+)$/i);
+          if (imagesMatch) {
+            const filename = imagesMatch[1];
+            const publicUrl = `/courses/${encodeURIComponent(slug)}/images/${filename.split('/').map(encodeURIComponent).join('/')}`;
+            return (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={publicUrl}
+                alt={alt}
+                className="rounded-lg shadow-md mx-auto max-w-full my-4 border border-zinc-200/50 dark:border-zinc-800/50"
+                {...rest}
+              />
+            );
+          }
         }
       }
       // eslint-disable-next-line @next/next/no-img-element
@@ -1218,10 +1312,9 @@ Student Question: `;
                     key={`${item.title}-${idx}`}
                     node={item}
                     depth={0}
-                    filenameToIndexMap={filenameToIndexMap}
+                    nodeToIndexMap={nodeToIndexMap}
                     maxUnlockedIndex={isPreview ? totalCards - 1 : maxUnlockedIndex}
                     currentCardIndex={currentCardIndex}
-                    activeFilename={cards[currentCardIndex]?.filename}
                     onSelectCard={(index) => handleSelectCard(index)}
                   />
                 ))}
@@ -1305,9 +1398,9 @@ Student Question: `;
 
         <ScrollArea className="flex-1 p-6 overflow-y-auto">
           <div className="max-w-full mx-auto pb-6">
-            <Card className="p-8 relative overflow-hidden">
+            <Card className="p-8 relative overflow-hidden bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 shadow-md">
               <div className="absolute top-0 left-0 w-full h-1 bg-primary"></div>
-              <div className="prose dark:prose-invert max-w-none text-muted-foreground space-y-4">
+              <div className="prose dark:prose-invert max-w-none text-foreground dark:text-zinc-300 space-y-4">
                 {activeCard?.type === 'video' ? (
                   activeCard.videoInfo?.video_id ? (
                     <div className="not-prose space-y-4">

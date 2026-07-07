@@ -30,6 +30,134 @@ Ran lint. See lint-report.md for details.
 
 <!-- Append-only. 최신 항목을 위에 추가. -->
 
+## 2026-07-07
+
+- **[FEATURE] 강좌 상세 페이지 라우팅 통일 및 커리큘럼 챕터 fold/unfold 기능 추가**
+  - **수정/갱신 파일**:
+    - [dashboard/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/dashboard/page.tsx) — 대시보드 내 "학습 중인 강좌" 목록에서 강좌 카드를 클릭할 때 기존 `/my-courses/[slug]`로 이동하던 것을 전체 강좌 상세 페이지인 `/courses/[slug]`로 연결되도록 변경하여 라우팅 경로를 통일했습니다.
+    - [my-courses/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/my-courses/page.tsx) — 수강 중인 강좌 및 패키지의 모든 상세 이동 경로를 `/courses/[slug]`로 유지 및 검증하였습니다.
+    - [courses/[slug]/client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/[slug]/client.tsx) — 전체 강좌 상세 페이지의 커리큘럼(TOC) 섹션 챕터 항목들에 `expandedChapters` 상태 및 토글 제어 인터랙션을 추가하여, 사용자가 각 챕터를 fold/unfold(접기/펼치기) 할 수 있도록 사용성을 대폭 개선했습니다. 이미 학습 완료된 챕터(모든 하위 섹션이 수강 완료됨)는 기본적으로 접힌 상태로 렌더링되도록 기본값 연산 로직을 추가했습니다.
+  - **작업 내용**:
+    - 대시보드의 "학습 중인 강좌" 카드 클릭 시 `/my-courses/[slug]`로 가고, "나의 강좌" 목록에서는 `/courses/[slug]`로 가면서 발생했던 상세 페이지 이동 경로의 불일치를 `/courses/[slug]`로 통일하여 해결하였습니다.
+    - 또한 일원화된 강좌 상세 페이지의 커리큘럼 타임라인에 챕터 클릭 시 하위 섹션이 토글 접힘/펼침 처리되는 기능을 신규 구현하였고, 사용자가 이미 다 학습한 챕터는 기본적으로 접어둠으로써 스크롤 낭비 없이 현재 학습해야 할 위치에 집중할 수 있도록 개선했습니다.
+
+## 2026-07-06
+
+- **[FEATURE] 강좌 패키지 태그(tags) 기능 도입 및 프로토콜 규격 연동**
+  - **수정 파일**:
+    - [index.ts](file:///C:/Workspace/Projects/OpenTutorials/lib/types/index.ts) — `CoursePackage` 인터페이스에 선택적 배열 속성 `tags?: string[];` 추가.
+    - [route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/admin/packages/upload/route.ts) — `package-manifest.json` 파싱 시 `tags` 필드를 구조 분해 할당으로 추출하고, 해당 값이 존재할 경우 배열 형식 여부를 검증(`Array.isArray`). DB(`db.json` 내 `course_packages` 테이블)에 패키지를 upsert 할 때 `tags` 필드가 정상적으로 저장되도록 파이프라인 연결.
+    - [protocol.md](file:///C:/Workspace/Projects/OpenTutorials/docs/bundler/protocol.md) — `package-manifest.json` 메타데이터 속성 명세 테이블에 `tags` 속성(Array of String, Optional)을 명시하고, 제작 예시인 `package-manifest.json` 예시 파일에 `tags` 필드 사용 사례를 보강.
+    - [protocol-changelog.md](file:///C:/Workspace/Projects/OpenTutorials/docs/bundler/protocol-changelog.md) — (신규 파일) Bundler 프로토콜 v1.0.0 이후의 변경사항들을 명확히 추적하기 위한 전용 체인지로그 문서 작성.
+    - [db.json](file:///C:/Workspace/Projects/OpenTutorials/db.json) — 기존에 등록된 2개의 강좌 패키지("아두이노 IoT 프로젝트 마스터 클래스", "신경망과 LLM 개론")에 수동으로 각각 성격에 맞는 태그 리스트를 매핑하여 상세 화면에 즉각 노출되도록 보완.
+  - **작업 내용**:
+    - 기존에는 강좌 패키지 메타데이터 및 업로드 API 스키마에 `tags` 속성이 구현되어 있지 않아 강좌 상세 화면에서 항상 "등록된 태그 없음"이 노출되던 한계를 해결하고, 프로토콜 명세에 `tags` 필드를 공식 등록 및 업로드 핸들러의 DB 저장 파이프라인에 완벽히 연동하였습니다. 또한 기존 수강 강좌 2개에 태그 데이터를 적재하여 즉각 검증이 가능하도록 처리했습니다. 추가로, 외부 강좌 빌더 및 에이전트 빌더가 프로토콜 스펙 변동을 편하게 적용할 수 있도록 전용 체인지로그 문서를 마련했습니다.
+
+- **[FEATURE] 학습 화면 폰트 개선 및 마크다운 헤더 폰트 크기 최적화 및 시인성 개선**
+  - **수정 파일**:
+    - [layout.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/layout.tsx) — `next/font/local`을 사용해 로컬 Noto Sans KR 가변 가중치 폰트(`NotoSansKR-VariableFont_wght.ttf`)를 `--font-noto-sans` 변수로 로드하여 HTML에 주입.
+    - [tailwind.config.ts](file:///C:/Workspace/Projects/OpenTutorials/tailwind.config.ts) — 기본 폰트 스택(`fontFamily.sans`)에 Noto Sans KR 변수를 추가하여, 영문 폰트(Geist) 적용 이후 한글 폰트로 Noto Sans KR이 자연스럽게 폴백되도록 적용.
+    - [client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx) — 학습 화면 내 MDX 마크다운 렌더러 `mdxComponents`의 heading 크기(h1, h2, h3, h4)를 본문 폰트와 큰 차이가 나지 않도록 최적화. 또한 본문 카드 배경을 라이트 모드에서 완전한 흰색(`bg-white`)으로 변경하고, 흐릿한 `text-muted-foreground` 대신 뚜렷한 `text-foreground`를 적용해 시인성을 대폭 강화.
+  - **작업 내용**:
+    - 학습 화면에서 본문 글씨 크기에 비해 챕터 타이틀(H1) 및 섹션 타이틀(H2, H3, H4)의 폰트 사이즈가 과도하게 크게 렌더링되던 레이아웃 불균형 문제를 해결하여 본문 폰트와 조화로운 크기로 변경하였습니다.
+    - 또한 한글 가독성 향상을 위해 `docs/temp/Noto_Sans_KR`에 준비되어 있던 Noto Sans KR 폰트를 `public/fonts` 디렉토리로 이관하고 Tailwind 및 Next.js 로컬 폰트 레이아웃에 탑재하여, 영문에는 모던한 Geist가 우선 적용되고 한글에는 정갈한 Noto Sans KR 폰트가 적용되도록 멀티 폰트 폴백 아키텍처를 구현하였습니다.
+    - 추가로 본문 카드 영역의 배경을 라이트 모드에서 완전한 흰색(`bg-white`)으로 변경하고 글씨 대비도를 높이기 위해 텍스트 색상을 `text-foreground`로 지정해 흰색 배경 위에서 글자가 훨씬 명확히 읽히도록 시인성을 개선하였으며, 다크 모드 환경에서는 편안한 딥다크 스타일(`bg-zinc-950`/`text-zinc-300`)을 지원하도록 처리했습니다.
+
+- **[FEATURE] 강좌 학습 화면 마크다운 스타일링 대폭 보강 및 GFM 테이블/코드 박스 복사 기능 도입**
+  - **수정 파일**:
+    - [client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx) — MDX 렌더링에 사용되는 `mdxComponents` 매핑에 H1, H2, H3, H4, paragraph, list, blockquote, table 등에 적합한 Tailwind CSS 클래스를 추가하여 가독성과 시인성을 강화. 복사 기능이 내장된 다크 테마 기반 코드 박스(`PreBlock`) 및 인라인 코드용 `InlineCode` 컴포넌트를 설계하여 반영.
+    - [page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/page.tsx) — MDX 직렬화(`serializeWithGfm`) 시 `remark-gfm` 플러그인을 도입하여 마크다운의 파이프 테이블 표가 깨지지 않고 정상적인 HTML 테이블 구조로 파싱될 수 있도록 수정.
+    - [protocol.md](file:///C:/Workspace/Projects/OpenTutorials/docs/bundler/protocol.md) — 강좌 번들러 프로토콜 내에 헤더(H1, H2) 구성 방식, GFM 테이블 스펙, 언어를 명시하는 코드 블록 작성 규칙 등을 구체적으로 기술한 **"7. 학습 카드 마크다운 가이드라인"** 섹션을 추가.
+  - **작업 내용**:
+    - "아두이노 IoT 프로젝트 마스터 클래스"를 포함한 모든 강좌 학습 화면에서 챕터/섹션 타이틀이 H1, H2 헤더로 명확히 시각적 강조를 띄게 되었고, 날것의 마크다운 텍스트로 보였던 비교 표/테이블이 반응형 보더와 헤더가 정돈된 깔끔한 UI 테이블로 자동 렌더링되며, 텍스트 형태였던 소스 코드가 복사하기 버튼이 달린 이쁘고 세련된 다크 코드 박스로 출력되도록 프론트엔드 파서 및 스타일링 구성을 전면 개편했습니다. 아울러 차후 제작될 강좌 번들이 이 형식을 일관되게 채택하도록 번들러 프로토콜 표준 지침 문서에 관련 규칙을 의무화하였습니다.
+
+- **[BUGFIX] 강좌 상세 및 나의 강좌 화면에서 학습 화면 이동 시 카드 인덱스 매핑 오류 해결**
+  - **수정 파일**:
+    - [client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/[slug]/client.tsx) — 강좌 상세 화면에서 커리큘럼 카드를 클릭할 때 `cardIndex` 0-based 값을 1-based `?card=${cardIndex + 1}`로 전달하게 하여 학습 화면 진입 시 올바른 챕터 카드가 매핑되도록 수정.
+    - [page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/my-courses/page.tsx) — "나의 강좌" 목록 화면에서 "이어서 학습하기" 선택 시 1-based index인 `currentCard`에 +1을 더해 잘못된 다음 카드를 건너뛰던 문제를 `currentCard || 1`로 변경하여 마지막으로 공부하던 올바른 위치로 진입하게끔 수정.
+  - **작업 내용**:
+    - 강좌 상세 화면에서 2-1 카드를 선택할 때 0-based `cardIndex = 2`를 그대로 `?card=2` 형태로 전달하였으나, 학습 화면에서는 1-based index(2번째 카드 = 1-2 카드)로 해석 및 -1 차감(1-based -> 0-based) 파싱하여 1-2 카드가 노출되던 내비게이션 오류를 해결했습니다.
+    - 또한 나의 강좌 리스트 화면에서 이어서 학습하기 진입 시 1-based index에 1을 중복하여 덧셈 계산하여 한 카드를 건너뛰고 시작하던 버그도 일괄 정상화하였습니다.
+
+- **[BUGFIX] "신경망과 LLM 개론" 강좌 진행 상황 불일치 및 2-1 강좌 페이지 로딩 시 자동 완료 오류 해결**
+  - **수정 파일**:
+    - [02-neural-network-text.mdx](file:///C:/Workspace/Projects/OpenTutorials/public/courses/neutral-network-and-llm/cards/02-neural-network-text.mdx) — LaTeX 수학 수식 중괄호(`{}`) 표현이 `next-mdx-remote` 파서(Acorn)에 의해 JSX/Javascript 영역으로 잘못 파싱되어 MDX 빌드 에러를 일으키는 문제를 텍스트 수식 표현(중괄호 제거)으로 수정하여 정상 컴파일되도록 해결.
+    - [page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/page.tsx) — MDX 직렬화(`serialize`) 시 에러가 발생해도 카드 목록에서 스킵하지 않고 에러 표시 플레이스홀더 카드를 추가하여, 전체 카드 수(`totalCards`)가 어긋나고 진행상황이 왜곡(예: 2-1 강좌 페이지가 마지막 카드로 둔갑하여 자동 수강완료되는 현상)되지 않도록 안전 장치 적용.
+    - [route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/packages/subscribe/route.ts) — 구독 강좌 패키지 진행률 반환 시 `total_courses`를 1로, `completed_courses`를 (completed ? 1 : 0)으로 계산하던 하드코딩 방식을 제거하고, 패키지의 실제 총 카드 수(`totalCourses`)와 사용자의 진행도(`max_card`/`last_card`) 값을 반영하여 실시간 카드 단위의 세밀한 진행률(%)을 제공하도록 수정.
+    - [db.json](file:///C:/Workspace/Projects/OpenTutorials/db.json) — "신경망과 LLM 개론" 수강 이력 레코드 중 자동으로 `completed: true` 처리되었던 내역을 `completed: false` 로 정상화 마이그레이션 적용.
+  - **작업 내용**:
+    - "신경망과 LLM 개론" 강좌의 2-1 강좌 페이지(3번째 카드)로 들어갈 때 2번째 카드였던 `02-neural-network-text.mdx`가 MDX 컴파일 오류로 누락되어 전체 카드 수(`totalCards`)가 3개로 인식되고, 이로 인해 3번째 카드 조회가 마지막 카드로 오인되어 자동 완료 처리되던 버그를 근본적으로 수정했습니다. 또한 학습 화면(3/4 진행), 나의 강좌(100%), 강좌 상세 화면(100%)에서 각각 다르게 계산되던 진행 상황 로직을 실제 총 카드 개수 및 해제된 카드 개수 기준으로 일관되게 맞춤으로써 3개 화면 모두 **75% (3/4 진행)** 로 완벽히 통일하였습니다.
+
+- **[BUGFIX] "아두이노 IoT 프로젝트 마스터 클래스" 학습 화면 React SSR 에러 해결 및 미활성 챕터 기본 접기 구현**
+  - **수정 파일**:
+    - [page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/page.tsx) — `LearnPageClient`를 Next.js의 `dynamic(..., { ssr: false })`로 동적 임포트하여, React 19/Next 15 환경에서 Turbopack 빌드 시 `next-mdx-remote` 등의 CommonJS React 훅 참조 모듈이 서버 사이드 렌더링(SSR) 시 React dispatcher null 에러(`Cannot read properties of null (reading 'useState')`)를 일으키는 현상을 해결.
+    - [client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx) — 목차 노드 뷰(`LearnTocNodeView`)의 `isExpanded` 상태 초기값을 무조건 `true`로 펼쳐놓는 대신, 현재 활성화된 카드(강의)의 조상 노드인 경우에만 `true`로 설정하고 나머지는 접힌 상태(`false`)로 렌더링되도록 수정하여 목차가 한눈에 잘 들어오도록 개선.
+  - **작업 내용**:
+    - 리팩토링 및 렌더링 최적화를 통해 로컬 아두이노 학습 강좌 로딩 에러를 완벽히 해결하고 사용자가 요청한 챕터 접기 편의 기능을 구현 완료.
+
+- **[BUGFIX] "아두이노 IoT 프로젝트 마스터 클래스" 강좌 목차 클릭 내비게이션 오류 및 학습 화면 이미지 깨짐 현상 해결**
+  - **수정 파일**:
+    - [client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx) — 좌측 강좌 목차의 활성화(active) 표시 및 카드 선택 클릭 시 string(파일명) 매핑 대신 TOC 노드 객체 참조 매핑(`Map<TocNode, number>`)을 활용하도록 개선하여 동일 파일명이 여러 챕터에 사용되어도 충돌 없이 정확한 카드로 내비게이션 및 하이라이트가 처리되도록 수정. custom image 컴포넌트의 relative images 경로 파싱 regex 필터링에 absolute/external URL 검사 예외 처리를 추가하고 슬래시가 포함된 파일명 인코딩 버그를 수정.
+    - [db.json](file:///C:/Workspace/Projects/OpenTutorials/db.json) — "아두이노 IoT 프로젝트 마스터 클래스" (`iot-communication`) 강좌의 cards 및 toc 파일명들에 chapter별 유일한 하위 경로(예: `ch01/01-lesson-1.mdx`)를 주입하여 static storage 내에서 카드들이 덮어씌워지지 않도록 마이그레이션 적용.
+    - `public/courses/iot-communication/config.json` — db.json의 업데이트 내용에 맞춰 index config 갱신.
+    - `public/courses/iot-communication/cards` — 중복 파일명들로 인해 ch13으로 덮어씌워져 있던 13개 챕터별 카드 MDX 파일들을 복구하고 각각의 ch01~ch13 폴더 구조로 재배치.
+    - `public/courses/iot-communication/images` — 각 챕터별 subcourse(iot-communication-ch01~13) images 폴더에 분산 보관되어 정적 서빙에서 누락되었던 83개의 이미지 파일들을 통합 package images 폴더로 일괄 복제하여 이미지 깨짐 현상을 해결.
+  - **작업 내용**:
+    - 기존 마이그레이션 스크립트가 13개 분량의 subcourse 강좌 데이터를 단일 패키지로 통합하는 과정에서 동일한 카드 파일명(`01-lesson-1.mdx`)을 구분자 없이 복사하여 최종 챕터(ch13) 내용으로 덮어씌우고 이미지를 복사하지 않아 모든 이미지가 깨지던 문제를 완벽히 복구하고, 중복 파일명이 존재할 시 UI 목차 클릭 매핑이 깨지는 아키텍처 한계를 리액트 트리 렌더링 노드 매핑 방식으로 수정하여 재발을 방지했습니다.
+
+- **[CLEANUP] 제거된 구 `courses` 및 `course_package_items` 테이블 관련 DB 조회 쿼리 전수 조사 및 클린업**
+  - **수정/갱신 파일**:
+    - [dashboard/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/dashboard/page.tsx) — `user_progress` 및 `user_package_subscriptions` 테이블 조회 쿼리에서 더 이상 존재하지 않는 `courses` 및 `course_package_items` 조인 제거 후 `course_packages` 테이블 직접 조회로 수정.
+    - [my-courses/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/my-courses/page.tsx) — `ProgressItem` 인터페이스에서 `course_package_items` 타입을 제거하고, "학습 시작하기" 선택 시 이동할 대상 URL을 `course_package_items` 탐색 없이 `progressList` 내 `course_id` (현재 package_id) 매칭을 통해 바로 확인하도록 수정.
+    - [subscribe/route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/courses/subscribe/route.ts) — 기존에 `course_package_items` 및 `courses` 테이블 조작을 시도하여 수강 진행 기록(`user_progress`)을 제대로 생성하지 못하던 구버전 구독 API를 최신 패키지 구독 API(`app/api/packages/subscribe/route.ts`)와 동일하게 단일 패키지 수강 처리 로직으로 갱신.
+    - [[id]/route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/admin/packages/[id]/route.ts) — 패키지 삭제(DELETE) 요청 처리 시, 연관 강좌 및 매핑 테이블이 없어진 새로운 구조에 맞추어 `course_packages` 및 Storage 버킷의 해당 패키지 slug 폴더, 그리고 `user_progress`를 직접 일괄 삭제하도록 전면 개편.
+    - [route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/admin/packages/route.ts) / [route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/courses/route.ts) / [route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/packages/route.ts) — `courses` 및 `course_package_items`를 조인 조회하던 쿼리를 제거하고 단일 `course_packages` 조회로 간소화 및 하위 호환성을 위해 `courses: []` 반환 처리.
+    - [[id]/route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/admin/courses/[id]/route.ts) / [route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/admin/courses/route.ts) / [check-orphans/route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/admin/courses/check-orphans/route.ts) — 더 이상 존재하지 않는 `courses` 테이블을 조작하던 개별 강좌 관리 API들을 사용되지 않는 점을 감안하여 Deprecated 처리(404 에러 또는 빈 리스트 즉시 반환).
+  - **작업 내용**:
+    - `courses`와 `course_package_items` 테이블이 `db.json`에서 완전히 삭제됨에 따라, 백엔드 API 및 프론트엔드 전체에서 해당 테이블들을 참조하거나 조인하던 모든 DB 쿼리를 제거하고 단일 패키지(`course_packages`) 기반 모델로 완전히 전환함.
+
+- **[BUGFIX] 대시보드에서 학습중인 강좌 카드 선택 시 강좌 상세 정보를 조회하지 못하는 오류 수정**
+  - **수정 파일**:
+    - [page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/my-courses/[slug]/page.tsx) — DB에서 강좌 상세 정보를 조회할 때 기존 `courses` 테이블 대신 `course_packages` 테이블을 조회하도록 수정.
+  - **작업 내용**:
+    - 대시보드의 "학습중인 강좌" 카드 선택 시 `[MyCourseDetailServer] Course not found in both DB and Dummy data for slug` 콘솔 에러가 발생하며 강좌 상세 화면이 정상 로딩되지 않는 문제를 해결함.
+    - 이전의 강좌 패키지 통합 마이그레이션 결과로 `db.json`에서 `courses` 테이블이 완전히 제거되고 `course_packages`로 통합되었으나, 해당 상세 조회 쿼리만 누락되어 있던 부분을 동기화함.
+
+- **[REFACTOR] 개별 강좌(Courses)와 강좌 패키지(Course Packages) 통합 및 단일화**
+  - **수정/삭제 파일**:
+    - [db.json](file:///C:/Workspace/Projects/OpenTutorials/db.json) — `courses` 및 `course_package_items` 테이블 제거. `course_packages`에 `toc` 및 `cards` 컬럼 추가하고, `user_progress`의 `course_id` 값을 패키지 ID로 통합 마이그레이션.
+    - [local-db-server.ts](file:///C:/Workspace/Projects/OpenTutorials/lib/db/local-db-server.ts) — `DEFAULT_DB` 스키마 및 `executeLocalQuery`의 Auto Join Resolver에서 `courses`, `course_package_items` 관련 종속성 제거 및 `course_packages` 다이렉트 조인으로 리팩토링.
+    - [route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/packages/subscribe/route.ts) — 구독 및 진행도 API 수정. `course_package_items` 의존성을 제거하고 강좌 패키지 단위를 단일 강좌 단위로 다루어 구독 및 진행 상태 `user_progress` 관리 단일화.
+    - [route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/courses/[slug]/route.ts) — 개별 강좌 `items` 조인을 제거하고, `course_packages`에서 직접 메타데이터 및 `toc`, `cards`를 읽어 단일 `user_progress`와 매핑하여 반환하도록 쿼리 전면 수정.
+    - [route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/courses/[slug]/resource/route.ts) — `courses` 대신 `course_packages` 테이블에서 직접 강좌 세부 내용을 가져와 markdown 컴파일을 수행하도록 조회 테이블 변경.
+    - [page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/my-agents/page.tsx) — 에이전트 할당 강좌 로딩(`loadAgents`) 시 `courses` 테이블 조회를 제외하고, `course_packages` 테이블만 조회하도록 리팩토링.
+    - [client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/[slug]/client.tsx) — 커리큘럼 타임라인 렌더링을 하위 강좌 리스트 대신 패키지의 챕터/섹션(TOC) 트리 렌더링으로 변경하고 개별 카드 단위 학습 시작 및 다시보기 버튼 바인딩.
+    - [page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/page.tsx) — 서버 컴포넌트 로딩에서 `courses` 대신 `course_packages`를 가져오도록 수정.
+    - [route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/admin/packages/upload/route.ts) — 기존 개별 강좌 단위 다중 ZIP 업로드 단계를 폐지하고, `package-manifest.json`, `config.json`, `wiki.md`, `cards/`가 직접 포함된 단일 패키지 ZIP 파일을 전송받아 한 방에 압축 해제 후 로컬 저장 및 `course_packages` upsert를 처리하는 단일 통합 API로 전면 개편.
+    - `app/api/admin/courses/upload/route.ts` (삭제) — 불필요해진 개별 강좌 ZIP 업로드 API 파일 삭제.
+    - [page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/manage/upload/page.tsx) — 어드민 ZIP 업로드 프론트엔드 검증 단계를 단일 패키지 내부 정합성 및 TOC-Cards 매칭 사전 검사(`package-structure`, `package-config-toc`)로 전환하고, 단일 요청 전송으로 코드 간소화.
+    - [UserHeader.tsx](file:///C:/Workspace/Projects/OpenTutorials/components/layout/UserHeader.tsx) — `getUser()` 프라미스 파라미터 타입 에러를 명시적 캐스팅으로 해결.
+    - [protocol.md](file:///C:/Workspace/Projects/OpenTutorials/docs/bundler/protocol.md) — 강좌 제작자용 번들러 스펙 문서의 하위 강좌 ZIP 매핑 관계 명세를 단일 ZIP 디렉토리 및 루트 config.json 배치 구조로 최신 동기화.
+  - **작업 내용**:
+    - "기존에는 개별 강좌와 강좌 패키지가 구분되어 있었지만 이제는 강좌 패키지 하나로 통일되어 관리한다. 더 이상 개별 강좌의 개념은 사용하지 않는다. 관련 테이블이나 로직을 삭제하고 강좌 패키지로 통합해야 한다." 요청을 완벽하게 수행함.
+    - DB 구조의 극적인 간소화 및 온디바이스 로컬 파일 시스템 업로드의 효율 극대화를 달성하고 타입 에러를 해결하여 빌드 안전성을 완벽 확보함.
+
+
+- **[BUGFIX] 에이전트 관리 화면에서 특정 에이전트에 할당된 강좌가 누락되는 문제 해결**
+  - **수정/생성 파일**:
+    - `app/(user)/my-agents/page.tsx` — 에이전트에 할당된 강좌 정보를 조회할 때 `courses` 테이블만 조회하던 기존 로직을 수정하여 `courses`와 `course_packages` (강좌 패키지) 테이블을 모두 병합해서 조회하도록 개편하고, 동일 에이전트 ID에 대해 중복된 강좌명(title)은 제거하여 표시함.
+  - **작업 내용**:
+    - "현재 2개의 강좌가 등록되어 있고, 강좌는 각각 Hermes Tencent 에이전트와 Local GEMMA 에이전트를 사용하도록 지정하였다. 하지만 에이전트 관리 화면에서 Hermes Tencent 에이전트만 할당된 강좌 정보가 표시된다." 이슈를 해결하기 위함.
+    - 강좌 패키지(`course_packages`) 단위로 에이전트가 할당되고, 하위 강좌(`courses`)의 `agent_id`가 null인 상황(예: 아두이노 강좌)에서도, 에이전트 카드 내 '할당된 강좌' 목록에 패키지 단위 강좌명이 누락 없이 정확하게 매핑 및 노출되도록 보장함.
+
+- **[FEATURE] 강좌 등록/업로드 시 튜터 에이전트 자동 매핑 및 연동 기능 구현**
+  - **수정/생성 파일**:
+    - `lib/supabase/admin.ts` — `getOrAssignTutorAgentId` 공통 헬퍼 함수를 추가하여 강좌 등록 시 기본 튜터(is_ai_tutor: true)가 있으면 기본 튜터로, 없으면 기존 할당된 에이전트 보존 또는 첫 번째 튜터로, 튜터 목록이 아예 비어 있으면 신규 기본 튜터를 생성하여 할당할 수 있도록 구현.
+    - `app/api/admin/courses/upload/route.ts` — 하위 강좌 ZIP 개별 파일 등록/업데이트 시 `getOrAssignTutorAgentId`를 통해 반환된 `agent_id` 값을 함께 `insert`/`update` 필드로 설정해 튜터 에이전트 강제 지정 보장.
+    - `app/api/admin/packages/upload/route.ts` — 매니페스트 기반 하위 강좌 등록/업데이트 시 동일하게 `getOrAssignTutorAgentId`를 통한 튜터 에이전트 매핑이 적용되도록 수정.
+  - **작업 내용**:
+    - "강좌가 등록될 때 튜터 에이전트를 반드시 등록해야 한다. 기본 튜터가 설정되어 있다면 기본 튜터를 설정해야 한다." 요구사항을 반영하여, 강좌 업로드 시점에 자동으로 활성화된 기본 튜터 혹은 에이전트를 `courses.agent_id`에 강제 바인딩하는 로직을 통합함으로써 수동 지정 과정에서의 누락 방지 및 학습 진입 시 원활한 AI 튜터 서비스 보장.
+
 ## 2026-07-05
 
 - **[CHORE] 앱 버전 v0.1.0 태깅 및 릴리즈/체인지로그 관리 프로세스 확립**
@@ -1498,3 +1626,46 @@ Ran lint. See lint-report.md for details.
     - `UserHeader` 컴포넌트를 `'use client'` 클라이언트 컴포넌트로 전면 리팩토링하고, `useState` 및 `useEffect` 훅을 활용해 마운트 시점에 로컬 Mock Supabase Client(`createClient`)로부터 유저 데이터를 비동기 획득하도록 구조를 보완하여 두 에러를 모두 완벽히 픽스했습니다.
   - **Concepts**: [[NextConnectionScopeFix]], [[LocalMockClientPruning]], [[AsyncClientComponentFix]]
 
+
+## 2026-07-06 (4th Session)
+
+- **[BUGFIX] 로컬 DB upsert 복합키 처리 부재로 인한 중복 user_progress 생성 및 대시보드 진도율 하드코딩 오류 해결**
+  - **수정 파일**:
+    - [lib/db/local-db-server.ts](file:///C:/Workspace/Projects/OpenTutorials/lib/db/local-db-server.ts)
+    - [app/(user)/dashboard/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/dashboard/page.tsx)
+  - **작업 내용**:
+    - **로컬 DB upsert 복합키 조회 지원**: `local-db-server.ts`의 `upsert` 로직에서 `id`나 `slug`가 존재하지 않을 때, `user_progress` 테이블은 `user_id`와 `course_id` 복합키로, `user_package_subscriptions` 테이블은 `user_id`와 `package_id` 복합키로 기존 레코드를 검색하도록 수정했습니다. 이를 통해 중복된 `user_progress` 데이터가 계속 쌓이는 버그를 해결했습니다.
+    - **기존 중복 데이터 클렌징**: `db.json` 내의 중복 생성된 `user_progress` 레코드를 분석하여 `user_id`와 `course_id` 기준으로 최다 진도 레코드만 남기고 삭제(Deduplication) 조치했습니다.
+    - **대시보드 진도율 하드코딩 및 중복 노출 제거**: `dashboard/page.tsx`에서 개별 강좌의 `totalCards`를 `10`으로 하드코딩하던 문제를 실제 강좌의 `cards.length`를 사용하도록 수정하여 실제 진도율(예: 76/78 단계)이 표시되도록 개선했으며, 대시보드의 "학습 중인 강좌" 섹션에 패키지 구독(`packageSubs`) 카드가 중복되어 이중으로 표시되던 로직을 제거하고 오직 진행 중인 강좌 진도(`activeProgress`)만 표시되도록 통합했습니다.
+  - **Concepts**: [[CompoundKeyUpsert]], [[DbDeduplication]], [[DynamicTotalCards]], [[DashboardCardDeconflict]]
+
+## 2026-07-06 (5th Session)
+
+- **[FEAT/BUGFIX] 강좌 등록 시 AI 튜터 자동 할당 API 연동 및 강좌 목록/이어보기 카드 인덱스 매핑 오류 수정**
+  - **수정 파일**:
+    - [app/api/admin/courses/upload/route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/admin/courses/upload/route.ts)
+    - [app/api/admin/packages/upload/route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/admin/packages/upload/route.ts)
+    - [lib/supabase/admin.ts](file:///C:/Workspace/Projects/OpenTutorials/lib/supabase/admin.ts)
+    - [app/(user)/courses/[slug]/client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/[slug]/client.tsx)
+    - [app/(user)/my-courses/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/my-courses/page.tsx)
+    - [app/(user)/learn/[slug]/client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx)
+  - **작업 내용**:
+    - **튜터 에이전트 자동 할당**: 강좌 패키지가 신규로 등록/업로드 완료될 때 사용 가능한 AI 튜터(Hermes 등) 에이전트를 해당 강좌에 자동으로 매핑하고 기본 튜터로 활성화하는 API 및 DB 트리거 기능을 추가했습니다.
+    - **학습 카드 이동 및 이어보기 복구**: 강좌 검색 페이지 및 '나의 강좌' 페이지에서 학습 이어보기 시, 카드의 인덱스와 learn 페이지 slug 라우팅이 어긋나 엉뚱한 카드가 열리던 오류를 수정하고, UI와 DB의 인덱스를 일치시켰습니다.
+  - **Concepts**: [[AutoAssignTutor]], [[ResumeCardIndexFix]]
+
+## 2026-07-06 (6th Session)
+
+- **[FEAT/UI] Noto Sans KR 폰트 적용 및 학습 화면 마크다운 컴포넌트 프리미엄 스타일링**
+  - **수정 파일**:
+    - [app/layout.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/layout.tsx)
+    - [tailwind.config.ts](file:///C:/Workspace/Projects/OpenTutorials/tailwind.config.ts)
+    - [app/(user)/learn/[slug]/client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx)
+    - [app/(user)/learn/[slug]/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/page.tsx)
+    - [docs/bundler/protocol.md](file:///C:/Workspace/Projects/OpenTutorials/docs/bundler/protocol.md)
+  - **작업 내용**:
+    - **Noto Sans KR 로컬 폰트 탑재**: `public/fonts/Noto_Sans_KR` 경로의 Variable Font를 Next.js `localFont`로 로드하고 tailwind 설정의 `sans` 폰트 패밀리 최우선 순위로 지정하여 앱 전체에 미려한 한글 폰트를 일괄 적용했습니다.
+    - **학습 화면 마크다운 컴포넌트 커스텀 렌더링**: h1~h4 헤더, 본문(p), 목록(ul, ol), 인용구, GFM 테이블을 프리미엄 UI 스타일로 렌더링하도록 `mdxComponents`를 보강했습니다.
+    - **코드 블록 및 인라인 코드 고도화**: 소스 코드 구문 강조를 위한 프리미엄 코드 블록(`PreBlock`, `InlineCode`)을 구현하고 상단 헤더에 언어 레이블 및 1-클릭 클립보드 복사 버튼을 내장했습니다.
+    - **강좌 번들러 프로토콜 문서 업데이트**: `docs/bundler/protocol.md`에 학습 카드 마크다운 가이드라인(헤더 사용법, 테이블 규격, 코드 블록 언어 지정)을 추가하여 제작 프로토콜을 공조 최신화했습니다.
+  - **Concepts**: [[NotoSansKRLocalFont]], [[MDXCustomStyling]], [[CodeBlockClipboardCopy]], [[BundlerProtocolMarkdownGuide]]

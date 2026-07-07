@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const adminClient = createAdminClient();
     const { data, error } = await adminClient
       .from('user_progress')
-      .select('*, course:courses(*, course_package_items(package_id))')
+      .select('*, course:course_packages(*)')
       .eq('user_id', user.id);
 
     if (error) {
