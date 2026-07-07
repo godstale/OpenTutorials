@@ -32,6 +32,60 @@ Ran lint. See lint-report.md for details.
 
 ## 2026-07-07
 
+- **[STYLE] 나의 강좌 페이지 우측 상단 "새 강좌 찾기" 버튼 색상 통일**
+  - **수정/갱신 파일**:
+    - [page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/my-courses/page.tsx) — 우측 상단 `[새 강좌 찾기]` 버튼의 클래스명을 `bg-emerald-600 hover:bg-emerald-700`에서 `bg-indigo-600 hover:bg-indigo-700`으로 수정하여 타 페이지와의 일관성을 확보했습니다.
+  - **작업 내용**:
+    - "나의 강좌" 페이지에 위치한 "새 강좌 찾기" 버튼이 메인 브랜드 테마 색상(Indigo) 대신 녹색(Emerald)으로 표시되어 타 페이지의 기본 액션 버튼들과 색상이 다르던 문제를 해결하기 위해, 타 페이지의 주 버튼 색상에 맞춰 Indigo 테마를 적용했습니다.
+
+- **[BUGFIX] 강좌 학습 화면 스크롤 불가 오류 수정**
+  - **수정/갱신 파일**:
+    - [layout.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/layout.tsx) — 학습 화면(`isLearnPage === true`)인 경우 `children`을 감싸는 `flex-1` 레이아웃 래퍼 `div`를 바이패스하도록 수정하여 `LearnPageClient`에 설정된 `h-full` 및 뷰포트 높이 제한과 스크롤 영역(`ScrollArea`) 바운더리가 올바르게 동작하도록 수정했습니다.
+  - **작업 내용**:
+    - 최근 푸터 개선 과정에서 `children` 전체를 감싸는 `<div className="flex-1">`가 추가되었는데, 이로 인해 `isLearnPage`일 때 스크롤 영역이 뷰포트 높이에 고정되지 않고 콘텐츠 전체 높이로 늘어난 뒤 최상단 `SidebarInset`의 `overflow-hidden`에 의해 스크롤이 불가능해졌던 CSS 레이아웃 문제를 해결했습니다.
+
+## 2026-07-07
+
+- **[STYLE] 좌측 상단 로고 및 푸터의 Bot 아이콘 색상을 메인 브랜드 컬러(primary)의 진한 녹색으로 변경**
+  - **수정/갱신 파일**:
+    - [UserSidebar.tsx](file:///C:/Workspace/Projects/OpenTutorials/components/layout/UserSidebar.tsx) — 좌측 상단 헤더 영역의 `Bot` 로고 아이콘 색상을 `text-indigo-600`에서 `text-primary`로 수정.
+    - [layout.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/layout.tsx) — 푸터 영역의 `Bot` 로고 아이콘 색상을 `text-indigo-600`에서 `text-primary`로 수정.
+  - **작업 내용**:
+    - 사이트의 메인 브랜드 컬러인 진한 녹색 톤(대시보드의 "신규 에이전트 등록" 버튼 등과 동일)에 맞추어 좌측 상단 사이드바의 헤더와 하단 푸터에 각각 위치한 `Bot` 로고 아이콘의 색상을 `text-primary`로 변경하여 브랜딩의 통일성을 높였습니다.
+
+## 2026-07-07
+
+- **[CHORE] 지침 파일(AGENTS.md, CLAUDE.md, GEMINI.md) 및 규칙 파일(.agents/rules/) 구조 간소화 및 최신화**
+  - **수정/갱신 파일**:
+    - [AGENTS.md](file:///C:/Workspace/Projects/OpenTutorials/AGENTS.md), [CLAUDE.md](file:///C:/Workspace/Projects/OpenTutorials/CLAUDE.md), [GEMINI.md](file:///C:/Workspace/Projects/OpenTutorials/GEMINI.md) — 중복되거나 불필요한 개발 정보들을 제거하고 핵심 프로젝트 개요, 스택 및 개별 규칙 참조 링크만 남김으로써 지침 파일 크기를 대폭 간소화.
+    - [local-db-storage.md](file:///C:/Workspace/Projects/OpenTutorials/.agents/rules/local-db-storage.md) — (신규) 로컬 DB 및 데이터 스토리지 패턴, Supabase 모킹 클라이언트 사용법, 권한 및 보안 우회 규칙을 독립된 규칙 문서로 분리.
+    - [wiki-maintenance.md](file:///C:/Workspace/Projects/OpenTutorials/.agents/rules/wiki-maintenance.md) — (신규) 작업 완료 후 Wiki에 변경 이력을 등록하는 의무 사항을 독립된 규칙 문서로 분리.
+    - [bundler-protocol.md](file:///C:/Workspace/Projects/OpenTutorials/.agents/rules/bundler-protocol.md) — (신규) 강좌 제작 번들러 프로토콜 변경 시 문서 최신화 규칙을 독립된 규칙 문서로 분리.
+    - [architecture.md](file:///C:/Workspace/Projects/OpenTutorials/.agents/rules/architecture.md) — 이전 클라우드 환경(관리자 포털, 인증 등) 정보 제거, 실제 데스크탑 로컬 구조 및 [proxy.ts](file:///C:/Workspace/Projects/OpenTutorials/proxy.ts) 미들웨어 우회 아키텍처 규칙으로 최신화.
+    - [api-conventions.md](file:///C:/Workspace/Projects/OpenTutorials/.agents/rules/api-conventions.md) — Supabase 클라우드, Admin 메일 체크, SSE, Phase 2 등 불필요한 구 API 패턴을 제거하고 `/api/local-db` 중계 및 `/api/agent` 연동 패턴 중심으로 재작성.
+    - [coding-standards.md](file:///C:/Workspace/Projects/OpenTutorials/.agents/rules/coding-standards.md) — Phase 1 더미 데이터 등의 불필요한 내용을 정리하고 핵심 TypeScript 및 React 컨벤션 위주로 단순화.
+    - [design-system.md](file:///C:/Workspace/Projects/OpenTutorials/.agents/rules/design-system.md) — [DESIGN.md](file:///C:/Workspace/Projects/OpenTutorials/DESIGN.md) 및 Shadcn UI 사용 규칙, 1024px 해상도 제한 등 데스크탑 중심의 테마 및 레이아웃 규칙 최신화.
+    - [git-workflow.md](file:///C:/Workspace/Projects/OpenTutorials/.agents/rules/git-workflow.md) — 로컬 1인 개발 환경에 최적화된 핵심 커밋 메시지 형식 및 단위 규칙으로 리팩토링.
+  - **작업 내용**:
+    - AI 에이전트와 LLM이 불필요한 컨텍스트(사용하지 않는 이전 아키텍처/클라우드 설정 등)를 과도하게 읽어 토큰 낭비 및 오작동하는 문제를 해결하기 위해, 메인 지침 파일들을 경량화하고 개별 상세 규칙들을 `.agents/rules/` 하위에 목적별로 작게 쪼개어 참조할 수 있도록 전면 개편했습니다.
+
+## 2026-07-07
+
+- **[BUGFIX] 나의 강좌 화면 및 강좌 구독 API에서 패키지 에이전트 정보(agent_id) 누락 해결**
+  - **수정/갱신 파일**:
+    - [route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/packages/subscribe/route.ts) — 구독 강좌 목록(GET) 응답에서 `package` 필드에 `agent_id`를 누락했던 문제를 해결하여 `agent_id: pkg?.agent_id`를 반환하도록 수정.
+    - [route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/courses/subscribe/route.ts) — 마찬가지로 강좌 구독 목록(GET) 응답의 `package` 필드에도 `agent_id: pkg?.agent_id`를 추가하여 통일성 확보.
+    - [page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/my-courses/page.tsx) — `PackageSubscriptionItem` 인터페이스의 `package` 정의에 `agent_id?: string | null` 타입을 보강하고, `(pkg as any).agent_id`로 캐스팅하던 비안전 코드를 안전하게 `pkg.agent_id`로 수정.
+  - **작업 내용**:
+    - "나의 강좌" 화면에서 수강 중인/완료한 패키지의 AI 에이전트 정보가 올바르게 렌더링되도록 API 응답 데이터 누락을 채워넣고 타입을 동기화하여 해결했습니다.
+
+- **[FEATURE] 나의 강좌 및 대시보드 강좌 카드에 할당된 에이전트 이름 표시 기능 추가**
+  - **수정/갱신 파일**:
+    - [my-courses/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/my-courses/page.tsx) — 수강 중인 강좌 및 완료한 강좌 목록 카드의 하단에 user_external_agents 목록을 매핑하여 에이전트 이름을 Bot 아이콘과 함께 표시했습니다.
+    - [dashboard/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/dashboard/page.tsx) — 대시보드 내 학습 중인 강좌 목록의 강좌 카드에 할당된 AI 튜터 이름을 Bot 아이콘과 함께 표시했습니다.
+  - **작업 내용**:
+    - 각 강좌 카드에서 연동 중인 AI 튜터 에이전트의 이름을 바로 노출하도록 기능을 제공하고, 미세한 pulse 애니메이션을 튜터 라벨에 부여하여 시각적 완성도를 높였습니다.
+
 - **[FEATURE] 강좌 상세 페이지 라우팅 통일 및 커리큘럼 챕터 fold/unfold 기능 추가**
   - **수정/갱신 파일**:
     - [dashboard/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/dashboard/page.tsx) — 대시보드 내 "학습 중인 강좌" 목록에서 강좌 카드를 클릭할 때 기존 `/my-courses/[slug]`로 이동하던 것을 전체 강좌 상세 페이지인 `/courses/[slug]`로 연결되도록 변경하여 라우팅 경로를 통일했습니다.
@@ -1669,3 +1723,34 @@ Ran lint. See lint-report.md for details.
     - **코드 블록 및 인라인 코드 고도화**: 소스 코드 구문 강조를 위한 프리미엄 코드 블록(`PreBlock`, `InlineCode`)을 구현하고 상단 헤더에 언어 레이블 및 1-클릭 클립보드 복사 버튼을 내장했습니다.
     - **강좌 번들러 프로토콜 문서 업데이트**: `docs/bundler/protocol.md`에 학습 카드 마크다운 가이드라인(헤더 사용법, 테이블 규격, 코드 블록 언어 지정)을 추가하여 제작 프로토콜을 공조 최신화했습니다.
   - **Concepts**: [[NotoSansKRLocalFont]], [[MDXCustomStyling]], [[CodeBlockClipboardCopy]], [[BundlerProtocolMarkdownGuide]]
+
+## 2026-07-07 (7th Session)
+
+- **[FEAT/UI/BUGFIX] 사이드바 로고 갱신, 푸터 및 ScrollToTop 버튼 탑재, 강좌 미리보기 오류 해결 및 폰트 변경 UI 기능 구현**
+  - **수정 파일**:
+    - [components/layout/UserSidebar.tsx](file:///C:/Workspace/Projects/OpenTutorials/components/layout/UserSidebar.tsx)
+    - [components/layout/ScrollToTop.tsx](file:///C:/Workspace/Projects/OpenTutorials/components/layout/ScrollToTop.tsx) (신규 생성)
+    - [app/(user)/layout.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/layout.tsx)
+    - [app/(user)/courses/manage/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/manage/page.tsx)
+    - [app/globals.css](file:///C:/Workspace/Projects/OpenTutorials/app/globals.css)
+    - [app/layout.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/layout.tsx)
+    - [app/(user)/settings/layout.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/settings/layout.tsx)
+    - [app/(user)/settings/ui/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/settings/ui/page.tsx) (신규 생성)
+  - **작업 내용**:
+    - **사이드바 로고 개선**: 좌측 상단 "Open Tutorials" 로고의 글자 크기를 `text-sm`으로 아담하게 줄이고, 앞에 로봇(`Bot`) 아이콘을 추가하여 AI 학습 튜터 브랜드 정체성을 시각적으로 강화했습니다.
+    - **푸터(Footer) 추가**: 학습 화면을 제외한 전 영역에 마진(`mt-32`)을 넉넉히 준 미려하고 깔끔한 푸터를 탑재하여 서비스 개요 및 저작권 정보를 표시하도록 했습니다.
+    - **ScrollToTop 플로팅 버튼**: 화면 우측 하단에 고정된 조그마한 스크롤 위로 가기 버튼을 탑재했습니다. 200px 이상 스크롤 시 부드럽게 페이드인되도록 설계했습니다.
+    - **강좌 미리보기 오류 수정**: 이전 courses 테이블의 package 통합 스펙으로 인해 `course.courses`가 유실되어 미리보기가 작동하지 않던 버그를 해결했습니다. 패키지 자체의 `toc`를 검사하고 패키지 slug를 사용해 `/learn/${course.slug}?preview=true`로 정상 포워딩하고, 에이전트 매핑도 패키지 레벨의 `agent_id`로 교체했습니다.
+    - **UI 글꼴 설정 메뉴 신규 추가**: 설정 하위 탭에 'UI 설정' 메뉴를 추가하고 기본(Geist) 및 구글 노토 산스(Noto Sans KR) 폰트를 토글할 수 있는 미려한 프리미엄 UI 카드를 구현했습니다.
+    - **글꼴 변경 즉시 반영 및 FOUC 방지**: 사용자가 선택한 폰트를 LocalStorage에 저장하여 테마 변경을 즉시 반영토록 하였으며, `layout.tsx`에 FOUC(깜빡임) 방지 인라인 스크립트를 주입해 페이지 새로고침 시에도 자연스럽고 신속하게 선택된 폰트가 노출되도록 인프라를 완성했습니다.
+  - **Concepts**: [[LogoImprovement]], [[GlobalFooter]], [[ResponsiveScrollToTop]], [[CoursePreviewFix]], [[FontPreferenceUI]], [[FoucPreventionScript]]
+
+## 2026-07-07 (8th Session)
+
+- **[BUGFIX/UI] 사이드바 접기 상태에서 로고(Bot 아이콘) 가려짐 현상 수정**
+  - **수정 파일**:
+    - [components/layout/UserSidebar.tsx](file:///C:/Workspace/Projects/OpenTutorials/components/layout/UserSidebar.tsx)
+  - **작업 내용**:
+    - **접기 시 로고 정렬 및 패딩 동적 처리**: 사이드바가 접혔을 때(`isCollapsed`) `SidebarHeader`의 padding을 `px-2`로 줄이고 `justify-center`로 설정하여, 좁아진 공간(3rem) 내에서 로고(`Bot` 아이콘)가 치우치거나 잘리는 현상을 해결했습니다. `Link` 컴포넌트의 flex alignment 역시 접힘 여부에 따라 `justify-center`와 `justify-start` to 스위칭하도록 변경했습니다.
+    - **펼침 시 로고 수직 정렬 수정**: 사이드바의 기본 헤더 클래스(`flex-col`)가 `tailwind-merge` 적용 시 완전히 무시되지 않고 충돌을 일으켜 로고가 상단에 달라붙는 문제를, `SidebarHeader`에 명시적으로 `flex-row` 클래스를 추가하여 말끔히 정렬되도록 수정했습니다.
+  - **Concepts**: [[SidebarCollapsedLogoFix]], [[DynamicLogoPadding]], [[SidebarExpandedLogoAlign]]
