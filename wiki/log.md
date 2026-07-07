@@ -1754,3 +1754,17 @@ Ran lint. See lint-report.md for details.
     - **접기 시 로고 정렬 및 패딩 동적 처리**: 사이드바가 접혔을 때(`isCollapsed`) `SidebarHeader`의 padding을 `px-2`로 줄이고 `justify-center`로 설정하여, 좁아진 공간(3rem) 내에서 로고(`Bot` 아이콘)가 치우치거나 잘리는 현상을 해결했습니다. `Link` 컴포넌트의 flex alignment 역시 접힘 여부에 따라 `justify-center`와 `justify-start` to 스위칭하도록 변경했습니다.
     - **펼침 시 로고 수직 정렬 수정**: 사이드바의 기본 헤더 클래스(`flex-col`)가 `tailwind-merge` 적용 시 완전히 무시되지 않고 충돌을 일으켜 로고가 상단에 달라붙는 문제를, `SidebarHeader`에 명시적으로 `flex-row` 클래스를 추가하여 말끔히 정렬되도록 수정했습니다.
   - **Concepts**: [[SidebarCollapsedLogoFix]], [[DynamicLogoPadding]], [[SidebarExpandedLogoAlign]]
+
+## 2026-07-07 (9th Session)
+
+- **[BUGFIX/UI] 강좌 관리 화면 내 강좌 카드의 하위 강좌 개수 및 할당 에이전트 표시 버그 수정 및 상세 페이지 색상 통일**
+  - **수정 파일**:
+    - [app/(user)/courses/manage/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/manage/page.tsx)
+    - [app/(user)/courses/[slug]/client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/[slug]/client.tsx)
+  - **작업 내용**:
+    - **하위 강좌 개수 산출 방식 변경**: 기존 `courses` 테이블을 `course_packages`로 통합 및 일원화함에 따라 `course.courses`가 항상 빈 배열(`[]`)로 수신되던 구조적 문제를 해결하기 위해, 패키지 내 학습 카드의 메타데이터인 `course.cards` 배열의 크기(`course.cards?.length || 0`)를 기반으로 하위 강좌 개수가 표시되도록 변경했습니다.
+    - **할당된 에이전트 표시 로직 현행화**: 하위 강좌별 에이전트 매핑 대신 통합된 강좌 패키지 수준의 `pkg.agent_id` 정보를 이용하도록 조회 로직을 변경했습니다. `agent_id`가 지정되어 있다면 해당 외부 에이전트명을 매핑해 반환하고, 지정되지 않았거나 유효하지 않다면 활성화된 기본 AI 튜터로 폴백되어 올바르게 에이전트명이 표출되도록 개선했습니다.
+    - **미리보기 라우팅 정상화**: `courses` 유실로 인해 미리보기가 작동하지 않던 버그를 해결하고자, `/learn/${course.slug}?card=1&preview=true` 경로로 즉시 라우팅되도록 프리뷰 버튼 클릭 이벤트를 업데이트했습니다.
+    - **강좌 상세 페이지 내 테마 색상 통일**: 강좌 상세 및 커리큘럼 화면에서 기존 혼재되어 사용되던 `emerald` 계열 테마 색상 및 일부 `green-500` 코드를 `green-700`으로 일관되게 변경하여 디자인 일관성을 높였으며, 완료 뱃지의 스타일을 차분한 `bg-zinc-400`으로 변경했습니다.
+  - **Concepts**: [[CourseCardStatsFix]], [[PackageLevelAgentMapping]], [[PreviewRoutingNormalization]], [[DetailColorThemeUnification]]
+

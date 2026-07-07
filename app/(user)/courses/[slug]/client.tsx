@@ -294,7 +294,7 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
           <div className="flex-1 space-y-4 w-full">
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">
+                <Badge className="bg-green-700 hover:bg-green-700 text-white font-semibold">
                   AI 강좌
                 </Badge>
                 {courseDetail.user_subscribed && (
@@ -331,7 +331,7 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
                   {hasNextCard ? (
                     <Button
                       onClick={() => router.push(`/learn/${courseDetail.slug}?card=${nextCardIndex || 1}`)}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white flex-1 gap-2"
+                      className="bg-green-700 hover:bg-green-700 text-white flex-1 gap-2"
                     >
                       <PlayCircle className="w-4 h-4" />
                       이어서 학습하기
@@ -349,7 +349,7 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
                 <Button
                   onClick={handleSubscribe}
                   disabled={registering}
-                  className="w-full md:w-auto px-8 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold gap-2"
+                  className="w-full md:w-auto px-8 bg-green-700 hover:bg-green-700 text-white font-semibold gap-2"
                 >
                   {registering ? '신청 중...' : '강좌 신청하기'}
                   <ArrowRight className="w-4 h-4" />
@@ -374,7 +374,7 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
           <div className="flex items-center gap-4 shrink-0 self-start">
             <div className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
-              <span>순차학습: <strong className={courseDetail.sequential_play ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-600 dark:text-zinc-400"}>{courseDetail.sequential_play ? "필수" : "선택"}</strong></span>
+              <span>순차학습: <strong className={courseDetail.sequential_play ? "text-green-700 dark:text-green-300" : "text-zinc-600 dark:text-zinc-400"}>{courseDetail.sequential_play ? "필수" : "선택"}</strong></span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
@@ -389,7 +389,7 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
         <Card className="border border-emerald-100 dark:border-emerald-950 bg-white dark:bg-zinc-900 shadow-sm overflow-hidden">
           <CardHeader className="pb-3 px-6 md:px-8">
             <CardTitle className="text-lg font-bold flex items-center gap-2">
-              <Bot className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              <Bot className="w-5 h-5 text-green-700 dark:text-green-300" />
               학습 AI 튜터 설정 및 통계
             </CardTitle>
             <CardDescription className="text-xs">
@@ -427,7 +427,7 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between text-xs border-b pb-2">
                       <span className="font-semibold text-zinc-700 dark:text-zinc-300">선택된 에이전트 상세 프로필</span>
-                      <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px]">
+                      <Badge className="bg-green-700 hover:bg-green-700 text-white text-[10px]">
                         {assignedAgent?.agent_type === 'llm' ? 'LLM 모드' : '하네스 모드'}
                       </Badge>
                     </div>
@@ -449,7 +449,7 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
       <Card className="border border-emerald-100 dark:border-emerald-950 bg-white dark:bg-zinc-900 overflow-hidden shadow-sm">
         <CardHeader className="pt-0 px-6 md:px-8">
           <CardTitle className="text-lg font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
-            <BookOpen className="w-5 h-5 text-emerald-600" />
+            <BookOpen className="w-5 h-5 text-green-700" />
             버전 및 변경 이력
           </CardTitle>
           <CardDescription className="text-zinc-500 text-xs">
@@ -459,7 +459,7 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
         <CardContent className="pt-2 md:pt-4 pb-0 px-6 md:px-8 space-y-4">
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">현재 버전:</span>
-            <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-mono hover:bg-emerald-100 border-none">
+            <Badge className="bg-green-700 text-white dark:bg-green-950 dark:text-green-300 font-mono border-none">
               v{courseDetail.version || '1.0.0'}
             </Badge>
           </div>
@@ -475,7 +475,7 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
       {/* Curriculum Timeline */}
       <div className="space-y-6 pt-8">
         <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
-          <BookOpen className="w-5 h-5 text-emerald-600" />
+          <BookOpen className="w-5 h-5 text-green-700" />
           커리큘럼
         </h2>
 
@@ -496,7 +496,7 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
               return (
                 <div key={index} className="relative group space-y-4">
                   {/* Timeline node (Chapter) */}
-                  <div className="absolute -left-[35px] md:-left-[43px] top-1.5 w-6 h-6 md:w-8 md:h-8 rounded-full border-4 flex items-center justify-center font-bold text-xs bg-white dark:bg-zinc-900 border-emerald-600 text-emerald-600">
+                  <div className="absolute -left-[35px] md:-left-[43px] top-1.5 w-6 h-6 md:w-8 md:h-8 rounded-full border-4 flex items-center justify-center font-bold text-xs bg-white dark:bg-zinc-900 border-green-700 text-green-700">
                     {index + 1}
                   </div>
 
@@ -508,9 +508,9 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
                       <h3 className="font-bold text-lg text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
                         {chapter.title}
                         {isExpanded ? (
-                          <ChevronDown className="w-4 h-4 text-zinc-400 group-hover/header:text-emerald-600 transition-colors" />
+                          <ChevronDown className="w-4 h-4 text-zinc-400 group-hover/header:text-green-700 transition-colors" />
                         ) : (
-                          <ChevronRight className="w-4 h-4 text-zinc-400 group-hover/header:text-emerald-600 transition-colors" />
+                          <ChevronRight className="w-4 h-4 text-zinc-400 group-hover/header:text-green-700 transition-colors" />
                         )}
                       </h3>
                       <p className="text-sm text-muted-foreground">{chapter.description}</p>
@@ -541,7 +541,7 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <h4 className="font-semibold text-sm text-zinc-900 dark:text-zinc-50">{section.title}</h4>
                                   {isCompleted ? (
-                                    <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-white text-[10px] px-1.5 py-0">
+                                    <Badge variant="default" className="bg-zinc-400 text-white text-[10px] px-1.5 py-0">
                                       완료
                                     </Badge>
                                   ) : isLocked ? (
@@ -549,7 +549,7 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
                                       잠금
                                     </Badge>
                                   ) : isStarted ? (
-                                    <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 hover:bg-emerald-100 text-[10px] px-1.5 py-0">
+                                    <Badge variant="secondary" className="bg-green-700 text-white text-[10px] px-1.5 py-0">
                                       학습 중
                                     </Badge>
                                   ) : (
@@ -570,7 +570,7 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
                                     disabled={isLocked}
                                     className={isCompleted 
                                       ? 'border-zinc-300 text-zinc-700 hover:bg-zinc-50 text-xs h-8' 
-                                      : 'bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-8'
+                                      : 'bg-green-700 hover:bg-green-700 text-white text-xs h-8'
                                     }
                                   >
                                     {isCompleted ? '다시 보기' : isStarted ? '이어서 학습' : '학습 시작'}
