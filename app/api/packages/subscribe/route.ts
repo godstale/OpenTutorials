@@ -100,7 +100,7 @@ export async function GET(request: NextRequest) {
         if (progress.completed) {
           completedCourses = totalCourses;
         } else {
-          completedCourses = progress.max_card ?? progress.last_card ?? 0;
+          completedCourses = Math.max(0, (progress.max_card ?? progress.last_card ?? 1) - 1);
         }
       }
 

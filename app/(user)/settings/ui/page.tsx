@@ -2,10 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Sparkles, Palette, Type } from 'lucide-react';
+import { Sparkles, Palette, Type, RotateCcw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function SettingsUiPage() {
   const [font, setFont] = useState<string>('default');
+
+  const handleResetWidths = () => {
+    localStorage.removeItem('open-tutorials-toc-width');
+    localStorage.removeItem('open-tutorials-tutor-width');
+    alert('학습 화면의 목차 및 AI 튜터 창 크기 설정이 초기화되었습니다. 다음 학습 진입 시 기본 크기로 적용됩니다.');
+  };
 
   useEffect(() => {
     const savedFont = localStorage.getItem('font-preference') || 'default';
@@ -100,6 +107,25 @@ export default function SettingsUiPage() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Layout Width Reset Section */}
+          <div className="space-y-3 pt-6 border-t border-zinc-100 dark:border-zinc-800">
+            <div className="flex items-center gap-1.5 text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+              <RotateCcw className="size-4 text-zinc-500" />
+              <span>학습 화면 레이아웃 초기화</span>
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              강좌 학습 페이지에서 드래그하여 조절한 목차 영역 및 AI 튜터 영역의 너비 설정을 초기 상태(기본 크기)로 리셋합니다.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleResetWidths}
+              className="mt-2 text-zinc-700 dark:text-zinc-300 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 hover:border-rose-200"
+            >
+              창 너비 설정 초기화
+            </Button>
           </div>
         </CardContent>
       </Card>

@@ -45,12 +45,13 @@ export async function POST(request: NextRequest) {
     const { course_id, last_card, completed } = body;
     console.log('[Progress API] POST progress update request:', { course_id, last_card, completed, user_id: user.id });
 
-    // Fetch existing progress to compute max_card
+    // Fetch existing progress to compute max_card and completed
     let oldMax = 0;
+    let oldCompleted = false;
     try {
       const { data: existingProgress } = await supabase
         .from('user_progress')
-        .select('max_card, last_card')
+        .select('max_card, last_card, completed')
         .eq('user_id', user.id)
         .eq('course_id', course_id)
         .maybeSingle();
@@ -58,12 +59,14 @@ export async function POST(request: NextRequest) {
       if (existingProgress) {
         // Fallback to last_card if max_card is not defined
         oldMax = existingProgress.max_card ?? existingProgress.last_card ?? 0;
+        oldCompleted = existingProgress.completed ?? false;
       }
     } catch (err) {
       console.warn('[Progress API] Could not fetch existing progress for max_card calculation:', err);
     }
 
     const newMax = Math.max(oldMax, last_card ?? 0);
+    const finalCompleted = completed !== undefined ? completed : oldCompleted;
 
     let data = null;
     let error = null;
@@ -77,7 +80,7 @@ export async function POST(request: NextRequest) {
           course_id,
           last_card: last_card ?? 0,
           max_card: newMax,
-          completed: completed ?? false,
+          completed: finalCompleted,
           updated_at: new Date().toISOString()
         }, { onConflict: 'user_id,course_id' })
         .select()
@@ -95,7 +98,7 @@ export async function POST(request: NextRequest) {
             user_id: user.id,
             course_id,
             last_card: last_card ?? 0,
-            completed: completed ?? false,
+            completed: finalCompleted,
             updated_at: new Date().toISOString()
           }, { onConflict: 'user_id,course_id' })
           .select()
@@ -112,7 +115,7 @@ export async function POST(request: NextRequest) {
           user_id: user.id,
           course_id,
           last_card: last_card ?? 0,
-          completed: completed ?? false,
+          completed: finalCompleted,
           updated_at: new Date().toISOString()
         }, { onConflict: 'user_id,course_id' })
         .select()

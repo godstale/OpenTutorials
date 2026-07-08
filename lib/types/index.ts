@@ -180,6 +180,7 @@ export interface Course {
   created_at: string;
   updated_at: string;
   toc?: TocNode[];
+  cards?: string[];
 }
 
 export interface UserProgress {

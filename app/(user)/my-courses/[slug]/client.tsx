@@ -222,11 +222,20 @@ export default function MyCourseDetailPageClient({
   
   // currentCard corresponds to progress.max_card or progress.last_card
   const currentCard = progress.max_card ?? progress.last_card ?? 0;
-  const percent = Math.min(100, Math.round((currentCard / totalCards) * 100));
+  
+  const maxUnlockedIndex = progress.completed
+    ? totalCards - 1
+    : Math.max(0, (progress.max_card ?? progress.last_card ?? 1) - 1);
 
-  // A card is unlocked if its 0-based index <= currentCard (or index < currentCard + 1)
+  const completedCards = progress.completed
+    ? totalCards
+    : Math.max(0, (progress.max_card ?? progress.last_card ?? 1) - 1);
+
+  const percent = totalCards > 0 ? Math.min(100, Math.round((completedCards / totalCards) * 100)) : 0;
+
+  // A card is unlocked if its 0-based index <= maxUnlockedIndex
   const isLessonUnlocked = (index: number) => {
-    return index <= currentCard;
+    return index <= maxUnlockedIndex;
   };
 
   const handleCancelSubscription = async () => {

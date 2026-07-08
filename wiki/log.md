@@ -30,6 +30,63 @@ Ran lint. See lint-report.md for details.
 
 <!-- Append-only. 최신 항목을 위에 추가. -->
 
+## 2026-07-08 (4th Session)
+
+- **[FEATURE] 설정 화면 최상단 우측에 [전체 리셋] 기능 및 에이전트 설정 내 최대 토큰 수(Max Tokens) 기능 추가**
+  - **수정/갱신 파일**:
+    - [layout.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/settings/layout.tsx) — 설정 레이아웃 상단 우측에 `전체 리셋` 버튼을 배치했습니다. 버튼 클릭 시 폰트, 화면 너비 설정, 에이전트 토큰, 체크포인트 우회 설정 등 모든 `localStorage` 설정값을 삭제한 뒤 새로고침합니다.
+    - [page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/settings/agent/page.tsx) — 준비 중 상태였던 기본 에이전트 설정 카드를 활성화하고, 최대 토큰 수(Max Tokens)를 변경할 수 있는 Select(드롭다운) UI를 구현했습니다. 변경 시 로컬 스토리지를 통해 전역 설정에 즉시 저장되며 토스트 메시지로 상태를 피드백합니다.
+    - [use-agent-settings.ts](file:///C:/Workspace/Projects/OpenTutorials/hooks/use-agent-settings.ts) — (신규) 최대 토큰 수를 `localStorage`에 저장 및 로드하고, 기본값으로 `'16k'`를 제공하는 `useAgentSettings` 커스텀 훅을 새로 설계하여 추가했습니다.
+  - **작업 내용**:
+    - "설정 > 에이전트" 화면에 최대 토큰(Max Tokens) 설정을 지정할 수 있도록 4k, 8k, 16k, 32k, 64k, 128k 등의 크기를 선택할 수 있는 구조를 마련했습니다. 기본값은 16k로 자동 설정되며, 앱 전체에서 참조할 수 있는 공통 훅 형태로 파라미터화했습니다.
+    - 설정 페이지 어디서든 저장된 상태(localStorage 값들)를 초기화 상태로 복구할 수 있는 통합 `전체 리셋` 트리거 버튼을 헤더 영역에 구현했습니다.
+
+## 2026-07-08 (3rd Session)
+
+- **[BUGFIX] 카드 개별 조회 시 학습 완료 오판정 버그 수정 및 진도율 동기화**
+  - **수정/갱신 파일**:
+    - [client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx) — 학습 화면 내 좌측 목차(TOC) 컴포넌트(`LearnTocNodeView` 및 플랫 리스트 뷰)에서 단순 해제(Unlocked)되었으나 아직 학습 중인 활성 카드가 체크 표시로 완료(Completed) 상태처럼 렌더링되던 조건문을 수정했습니다. 이제는 `idx < maxUnlockedIndex`인 카드만 명시적으로 완료 표시됩니다.
+    - [client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/[slug]/client.tsx) — 강좌 상세화면에서 진도율(`completedSubcourses`)을 계산할 때 현재 활성 카드를 완료 건수에서 제외하도록 `(max_card ?? last_card ?? 1) - 1`로 보정했습니다. 이어서 학습하기 네비게이션 시 `nextCardIndex + 1` 단계로 올바르게 넘어가게 수정했습니다.
+    - [client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/my-courses/[slug]/client.tsx) — 나의 강좌 상세 화면의 진도율 및 챕터 잠금 해제 판단 시에도 `max_card - 1` 값을 이용하도록 정렬하고 잠금 해제 범위를 동기화했습니다.
+    - [page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/dashboard/page.tsx) — 대시보드 진행률 계산 시 동일하게 `max_card - 1` 기반의 실시간 카드 진행율을 표기하도록 수정했습니다.
+    - [route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/packages/subscribe/route.ts) — 구독 강좌 패키지 목록 API 내의 `completedCourses`도 활성 카드 보정을 반영하여 계산하도록 수정했습니다.
+  - **작업 내용**:
+    - 강좌 시작 또는 카드 이동 시, 현재 활성화되어 아직 학습을 완료하지 않은 카드(Next/완료 버튼을 누르지 않은 단계)가 Completed로 카운트되어 체크마크가 찍히고 진도율이 1단계 과대평가되던 오작동을 해결했습니다.
+    - 모든 진도 관련 뷰(대시보드, 내 강좌 목록, 강좌 상세, 학습 창 TOC)가 동일한 `max_card - 1` 규칙을 적용해 모순 없는 일관적인 진행률을 출력하도록 고도화했습니다.
+
+## 2026-07-08 (2nd Session)
+
+- **[BUGFIX] 강좌 학습 완료 조건 수정 및 강좌 상세 학습 진도율 리셋 기능 구현**
+  - **수정/갱신 파일**:
+    - [client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx) — `saveProgress`에 명시적인 `isCompleted` 파라미터를 추가하여, 단순히 마지막 카드로 화면을 넘기거나 조회하는 것만으로는 강좌가 완료 처리되지 않도록 수정했습니다. 오직 마지막 카드의 "다음" 버튼(학습 완료)을 명시적으로 누르거나 체크포인트를 통과할 때만 완료로 설정됩니다.
+    - [route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/courses/progress/route.ts) — `/api/courses/progress` POST API에서 `completed` 파라미터가 누락되거나 제공되지 않았을 경우, 기존 수강 기록의 완료 여부를 덮어쓰지 않고 안전하게 유지하도록 방어적인 예외 처리를 반영했습니다.
+    - [client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/[slug]/client.tsx) — 강좌 상세 페이지 최상단 카드의 "이어서 학습하기" 버튼 옆에 "학습 진도율 리셋" 버튼을 추가했습니다. 클릭 시 `DELETE /api/courses/progress` API를 호출하여 강좌 신청 상태(구독)는 유지하되 진도율(수강 이력)만 깔끔하게 초기화합니다.
+  - **작업 내용**:
+    - 마지막 카드(인덱스 `totalCards - 1`)를 조회하자마자 완료(`completed: true`) 상태로 넘어가던 진도율 판정 오류를 해결했습니다.
+    - 수강 이력(진도율)만 깨끗이 리셋하여 처음부터 다시 수강할 수 있도록 "학습 진도율 리셋" 기능을 디자인 시스템(`lucide-react` RotateCcw, Shadcn Button 등)에 맞추어 강좌 상세 화면에 추가했습니다.
+
+## 2026-07-08
+
+- **[FEATURE] 강좌 학습 페이지 너비 값 초기화, 잠금 단계식 진도(Lock-step progress) 및 체크포인트 건너뛰기 우회 설정 구현**
+  - **수정/갱신 파일**:
+    - [client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx) — 카드를 보는 행위만으로는 학습 완료가 되지 않도록 방지하고, 오직 "다음" 버튼 또는 체크포인트 QnA를 통과했을 때만 해제 및 진도를 올리게 변경했으며, 우회 설정이 켜진 경우 체크포인트를 건너뛰도록 연동했습니다.
+    - [page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/settings/ui/page.tsx) — 리사이즈된 목차 및 AI 튜터 창의 너비 상태를 리셋할 수 있는 초기화 버튼을 추가했습니다.
+    - [page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/settings/course/page.tsx) — 강좌 학습 설정 메뉴를 새로이 구현하여 사용자가 체크포인트 단계를 통째로 건너뛰어 강제 잠금 해제할 수 있는 토글 옵션을 신설했습니다.
+  - **작업 내용**:
+    - 학습 완료 조건을 엄격화하여, 사용자가 단순히 TOC에서 카드를 선택하는 동작만으로 진도가 업데이트되는 현상을 수정했습니다. 이제는 "다음" 버튼이나 체크포인트 QnA 성공/스킵 시에만 진도가 갱신됩니다.
+    - `설정 > UI` 메뉴 하단에 학습 화면 레이아웃(너비) 초기화 섹션을 마련해 언제든 기본 크기로 복구할 수 있게 했습니다.
+    - `설정 > 강좌` 메뉴에 "체크포인트 강제 건너뛰기" 기능을 신설하여, 활성화 시 모든 체크포인트를 검사 없이 즉시 패스할 수 있는 장치를 연동하였습니다.
+
+- **[FEATURE] 강좌 학습 페이지 3단 컬럼 리사이즈(드래그 너비 조절) 기능 구현**
+  - **수정/갱신 파일**:
+    - [client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx) — 목차(TOC)와 AI 튜터(Tutor) 패널의 너비 조절을 위한 마우스/포인터 드래그 핸들러를 추가하고, 사용자의 너비 설정을 `localStorage`에 저장하여 유지하며, 레이아웃에 따른 동적 크기를 렌더링하도록 수정했습니다.
+  - **작업 내용**:
+    - 학습 페이지 내 목차 패널, 메인 컨텐츠 영역, AI 튜터 패널 등 3개의 열에 대해 사용자가 드래그를 통해 실시간으로 조절할 수 있도록 `PointerEvent` 기반의 Resizer Handle(구분선)을 추가하였습니다.
+    - 사용자가 지정한 각각의 너비는 `localStorage`(`open-tutorials-toc-width`, `open-tutorials-tutor-width`)에 자동 저장되어 페이지를 다시 열었을 때도 이전 설정 그대로 유지됩니다.
+    - 기존 `sendMessage` 함수에 선언된 미사용 섀도잉 변수(`fallbackTocText`)를 제거하여 린트 오류도 함께 해소했습니다.
+
+
+
 ## 2026-07-07
 
 - **[RELEASE] v0.3.1 버전 릴리즈 처리 (Changelog 및 README 업데이트, package.json 버전 범프)**

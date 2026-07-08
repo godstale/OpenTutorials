@@ -753,24 +753,14 @@
   ],
   "user_progress": [
     {
-      "id": "84794a50-d3f1-4b89-9dd9-6518318e34b4",
+      "id": "c6825a14-279d-44e8-8e5e-b8b931fca338",
       "user_id": "local-user-id",
       "course_id": "b4409acb-13b0-4985-a2ea-6a0c8d4bd583",
-      "last_card": 73,
-      "max_card": 77,
+      "last_card": 5,
+      "max_card": 5,
       "completed": false,
-      "updated_at": "2026-07-07T14:34:32.616Z",
-      "created_at": "2026-07-06T13:32:13.669Z"
-    },
-    {
-      "id": "752aa5f0-e49f-4085-b057-703159aee926",
-      "user_id": "local-user-id",
-      "course_id": "a7f0a8eb-cd88-408b-b20e-da7f82101528",
-      "last_card": 1,
-      "max_card": 3,
-      "completed": false,
-      "updated_at": "2026-07-07T14:47:01.330Z",
-      "created_at": "2026-07-06T13:30:30.235Z"
+      "updated_at": "2026-07-08T14:05:42.213Z",
+      "created_at": "2026-07-08T13:56:14.090Z"
     }
   ],
   "user_external_agents": [
@@ -785,7 +775,7 @@
       "user_id": "local-user-id",
       "status": "online",
       "created_at": "2026-07-04T10:48:32.215Z",
-      "updated_at": "2026-07-07T13:30:16.195Z",
+      "updated_at": "2026-07-08T13:23:59.082Z",
       "agent_type": "harness",
       "env_type": "cloud",
       "agent_program": "hermes"
@@ -799,9 +789,9 @@
       "is_tutor_configured": false,
       "agent_type": "llm",
       "user_id": "local-user-id",
-      "status": "offline",
+      "status": "online",
       "created_at": "2026-07-05T05:19:15.147Z",
-      "updated_at": "2026-07-07T14:40:32.929Z",
+      "updated_at": "2026-07-08T14:05:27.664Z",
       "env_type": "local",
       "agent_program": "lmstudio"
     },
@@ -819,7 +809,7 @@
       "user_id": "local-user-id",
       "status": "online",
       "created_at": "2026-07-05T08:37:49.875Z",
-      "updated_at": "2026-07-07T14:35:56.434Z"
+      "updated_at": "2026-07-08T13:21:10.255Z"
     }
   ],
   "user_external_agent_messages": [
@@ -1078,38 +1068,6 @@
       "content": "현재 사용 중인 LLM 모델 정보와 설정된 모델 목록을 확인해 보겠습니다.\n\n현재 제가 사용 중인 LLM 모델과 선택 가능한 모델 정보입니다.\n\n**현재 사용 중인 모델:**\n- `deepseek-v4-flash` (DeepSeek V4 Flash)\n- 제공사: DeepSeek (`https://api.deepseek.com/v1`)\n- API 모드: Chat Completions\n\n**같은 제공사(DeepSeek) 내에서 선택 가능한 모델:**\n| 모델 ID | 표시 이름 |\n|---------|----------|\n| `deepseek-v4-flash` | DeepSeek V4 Flash (현재 사용 중) |\n| `deepseek-v4-pro` | DeepSeek V4 Pro |\n\n**다른 제공사(설정만 되어 있으면 사용 가능):**\nHermes 에이전트는 config.yaml에서 `providers:` 항목만 추가하면 다양한 LLM 제공사로 전환할 수 있습니다. 현재는 DeepSeek만 설정되어 있지만, OpenRouter, OpenAI, Anthropic, Google 등도 API 키와 base_url만 추가하면 사용할 수 있습니다.\n\n`hermes config set model.default <model-id>`와 `hermes config set model.provider <provider-name>`을 통해 전환할 수 있습니다.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} -->",
       "created_at": "2026-07-05T08:23:04.546Z",
       "updated_at": "2026-07-05T08:23:04.547Z"
-    },
-    {
-      "id": "616cf215-fca9-45ca-beda-ec1863a1eb78",
-      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
-      "role": "assistant",
-      "content": "먼저 이 강좌를 위한 전용 폴더가 이미 있는지 확인하겠습니다.\n\n폴더는 존재하지만 파일이 너무 작습니다(14바이트). 내용을 확인해 보겠습니다.\n\n14바이트에 내용이 \"404: Not Found\"입니다. 이전 다운로드 시도가 실패했습니다. 이제 새로 다운로드하겠습니다.\n\n서버에 연결할 수 없습니다(localhost:3000). 현재 서버 상태를 확인해 보겠습니다.\n\n현재 상태를 보고드립니다.\n\n**상태 요약:**\n- 강좌 폴더: `/home/ubuntu/workspaces/courses/glm52-video-course/` — 생성되어 있음\n- 기존 resource.md 파일: 내용이 \"404: Not Found\"로, 이전 다운로드 시도 실패\n- 현재 시도: `http://localhost:3000/api/courses/glm52-video-course/resource` 에 접속했으나 **서버에 연결할 수 없음** (curl exit code 7, port 3000에 리스닝 중인 프로세스 없음)\n\n**원인:** 강좌 자료를 제공하는 API 서버(localhost:3000)가 현재 실행 중이지 않습니다. 해당 서버를 먼저 시작해야 다운로드가 가능합니다.\n\n다운로드가 완료되지 않았으므로, 다른 학습 질문에 답변하기 전에 이 문제를 해결해야 합니다. 서버를 어떻게 시작할 수 있는지 알려주시거나, 서버를 직접 띄워 주시면 다시 다운로드하겠습니다.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} -->",
-      "created_at": "2026-07-05T10:51:27.001Z",
-      "updated_at": "2026-07-05T10:51:27.001Z"
-    },
-    {
-      "id": "4e855d32-9d2e-4ba1-a798-d6fd6afab4eb",
-      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
-      "role": "user",
-      "content": "[시스템 점검] 현재 강좌 \"사물이 대화하는 방법, 통신 방법 알아보기\"의 학습 자료가 성공적으로 다운로드되고 분석되었는지 확인해 주세요. \n다운로드 주소: http://localhost:3000/api/courses/iot-communication-ch01/resource\n사용자가 여러 강좌를 동시에 수강할 수 있으므로, 반드시 이 강좌를 위한 개별 폴더(예: workspaces/courses/iot-communication-ch01 또는 이에 상응하는 고유 경로)를 생성하여 그 안에서 다운로드 및 분석 작업을 수행해 주셔야 합니다.\n만약 아직 강좌 파일을 다운로드하고 분석하는 작업이 완료되지 않았다면, 다른 학습 질문에 답하기 전에 이 작업을 가장 우선하여 완료하고 그 결과를 알려주세요.\n\n상태 확인 후, 답변의 마지막에 반드시 다음 형식의 히든 메시지를 포함해 주세요:\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} --> (다운로드 완료 시) 또는\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} --> (미완료 시)}",
-      "created_at": "2026-07-05T10:52:42.025Z",
-      "updated_at": "2026-07-05T10:52:42.025Z"
-    },
-    {
-      "id": "33eaf756-1988-482e-aa48-453c7e82b37d",
-      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
-      "role": "assistant",
-      "content": "\n\n강좌 전용 폴더가 아직 생성되지 않았습니다. 지금 다운로드 및 분석을 진행하겠습니다.\n\n파일이 이미 존재합니다. 내용을 확인해 보겠습니다.\n\n강좌 자료 상태를 확인했습니다.\n\n강좌 폴더  `/home/ubuntu/workspaces/courses/iot-communication-ch01/` 에 이미 `resource.md` 파일이 존재하며, 크기는 21,491바이트(349줄)로 정상적으로 다운로드되어 있습니다. 강좌명은 \"사물이 대화하는 방법, 통신 방법 알아보기\"이며, 아두이노 IoT 장치 개발에 필요한 6가지 핵심 통신 방법(USB, 이더넷, 적외선, RF, 블루투스, WiFi)에 대한 내용을 담고 있습니다.\n\n다운로드 및 분석이 이미 완료된 상태이므로, 언제든지 학습 질문에 답변할 준비가 되어 있습니다.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} -->",
-      "created_at": "2026-07-05T10:53:05.867Z",
-      "updated_at": "2026-07-05T10:53:05.867Z"
-    },
-    {
-      "id": "be5c5c87-ce19-419a-91ad-2194d9fefef9",
-      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
-      "role": "user",
-      "content": "[시스템 점검] 현재 강좌 \"GLM-5.2 분석 강좌\"의 학습 자료가 성공적으로 다운로드되고 분석되었는지 확인해 주세요. \n다운로드 주소: http://localhost:3000/api/courses/glm52-video-course/resource\n사용자가 여러 강좌를 동시에 수강할 수 있으므로, 반드시 이 강좌를 위한 개별 폴더(예: workspaces/courses/glm52-video-course 또는 이에 상응하는 고유 경로)를 생성하여 그 안에서 다운로드 및 분석 작업을 수행해 주셔야 합니다.\n만약 아직 강좌 파일을 다운로드하고 분석하는 작업이 완료되지 않았다면, 다른 학습 질문에 답하기 전에 이 작업을 가장 우선하여 완료하고 그 결과를 알려주세요.\n\n상태 확인 후, 답변의 마지막에 반드시 다음 형식의 히든 메시지를 포함해 주세요:\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} --> (다운로드 완료 시) 또는\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} --> (미완료 시)}",
-      "created_at": "2026-07-05T10:56:08.707Z",
-      "updated_at": "2026-07-05T10:56:08.707Z"
     },
     {
       "id": "49f83f8a-19f6-44fd-a4f8-1f8e06fa9483",
@@ -1878,6 +1836,70 @@
       "content": "네, 시스템 점검을 수행하겠습니다. 강좌 전용 폴더와 다운로드 상태를 먼저 확인하겠습니다.\n\n디렉터리는 존재하지만, 파일이 하나만 있습니다. 상태를 확인해 보겠습니다.\n\n상태 파일을 확인했습니다. 이전 시도에서 다운로드가 실패했었다고 기록되어 있습니다. 현재 상태를 재확인해 보겠습니다.\n\n---\n\n**시스템 점검 결과 — 신경망과 LLM 개론 강좌 자료**\n\n상태: 미완료 (다운로드 불가)\n\n**상세 내역:**\n- 전용 디렉터리: `/home/ubuntu/workspaces/courses/neutral-network-and-llm/` ✅ (생성되어 있음)\n- 강좌 자료 파일: 없음 (status.md만 존재)\n- 다운로드 URL: `http://localhost:3000/api/courses/neutral-network-and-llm/resource`\n- 장애 원인: **localhost:3000 포트에서 수신 중인 서버가 없음** (connection refused)\n\n**현재 수신 중인 포트 목록:**\n| 포트 | 서비스 | 상태 |\n|------|--------|------|\n| 3000 | 강좌 API 서버 | ❌ 미실행 |\n| 8642 | Hermes API | ✅ 실행 중 |\n| 9120 | Hermes Dashboard | ✅ 실행 중 |\n| 9119 | Nginx (리버스 프록시) | ✅ 실행 중 |\n\n3000번 포트에서 강좌 자료를 제공하는 API 서버가 실행되고 있지 않습니다. 이전 점검(2026-07-07)과 동일한 상태로, 아직 서버가 구동되지 않았습니다.\n\n**필요한 조치:** 강좌 자료 API 서버(localhost:3000)를 먼저 구동해 주시면, 즉시 다운로드 및 분석을 완료하겠습니다.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} -->",
       "created_at": "2026-07-07T14:47:20.047Z",
       "updated_at": "2026-07-07T14:47:20.047Z"
+    },
+    {
+      "id": "a79ece0d-3079-46fd-a904-00ffb3d3a520",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "user",
+      "content": "[시스템 점검] 현재 강좌 \"신경망과 LLM 개론\"의 학습 자료가 성공적으로 다운로드되고 분석되었는지 확인해 주세요. \n다운로드 주소: http://localhost:3000/api/courses/neutral-network-and-llm/resource\n사용자가 여러 강좌를 동시에 수강할 수 있으므로, 반드시 이 강좌를 위한 개별 폴더(예: workspaces/courses/neutral-network-and-llm 또는 이에 상응하는 고유 경로)를 생성하여 그 안에서 다운로드 및 분석 작업을 수행해 주셔야 합니다.\n만약 아직 강좌 파일을 다운로드하고 분석하는 작업이 완료되지 않았다면, 다른 학습 질문에 답하기 전에 이 작업을 가장 우선하여 완료하고 그 결과를 알려주세요.\n\n상태 확인 후, 답변의 마지막에 반드시 다음 형식의 히든 메시지를 포함해 주세요:\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} --> (다운로드 완료 시) 또는\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} --> (미완료 시)}",
+      "created_at": "2026-07-08T12:04:13.481Z",
+      "updated_at": "2026-07-08T12:04:13.481Z"
+    },
+    {
+      "id": "843e2295-7fa1-4f8b-a2c8-bd3ddc1a45ab",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "assistant",
+      "content": "Let me check if the course materials already exist in the workspace.\n\n아직 다운로드되지 않았습니다. 지금 다운로드하여 분석하겠습니다.\n\n서버에 연결할 수 없습니다. 서버 상태를 확인해 보겠습니다.\n\n현재 상황을 정리해 드리겠습니다.\n\n**신경망과 LLM 개론 - 강좌 자료 다운로드 상태**\n- 폴더 생성: 완료 (`/home/ubuntu/workspaces/courses/neutral-network-and-llm/`)\n- 다운로드: 실패\n- 원인: 강좌 자료를 제공하는 API 서버(`http://localhost:3000`)가 실행 중이지 않습니다.\n- 현재 실행 중인 서비스 포트: Hermes API (8642), Dashboard (9120), Nginx (9119) — 3000번 포트는 열려 있지 않습니다.\n\n이 API 서버는 별도로 구동해야 하는 것으로 보입니다. 이미 이전 시도(7월 7일)에서도 동일한 문제가 있었습니다.\n\n3000번 포트에서 강좌 API 서버를 구동해 주시면 즉시 다운로드하여 분석을 완료하겠습니다.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} -->",
+      "created_at": "2026-07-08T12:04:41.743Z",
+      "updated_at": "2026-07-08T12:04:41.743Z"
+    },
+    {
+      "id": "11276e62-f35a-4266-9f38-83acae1497fa",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "user",
+      "content": "[시스템 점검] 현재 강좌 \"신경망과 LLM 개론\"의 학습 자료가 성공적으로 다운로드되고 분석되었는지 확인해 주세요. \n다운로드 주소: http://localhost:3000/api/courses/neutral-network-and-llm/resource\n사용자가 여러 강좌를 동시에 수강할 수 있으므로, 반드시 이 강좌를 위한 개별 폴더(예: workspaces/courses/neutral-network-and-llm 또는 이에 상응하는 고유 경로)를 생성하여 그 안에서 다운로드 및 분석 작업을 수행해 주셔야 합니다.\n만약 아직 강좌 파일을 다운로드하고 분석하는 작업이 완료되지 않았다면, 다른 학습 질문에 답하기 전에 이 작업을 가장 우선하여 완료하고 그 결과를 알려주세요.\n\n상태 확인 후, 답변의 마지막에 반드시 다음 형식의 히든 메시지를 포함해 주세요:\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} --> (다운로드 완료 시) 또는\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} --> (미완료 시)}",
+      "created_at": "2026-07-08T13:21:10.283Z",
+      "updated_at": "2026-07-08T13:21:10.283Z"
+    },
+    {
+      "id": "e410cd10-9083-4eda-b29f-05ddcf830658",
+      "agent_id": "c3111115-c54b-48a3-919a-3cec5ec77627",
+      "role": "assistant",
+      "content": "\n\n아직 다운로드되지 않았습니다. 지금 바로 진행하겠습니다.\n\n현재 상태를 종합적으로 확인한 결과입니다.\n\n**상태: 다운로드 실패 - 서버에 연결할 수 없음**\n\n다음과 같은 이유로 강좌 자료를 다운로드할 수 없었습니다.\n\n1. 전용 코스 폴더 생성 완료: `/home/ubuntu/workspaces/courses/neutral-network-and-llm/` (생성됨)\n2. 다운로드 시도: `http://localhost:3000/api/courses/neutral-network-and-llm/resource`\n3. **문제**: localhost:3000 서버가 실행 중이지 않습니다 (connection refused).\n4. 대체 시도:\n   - Dashboard (9120): Unauthorized\n   - API Server (8642): 404 Not Found\n5. 기존 캐시: 이 강좌의 이전 다운로드 기록이 없습니다. (workspaces/courses에 있는 다른 강좌들은 arduino, iot, glm52 뿐입니다.)\n\n**다운로드를 완료하려면 localhost:3000에서 강좌 자료를 제공하는 서버를 먼저 실행해야 합니다.** 예를 들어, `node`나 `python -m http.server` 등의 방식으로 해당 API 엔드포인트를 서빙하는 웹 서버를 띄워주시면 다시 시도하겠습니다.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} -->",
+      "created_at": "2026-07-08T13:21:37.529Z",
+      "updated_at": "2026-07-08T13:21:37.529Z"
+    },
+    {
+      "id": "f4ee2f42-b0f7-4466-a7e7-1a649d422abc",
+      "agent_id": "b24155af-379b-4d87-a071-692461f2e01b",
+      "role": "user",
+      "content": "HC-11 433MHz RF 모듈 2개를 이용해서 통신하는 가장 기본적인 아두이노 코드를 작성해줘",
+      "created_at": "2026-07-08T13:25:42.390Z",
+      "updated_at": "2026-07-08T13:25:42.390Z"
+    },
+    {
+      "id": "63debacd-a968-4d92-b934-55772b5ca2b7",
+      "agent_id": "b24155af-379b-4d87-a071-692461f2e01b",
+      "role": "assistant",
+      "content": "강의 내용 중 **HC-11 모듈을 이용한 무선 통신** 파트를 공부하고 계시는군요! HC-11은 시리얼(Serial) 통신 방식을 사용하기 때문에, 아두이노의 `SoftwareSerial` 라이브러리를 사용하면 하드웨어 시리얼(0, 1번 핀)을 방해하지 않고 편리하게 통신을 구현할 수 있습니다.\n\n가장 기본적인 **데이터 송신용(Transmitter)**과 **데이터 수신용(Receiver)** 코드를 나누어 작성해 드립니다.\n\n---\n\n### 1. 하드웨어 연결 방법 (공통)\n두 장치 모두 동일한 방식으로 연결합니다.\n\n| HC-11 핀 | 아두이노 핀 | 비고 |\n| :--- | :--- | :--- |\n| **VCC** | **5V** | 전원 공급 |\n| **GND** | **GND** | 접지 |\n| **TX** | **D10 (RX)** | 송신 -> 수신 (교차 연결) |\n| **RX** | **D11 (TX)** | 수신 -> 송신 (교차 연결) |\n\n*※ 주의: HC-11 모듈의 TX는 아두이노의 RX로, RX는 아두이노의 TX로 서로 **교차해서** 연결해야 합니다.*\n\n---\n\n### 2. [송신측] 데이터 전송 코드 (온습도/공기질 장치 역할)\n이 코드는 3초마다 \"Temp:25,Hum:60,AQ:100\"이라는 가상의 데이터를 보냅니다.\n\n```cpp\n#include <SoftwareSerial.h>\n\n// SoftwareSerial(RX, TX) - 아두이노 D10은 RX, D11은 TX로 설정\nSoftwareSerial hc11(10, 11);\n\nvoid setup() {\n  Serial.begin(9600);      // 시리얼 모니터용\n  hc11.begin(9600);         // HC-11 통신용 (기본 속도 9600)\n  Serial.println(\"Transmitter Ready...\");\n}\n\nvoid loop() {\n  // 보낼 가상의 데이터 생성\n  String data = \"Temp:25,Hum:60,AQ:100\";\n  \n  // HC-11을 통해 데이터 전송\n  hc11.println(data);\n  \n  // 시리얼 모니터에 전송 상태 표시\n  Serial.print(\"Sent: \");\n  Serial.println(data);\n  \n  delay(3000); // 3초 간격 전송 (강의 내용의 공기질 장치 간격 참고)\n}\n```\n\n---\n\n### 3. [수신측] 데이터 수신 코드 (홈 서버 장치 역할)\n이 코드는 무선으로 들어온 데이터를 받아서 시리얼 모니터에 출력합니다.\n\n```cpp\n#include <SoftwareSerial.h>\n\n// SoftwareSerial(RX, TX) - 아두이노 D10은 RX, D11은 TX로 설정\nSoftwareSerial hc11(10, 11);\n\nvoid setup() {\n  Serial.begin(9600);      // 시리얼 모니터용\n  hc11.begin(9600);         // HC-11 통신용\n  Serial.println(\"Receiver Ready...\");\n}\n\nvoid loop() {\n  // HC-11로 데이터가 들어왔는지 확인\n  if (hc11.available()) {\n    // 들어온 데이터를 읽음\n    String receivedData = hc11.readStringUntil('\\n');\n    \n    // 시리얼 모니터에 출력\n    Serial.print(\"Received: \");\n    Serial.println(receivedData);\n  }\n}\n```\n\n---\n\n### 💡 성공적인 테스트를 위한 팁 (강의 내용 기반)\n\n1.  **Baud Rate 확인:** HC-11 모듈의 기본 통신 속도는 보통 `9600`입니다. 만약 데이터가 깨져서 나온다면 모듈의 속도 설정과 코드의 `hc11.begin(9600)`이 일치하는지 확인하세요.\n2.  **데이터 충돌 테스트:** 강의 내용에 있듯이, 송신 장치가 여러 개라면 데이터가 서로 겹쳐서 깨질 수 있습니다. 이때는 `delay()` 시간을 조절하거나, 데이터 송신 사이에 짧은 여백을 두는 등의 SW 처리가 필요합니다.\n3.  **전원 확인:** HC-11은 통신 시 전류를 소모합니다. 통신이 불안정하다면 아두이노의 전원이 안정적인지 확인하고, 거리 테스트 시에는 배터리 전원을 사용해 보세요.\n\n먼저 이 기본 코드로 두 장치 간에 글자가 잘 오가는지 확인하신 후, 실제 센서 값(온도, 습도 등)을 읽어오는 코드로 발전시켜 보시기 바랍니다! 추가로 궁금한 점이 있으면 질문해 주세요.",
+      "created_at": "2026-07-08T13:26:45.078Z",
+      "updated_at": "2026-07-08T13:26:45.078Z"
+    },
+    {
+      "id": "f7e2af51-0473-4846-bb62-bffc8bee0da0",
+      "agent_id": "b24155af-379b-4d87-a071-692461f2e01b",
+      "role": "user",
+      "content": "HM-10 BLE 모듈을 이용해서 아래와 같이 제어하려고 한다..\n\n스마트폰 (AT Command 전송) → [BLE] → HM-10 모듈 → PIO 핀 → LED/버튼 제어\n\n이 시나리오를 구현하는 기본적인 아두이노 코드를 작성해줘.",
+      "created_at": "2026-07-08T13:29:13.329Z",
+      "updated_at": "2026-07-08T13:29:13.329Z"
+    },
+    {
+      "id": "117b0438-a326-4f5c-a64e-6f4f13e6caa9",
+      "agent_id": "b24155af-379b-4d87-a071-692461f2e01b",
+      "role": "assistant",
+      "content": "강의 내용 중 **[HM-10으로 Qmote 만들기]** 파트의 핵심 시나리오를 정확히 파악하고 계시네요! \n\n그런데 여기서 한 가지 중요한 포인트가 있습니다. **강의 내용(Lesson 8-1)에서 소개하는 방식은 '아두이노 없이' HM-10 모듈의 핀을 직접 제어하는 방식**입니다. \n\n하지만 질문하신 것처럼 **아두이노를 포함하여** 이 시나리오를 구현하고 싶으시다면, 흐름은 다음과 같이 구성됩니다.\n> **스마트폰 → [BLE] → HM-10 모듈 → 아두이노 (Serial) → 디지털 핀 → LED/버튼 제어**\n\n이 흐름을 구현하기 위한 가장 기본적인 아두이노 코드를 작성해 드립니다.\n\n---\n\n### 1. 하드웨어 연결 (아두이노 사용 시)\n\n| HM-10 핀 | 아두이노 핀 | 비고 |\n| :--- | :--- | :--- |\n| **VCC** | **5V** | |\n| **GND** | **GND** | |\n| **TX** | **D10 (RX)** | 소프트웨어 시리얼 활용 |\n| **RX** | **D11 (TX)** | |\n\n*   **LED:** 아두이노 **D13**번 핀에 연결 (저항 포함)\n*   **버튼:** 아두이노 **D2**번 핀에 연결 (풀업 저항 또는 `INPUT_PULLUP` 사용)\n\n---\n\n### 2. 아두이노 코드 (스마트폰 명령 수신 및 제어)\n\n이 코드는 스마트폰 앱에서 보낸 간단한 문자(예: '1'은 LED 켜기, '0'은 LED 끄기)를 받아 LED를 제어합니다.\n\n```cpp\n#include <SoftwareSerial.h>\n\n// SoftwareSerial(RX, TX) - 아두이노 D10을 RX로, D11을 TX로 설정\nSoftwareSerial bleSerial(10, 11); \n\nconst int ledPin = 13;     // LED 연결 핀\nconst int buttonPin = 2;   // 버튼 연결 핀\n\nvoid setup() {\n  Serial.begin(9600);      // 시리얼 모니터용\n  bleSerial.begin(9600);   // HM-10 통신용\n  \n  pinMode(ledPin, OUTPUT);\n  pinMode(buttonPin, INPUT_PULLUP); // 내부 풀업 저항 사용 (버튼 연결 시 편리)\n\n  Serial.println(\"BLE Control Ready...\");\n}\n\nvoid loop() {\n  // 1. 스마트폰으로부터 데이터가 들어왔는지 확인\n  if (bleSerial.available()) {\n    char cmd = bleSerial.read(); // 스마트폰에서 보낸 문자 읽기\n    Serial.print(\"Received Command: \");\n    Serial.println(cmd);\n\n    // 2. 수신된 명령에 따른 동작 처리\n    if (cmd == '1') {\n      digitalWrite(ledPin, HIGH); // LED 켜기\n      bleSerial.println(\"LED ON\"); // 스마트폰으로 응답 전송\n    } \n    else if (cmd == '0') {\n      digitalWrite(ledPin, LOW);  // LED 끄기\n      bleSerial.println(\"LED OFF\");\n    }\n  }\n\n  // 3. 버튼 상태 확인 (버튼을 누르면 LED가 반전되는 기능 추가 예시)\n  if (digitalRead(buttonPin) == LOW) { // 버튼이 눌렸을 때 (Pull-up이므로 LOW)\n    digitalWrite(ledPin, !digitalRead(ledPin)); // 현재 LED 상태 반전\n    bleSerial.println(\"Button Pressed: LED Toggled\");\n    delay(300); // 디바운싱을 위한 짧은 대기\n  }\n}\n```\n\n---\n\n### 💡 학습 가이드: 아두이노 vs 아두이노 없음\n\n강의 내용과 질문하신 내용의 차이점을 명확히 이해하면 학습에 큰 도움이 됩니다!\n\n1.  **강의의 방식 (Arduino-less):**\n    *   **흐름:** 스마트폰 $\\rightarrow$ HM-10 $\\rightarrow$ **HM-10의 PIO 핀** $\\rightarrow$ LED\n    *   **특징:** 아두이노 코딩이 필요 없습니다. HM-10 모듈 자체의 기능을 활용하기 때문에 **매우 작고 가벼운 장치(Qmote 같은 웨어러블)**를 만들 때 유리합니다.\n    *   **방법:** 스마트폰 앱에서 `AT+PIO...`와 같은 AT Command를 직접 전송합니다.\n\n2.  **질문하신 방식 (With Arduino):**\n    *   **흐름:** 스마트폰 $\\rightarrow$ HM-10 $\\rightarrow$ **아두이노** $\\rightarrow$ 디지털 핀 $\\rightarrow$ LED\n    *   **특징:** 아두이노를 거치기 때문에 **복잡한 연산이나 다양한 센서 제어**가 가능합니다. (예: 온도에 따라 LED 색상을 바꾸는 등)\n    *   **방법:** 아두이노가 HM-10으로부터 데이터를 받아 해석(Parsing)한 뒤 핀을 제어합니다.\n\n**지금 단계에서는 먼저 아두이노를 이용해 스마트폰과 통신이 잘 되는지 확인하신 후, 나중에 아두이노를 빼고 HM-10만으로 제어하는 \"Qmote 방식\"에 도전해 보시는 것을 추천합니다!**",
+      "created_at": "2026-07-08T13:30:30.650Z",
+      "updated_at": "2026-07-08T13:30:30.650Z"
     }
   ],
   "macros": []
