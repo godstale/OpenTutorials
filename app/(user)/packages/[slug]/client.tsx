@@ -195,9 +195,13 @@ export default function PackageClient({ slug }: { slug: string }) {
           {pkg.courses.map((course, index) => {
             const isCompleted = course.user_progress?.completed ?? false;
             const isStarted = !!course.user_progress;
-            const totalCards = 10;
-            const currentCard = course.user_progress?.max_card ?? course.user_progress?.last_card ?? 0;
-            const progressVal = Math.min(100, Math.round((currentCard / totalCards) * 100));
+            const totalCards = course.cards?.length || 10;
+            const completedCards = course.user_progress
+              ? (course.user_progress.completed
+                  ? totalCards
+                  : Math.max(0, (course.user_progress.max_card ?? course.user_progress.last_card ?? 1) - 1))
+              : 0;
+            const progressVal = Math.min(100, Math.round((completedCards / totalCards) * 100));
 
             return (
               <div key={course.id} className="relative group">
@@ -242,7 +246,7 @@ export default function PackageClient({ slug }: { slug: string }) {
                       {isStarted && !isCompleted && (
                         <div className="space-y-1 max-w-xs pt-1">
                           <Progress value={progressVal} className="h-1.5" />
-                          <span className="text-[10px] text-zinc-400">{currentCard} / {totalCards} 단계 완료</span>
+                          <span className="text-[10px] text-zinc-400">{completedCards} / {totalCards} 단계 완료</span>
                         </div>
                       )}
                     </div>

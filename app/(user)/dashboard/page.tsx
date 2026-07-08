@@ -42,18 +42,27 @@ async function DashboardContent() {
   const completedCoursesCount = userProgress?.filter((p: { completed: boolean }) => p.completed).length ?? 0;
  
   // Create unified learning items: active individual courses
-  const unifiedLearningItems: any[] = activeProgress.map((p: any) => ({
-    id: `course-${p.id}`,
-    type: 'course' as const,
-    slug: p.course?.slug || '',
-    title: p.course?.title || '',
-    description: p.course?.description || '',
-    thumbnail: p.course?.thumbnail || null,
-    currentCard: p.max_card ?? p.last_card ?? 0,
-    totalCards: p.course?.cards?.length || 10,
-    updatedAt: p.updated_at,
-    agentId: p.course?.agent_id || null
-  }));
+  const unifiedLearningItems: any[] = activeProgress.map((p: any) => {
+    const totalCards = p.course?.cards?.length || 10;
+    const completedCards = p.completed
+      ? totalCards
+      : Math.max(0, (p.max_card ?? p.last_card ?? 1) - 1);
+    const progressPercent = totalCards > 0 ? Math.min(100, Math.round((completedCards / totalCards) * 100)) : 0;
+
+    return {
+      id: `course-${p.id}`,
+      type: 'course' as const,
+      slug: p.course?.slug || '',
+      title: p.course?.title || '',
+      description: p.course?.description || '',
+      thumbnail: p.course?.thumbnail || null,
+      currentCard: p.max_card ?? p.last_card ?? 0,
+      totalCards,
+      percent: progressPercent,
+      updatedAt: p.updated_at,
+      agentId: p.course?.agent_id || null
+    };
+  });
 
   // Sort by updatedAt (descending)
   unifiedLearningItems.sort((a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
@@ -157,8 +166,7 @@ async function DashboardContent() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {unifiedLearningItems.slice(0, 3).map((item) => {
             const isCourse = item.type === 'course';
-            const coursePercent = isCourse ? Math.min(100, Math.round((item.currentCard! / item.totalCards!) * 100)) : 0;
-            const percentValue = isCourse ? coursePercent : item.percent!;
+            const percentValue = item.percent;
             const assignedAgent = externalAgents?.find((a: any) => a.id === item.agentId);
 
             return (

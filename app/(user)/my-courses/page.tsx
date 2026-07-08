@@ -210,7 +210,7 @@ export default function MyCoursesPage() {
                           <h4 className="font-semibold text-zinc-900 dark:text-zinc-50 line-clamp-1">{pkg.title}</h4>
                           <div className="flex gap-2">
                             <Badge className="bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-950 shrink-0">
-                              패키지 완료
+                              수강 완료
                             </Badge>
                             <Award className="w-5 h-5 text-yellow-500 shrink-0" />
                           </div>

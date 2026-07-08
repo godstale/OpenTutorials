@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, PlayCircle, CheckCircle2, ArrowLeft, ArrowRight, Bot, ChevronDown, ChevronRight } from 'lucide-react';
+import { BookOpen, PlayCircle, CheckCircle2, ArrowLeft, ArrowRight, Bot, ChevronDown, ChevronRight, RotateCcw } from 'lucide-react';
 import { Course, UserExternalAgent } from '@/lib/types';
 import { CourseIcon } from '@/components/ui/course-icon';
 
@@ -243,6 +243,31 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
     }
   };
 
+  const handleResetProgress = async () => {
+    if (!courseDetail) return;
+    const confirmReset = window.confirm('정말로 이 강좌의 학습 진도를 리셋하시겠습니까? 처음부터 다시 학습하게 됩니다.');
+    if (!confirmReset) return;
+
+    try {
+      const res = await fetch('/api/courses/progress', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ course_id: courseDetail.id })
+      });
+
+      if (res.ok) {
+        alert('학습 진도가 성공적으로 리셋되었습니다.');
+        await fetchCourseDetail();
+      } else {
+        const errorData = await res.json();
+        alert(`진도 리셋에 실패했습니다: ${errorData.error || '알 수 없는 오류'}`);
+      }
+    } catch (err) {
+      console.error('Failed to reset progress:', err);
+      alert('네트워크 오류가 발생했습니다.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="container max-w-5xl mx-auto py-8 space-y-6 animate-pulse">
@@ -266,9 +291,11 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
   }
 
   const totalSubcourses = courseDetail.cards?.length || 0;
-  const completedSubcourses = courseDetail.user_progress?.completed
-    ? totalSubcourses
-    : (courseDetail.user_progress?.max_card ?? courseDetail.user_progress?.last_card ?? 0);
+  const completedSubcourses = courseDetail.user_progress
+    ? (courseDetail.user_progress.completed
+        ? totalSubcourses
+        : Math.max(0, (courseDetail.user_progress.max_card ?? courseDetail.user_progress.last_card ?? 1) - 1))
+    : 0;
   const progressPercent = totalSubcourses > 0 ? Math.min(100, Math.round((completedSubcourses / totalSubcourses) * 100)) : 0;
 
   const nextCardIndex = completedSubcourses;
@@ -330,7 +357,7 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
                 <div className="pt-2 flex flex-col sm:flex-row gap-3">
                   {hasNextCard ? (
                     <Button
-                      onClick={() => router.push(`/learn/${courseDetail.slug}?card=${nextCardIndex || 1}`)}
+                      onClick={() => router.push(`/learn/${courseDetail.slug}?card=${nextCardIndex + 1}`)}
                       className="bg-green-700 hover:bg-green-700 text-white flex-1 gap-2"
                     >
                       <PlayCircle className="w-4 h-4" />
@@ -342,6 +369,14 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
                       강좌 내 모든 학습 완료!
                     </Button>
                   )}
+                  <Button
+                    onClick={handleResetProgress}
+                    variant="destructive"
+                    className="gap-2 shrink-0 shadow-sm"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    학습 진도율 리셋
+                  </Button>
                 </div>
               </div>
             ) : (

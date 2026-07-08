@@ -293,6 +293,7 @@ interface LearnTocNodeViewProps {
   nodeToIndexMap: Map<TocNode, number>;
   maxUnlockedIndex: number;
   currentCardIndex: number;
+  isCourseCompleted: boolean;
   onSelectCard: (index: number) => void;
 }
 
@@ -302,6 +303,7 @@ function LearnTocNodeView({
   nodeToIndexMap,
   maxUnlockedIndex,
   currentCardIndex,
+  isCourseCompleted,
   onSelectCard,
 }: LearnTocNodeViewProps) {
   const hasChildren = node.children && node.children.length > 0;
@@ -336,6 +338,7 @@ function LearnTocNodeView({
     const idx = nodeToIndexMap.get(node) ?? 0;
     const isUnlocked = idx <= maxUnlockedIndex;
     const isActive = idx === currentCardIndex;
+    const isCompleted = idx < maxUnlockedIndex || isCourseCompleted;
 
     return (
       <div className={getIndentClass(depth)}>
@@ -355,11 +358,13 @@ function LearnTocNodeView({
             "w-4 h-4 rounded-full flex items-center justify-center text-[9px] shrink-0 font-bold border",
             isActive 
               ? "bg-primary text-primary-foreground border-primary" 
-              : isUnlocked 
+              : isCompleted 
               ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" 
+              : isUnlocked 
+              ? "bg-muted text-foreground border-zinc-300 dark:border-zinc-700" 
               : "bg-muted text-muted-foreground/40 border-transparent"
           )}>
-            {isUnlocked && !isActive ? (
+            {isCompleted && !isActive ? (
               <Check className="w-3.5 h-3.5 text-emerald-500" />
             ) : (
               idx + 1
@@ -417,6 +422,7 @@ function LearnTocNodeView({
               nodeToIndexMap={nodeToIndexMap}
               maxUnlockedIndex={maxUnlockedIndex}
               currentCardIndex={currentCardIndex}
+              isCourseCompleted={isCourseCompleted}
               onSelectCard={onSelectCard}
             />
           ))}
@@ -457,6 +463,91 @@ export default function LearnPageClient({
   const { layout } = useLearnLayout();
   const totalCards = cards.length;
   const [currentCardIndex, setCurrentCardIndex] = useState(initialCardIndex);
+  const [isCourseCompleted, setIsCourseCompleted] = useState<boolean>(() => !!userProgress?.completed);
+
+  // Resizable panel widths
+  const [tocWidth, setTocWidth] = useState<number>(256);
+  const [tutorWidth, setTutorWidth] = useState<number>(400);
+  const [bypassCheckpointSetting, setBypassCheckpointSetting] = useState<boolean>(false);
+
+  // Load saved widths & settings from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedToc = localStorage.getItem('open-tutorials-toc-width');
+      if (savedToc) setTocWidth(parseInt(savedToc, 10));
+      const savedTutor = localStorage.getItem('open-tutorials-tutor-width');
+      if (savedTutor) setTutorWidth(parseInt(savedTutor, 10));
+      const savedBypass = localStorage.getItem('open-tutorials-bypass-checkpoint') === 'true';
+      setBypassCheckpointSetting(savedBypass);
+    }
+  }, []);
+
+  const saveProgress = async (unlockedIndex: number, isCompleted: boolean = false) => {
+    if (!course?.id) return;
+    try {
+      await fetch('/api/courses/progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          course_id: course.id,
+          last_card: unlockedIndex + 1,
+          completed: isCompleted
+        })
+      });
+    } catch (err) {
+      console.error('Failed to update progress in DB:', err);
+    }
+  };
+
+  const startResizingToc = (mouseDownEvent: React.PointerEvent) => {
+    mouseDownEvent.preventDefault();
+    const startX = mouseDownEvent.clientX;
+    const startWidth = tocWidth;
+
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      const deltaX = moveEvent.clientX - startX;
+      const newWidth = Math.max(180, Math.min(480, startWidth + deltaX));
+      setTocWidth(newWidth);
+      localStorage.setItem('open-tutorials-toc-width', newWidth.toString());
+    };
+
+    const handlePointerUp = () => {
+      document.removeEventListener('pointermove', handlePointerMove);
+      document.removeEventListener('pointerup', handlePointerUp);
+      document.body.style.removeProperty('cursor');
+      document.body.style.removeProperty('user-select');
+    };
+
+    document.addEventListener('pointermove', handlePointerMove);
+    document.addEventListener('pointerup', handlePointerUp);
+    document.body.style.setProperty('cursor', 'col-resize');
+    document.body.style.setProperty('user-select', 'none');
+  };
+
+  const startResizingTutor = (mouseDownEvent: React.PointerEvent) => {
+    mouseDownEvent.preventDefault();
+    const startX = mouseDownEvent.clientX;
+    const startWidth = tutorWidth;
+
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      const deltaX = startX - moveEvent.clientX;
+      const newWidth = Math.max(280, Math.min(600, startWidth + deltaX));
+      setTutorWidth(newWidth);
+      localStorage.setItem('open-tutorials-tutor-width', newWidth.toString());
+    };
+
+    const handlePointerUp = () => {
+      document.removeEventListener('pointermove', handlePointerMove);
+      document.removeEventListener('pointerup', handlePointerUp);
+      document.body.style.removeProperty('cursor');
+      document.body.style.removeProperty('user-select');
+    };
+
+    document.addEventListener('pointermove', handlePointerMove);
+    document.addEventListener('pointerup', handlePointerUp);
+    document.body.style.setProperty('cursor', 'col-resize');
+    document.body.style.setProperty('user-select', 'none');
+  };
   const [maxUnlockedIndex, setMaxUnlockedIndex] = useState<number>(() => {
     if (userProgress?.completed) {
       return totalCards - 1;
@@ -487,7 +578,13 @@ export default function LearnPageClient({
   const packageSlug = searchParams ? searchParams.get('package') : null;
   const isReview = searchParams ? searchParams.get('review') === 'true' : false;
   const isPreview = searchParams ? searchParams.get('preview') === 'true' : false;
-  const canSkipCheckpoint = isReview || isPreview || !!userProgress?.completed || !coursePackage || !coursePackage.force_checkpoint;
+  const canSkipCheckpoint = 
+    bypassCheckpointSetting ||
+    isReview || 
+    isPreview || 
+    !!userProgress?.completed || 
+    !coursePackage || 
+    !coursePackage.force_checkpoint;
 
   const [nextCourseInPackage, setNextCourseInPackage] = useState<{ slug: string; title: string } | null>(null);
   const [showPackageNextDialog, setShowPackageNextDialog] = useState(false);
@@ -514,19 +611,12 @@ export default function LearnPageClient({
     checkNextCourse();
   }, [packageSlug, slug]);
 
-  // Keep maxUnlockedIndex updated as currentCardIndex increases
-  useEffect(() => {
-    if (currentCardIndex > maxUnlockedIndex) {
-      setMaxUnlockedIndex(currentCardIndex);
-    }
-  }, [currentCardIndex, maxUnlockedIndex]);
-
   const currentCardFilename = cards[currentCardIndex]?.filename;
   const checkpoint = checkpoints?.find(cp => cp.afterCard === currentCardFilename);
   const alreadyPassed = 
     (currentCardFilename ? passedCheckpoints.has(currentCardFilename) : false) ||
     currentCardIndex < maxUnlockedIndex;
-  const hasCheckpoint = !!(checkpoint && !alreadyPassed);
+  const hasCheckpoint = !!(checkpoint && !alreadyPassed && !bypassCheckpointSetting);
 
   const handleSelectCard = (idx: number) => {
     if (isCheckpointMode) {
@@ -553,6 +643,17 @@ export default function LearnPageClient({
       role: 'agent',
       content: '체크포인트를 건너뛰었습니다. 다음 단계로 진행하실 수 있습니다.'
     }]);
+
+    const nextIdx = currentCardIndex + 1;
+    if (nextIdx < totalCards) {
+      if (nextIdx > maxUnlockedIndex) {
+        setMaxUnlockedIndex(nextIdx);
+        saveProgress(nextIdx, false);
+      }
+    } else {
+      setIsCourseCompleted(true);
+      saveProgress(currentCardIndex, true);
+    }
   };
 
   const startCheckpointQnA = (cp: { afterCard: string; prompt: string }) => {
@@ -563,7 +664,7 @@ export default function LearnPageClient({
 The student has just completed the card "${cards[currentCardIndex]?.title}".
 You must now test the student's understanding by asking a question based on this instruction:
 "${cp.prompt}"
-
+ 
 Please ask the student the question now. Only ask the question itself, do not reveal the answer or evaluation criteria yet. Make your tone friendly and encouraging.`;
     
     sendMessage(triggerPrompt, messages, false, true);
@@ -589,9 +690,19 @@ Please ask the student the question now. Only ask the question itself, do not re
       return;
     }
 
-    if (currentCardIndex < totalCards - 1) {
-      setCurrentCardIndex(currentCardIndex + 1);
+    const nextIdx = currentCardIndex + 1;
+    if (nextIdx < totalCards) {
+      if (nextIdx > maxUnlockedIndex) {
+        setMaxUnlockedIndex(nextIdx);
+        saveProgress(nextIdx, false);
+      }
+      setCurrentCardIndex(nextIdx);
     } else {
+      if (currentCardIndex > maxUnlockedIndex) {
+        setMaxUnlockedIndex(currentCardIndex);
+      }
+      setIsCourseCompleted(true);
+      saveProgress(currentCardIndex, true);
       if (nextCourseInPackage) {
         setShowPackageNextDialog(true);
       } else {
@@ -944,26 +1055,7 @@ Please ask the student the question now. Only ask the question itself, do not re
       cardTitle: cards[currentCardIndex]?.title || 'Untitled',
       hasMdx: !!cards[currentCardIndex]?.mdxSource
     });
-
-    // Update progress in DB (non-blocking)
-    const updateProgress = async () => {
-      if (!course?.id) return;
-      try {
-        await fetch('/api/courses/progress', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            course_id: course.id,
-            last_card: currentCardIndex + 1,
-            completed: currentCardIndex === totalCards - 1
-          })
-        });
-      } catch (err) {
-        console.error('Failed to update progress in DB:', err);
-      }
-    };
-    updateProgress();
-  }, [currentCardIndex, cards, course, totalCards]);
+  }, [currentCardIndex, cards]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -1021,12 +1113,7 @@ Please ask the student the question now. Only ask the question itself, do not re
       const isFallback = !finalResourceUrl.includes('.supabase.co');
       const isFirstQuestion = newMessages.filter(m => m.role === 'user').length === 1;
 
-      let fallbackTocText = '';
-      if (isFallback && isFirstQuestion) {
-        const tocItems = course.toc || [];
-        const tocTreeText = generateFallbackTocText(tocItems, 0);
-        fallbackTocText = `\n\n[Fallback Course Table of Contents]\n${tocTreeText}\n\nNote: The resource URL could not be loaded via external storage. Please refer to this Table of Contents to understand the overall course structure.`;
-      }
+
 
       let systemPrompt = '';
       if (agentType === 'llm') {
@@ -1212,6 +1299,17 @@ Student Question: `;
           }
           setIsCheckpointMode(false);
           setActiveCheckpoint(null);
+
+          const nextIdx = currentCardIndex + 1;
+          if (nextIdx < totalCards) {
+            if (nextIdx > maxUnlockedIndex) {
+              setMaxUnlockedIndex(nextIdx);
+              saveProgress(nextIdx, false);
+            }
+          } else {
+            setIsCourseCompleted(true);
+            saveProgress(currentCardIndex, true);
+          }
         }
       }
       if (!isSystemCheck) {
@@ -1244,7 +1342,10 @@ Student Question: `;
     <div className="no-layout-padding flex h-full w-full overflow-hidden">
       {/* Course TOC Panel */}
       {(layout === '3-layout' || layout === 'toc-content') && (
-        <div className="w-64 border-r bg-background flex flex-col h-full shrink-0 min-h-0 relative">
+        <div 
+          style={{ width: `${tocWidth}px` }}
+          className="bg-background flex flex-col h-full shrink-0 min-h-0 relative"
+        >
         <div className="p-4 border-b shrink-0 flex items-center justify-between">
           <h3 className="font-bold text-sm text-foreground flex items-center gap-2">
             <BookOpen className="w-4 h-4 text-primary" /> 강좌 목차
@@ -1271,6 +1372,7 @@ Student Question: `;
               cards.map((card, idx) => {
                 const isUnlocked = isPreview || idx <= maxUnlockedIndex;
                 const isActive = idx === currentCardIndex;
+                const isCompleted = idx < maxUnlockedIndex || isCourseCompleted;
                 return (
                   <button
                     key={idx}
@@ -1289,11 +1391,13 @@ Student Question: `;
                       "w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0 font-bold border",
                       isActive 
                         ? "bg-primary text-primary-foreground border-primary" 
-                        : isUnlocked 
+                        : isCompleted 
                         ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" 
+                        : isUnlocked 
+                        ? "bg-muted text-foreground border-zinc-300 dark:border-zinc-700" 
                         : "bg-muted text-muted-foreground/40 border-transparent"
                     )}>
-                      {isUnlocked && !isActive ? (
+                      {isCompleted && !isActive ? (
                         <Check className="w-3.5 h-3.5" />
                       ) : (
                         idx + 1
@@ -1318,6 +1422,7 @@ Student Question: `;
                     nodeToIndexMap={nodeToIndexMap}
                     maxUnlockedIndex={isPreview ? totalCards - 1 : maxUnlockedIndex}
                     currentCardIndex={currentCardIndex}
+                    isCourseCompleted={isCourseCompleted}
                     onSelectCard={(index) => handleSelectCard(index)}
                   />
                 ))}
@@ -1373,8 +1478,18 @@ Student Question: `;
       </div>
       )}
 
+      {/* TOC Resizer Handle */}
+      {(layout === '3-layout' || layout === 'toc-content') && (
+        <div
+          onPointerDown={startResizingToc}
+          className="w-1 hover:w-1.5 active:w-1.5 bg-border hover:bg-primary/50 active:bg-primary transition-all cursor-col-resize h-full select-none flex-shrink-0 z-40 relative group"
+        >
+          <div className="absolute inset-y-0 -left-1 -right-1 cursor-col-resize" />
+        </div>
+      )}
+
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col h-full bg-background relative overflow-hidden border-r">
+      <main className="flex-1 flex flex-col h-full bg-background relative overflow-hidden border-none">
         <header className="h-16 px-6 flex items-center justify-between border-b shrink-0">
           <div className="flex items-center gap-4">
             <span className="text-sm bg-primary/10 text-primary px-2 py-1 rounded">Card {currentCardIndex + 1}</span>
@@ -1465,9 +1580,22 @@ Student Question: `;
         </div>
       </main>
 
+      {/* Tutor Resizer Handle */}
+      {(layout === '3-layout' || layout === 'content-tutor') && (
+        <div
+          onPointerDown={startResizingTutor}
+          className="w-1 hover:w-1.5 active:w-1.5 bg-border hover:bg-primary/50 active:bg-primary transition-all cursor-col-resize h-full select-none flex-shrink-0 z-40 relative group"
+        >
+          <div className="absolute inset-y-0 -left-1 -right-1 cursor-col-resize" />
+        </div>
+      )}
+
       {/* AI Agent Chat Area */}
       {(layout === '3-layout' || layout === 'content-tutor') && (
-        <aside className="w-[400px] shrink-0 bg-muted/10 flex flex-col h-full shadow-lg z-10 overflow-hidden min-h-0">
+        <aside 
+          style={{ width: `${tutorWidth}px` }}
+          className="shrink-0 bg-muted/10 flex flex-col h-full shadow-lg z-10 overflow-hidden min-h-0 border-l border-border/50"
+        >
         {isCheckpointMode && activeCheckpoint && (
           <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2.5 text-xs text-amber-800 dark:text-amber-400 flex items-center justify-between shrink-0">
             <span className="font-medium flex items-center gap-1">⚠️ 강좌 체크포인트 QnA 진행 중</span>
