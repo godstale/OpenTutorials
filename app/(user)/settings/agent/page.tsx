@@ -94,26 +94,6 @@ export default function SettingsAgentPage() {
           </div>
         </CardContent>
       </Card>
-
-      <Card className="opacity-60">
-        <CardHeader>
-          <CardTitle>알림 및 크론 설정</CardTitle>
-          <CardDescription>에이전트의 알림 채널(Slack, Telegram)과 크론 스케줄을 설정합니다.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">추후 제공될 예정입니다.</p>
-        </CardContent>
-      </Card>
-
-      <Card className="opacity-60">
-        <CardHeader>
-          <CardTitle>에이전트 연동 관리</CardTitle>
-          <CardDescription>외부 에이전트 엔드포인트 및 API 키를 통합 관리합니다.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">추후 제공될 예정입니다.</p>
-        </CardContent>
-      </Card>
     </div>
   );
 }

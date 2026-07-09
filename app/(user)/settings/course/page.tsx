@@ -52,16 +52,6 @@ export default function SettingsCoursePage() {
           </div>
         </CardContent>
       </Card>
-
-      <Card className="opacity-60">
-        <CardHeader>
-          <CardTitle>학습 환경 설정</CardTitle>
-          <CardDescription>강좌 재생 속도, 자막, 화질 등 학습 환경을 설정합니다.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">추후 제공될 예정입니다.</p>
-        </CardContent>
-      </Card>
     </div>
   );
 }

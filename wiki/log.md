@@ -30,6 +30,15 @@ Ran lint. See lint-report.md for details.
 
 <!-- Append-only. 최신 항목을 위에 추가. -->
 
+## 2026-07-09 (5th Session)
+
+- **[UI] 설정 페이지 내 준비 중인 비활성화 카드 제거**
+  - **수정/갱신 파일**:
+    - [page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/settings/agent/page.tsx) — 하단에 불필요하게 '추후 제공 예정'으로 표시되던 '알림 및 크론 설정' 카드와 '에이전트 연동 관리' 카드를 제거했습니다.
+    - [page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/settings/course/page.tsx) — 하단에 '추후 제공 예정'으로 표시되던 '학습 환경 설정' 카드를 제거했습니다.
+  - **작업 내용**:
+    - 설정 각 탭 페이지에서 현재 동작하지 않거나 비활성화 상태인 레이아웃 자리차지용(opacity-60, 추후 제공 예정) 카드 요소들을 제거하여 UI의 군더더기를 없애고 사용성 혼란을 해소했습니다.
+
 ## 2026-07-09 (4th Session)
 
 - **[FEATURE] AI 튜터 설정 내 자동 프롬프트 압축 시작 임계값(Threshold) 설정 기능 추가 및 불필요 알림 삭제**
