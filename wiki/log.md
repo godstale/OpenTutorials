@@ -30,6 +30,85 @@ Ran lint. See lint-report.md for details.
 
 <!-- Append-only. 최신 항목을 위에 추가. -->
 
+## 2026-07-09 (7th Session)
+
+- **[FEATURE] AI 대화창 내 첫 안내 메시지 복사 버튼 제거, 입력창 placeholder 내 프롬프트 사용량(%) 표시 및 로컬 LLM 에이전트(Ollama/LM Studio) 대상 자료 다운로드 체크 우회 구현**
+  - **수정/갱신 파일**:
+    - [client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx) — 
+      1) 첫 안내 메시지(id: '1')인 경우 하단 복사 버튼이 노출되지 않도록 조건을 추가했습니다.
+      2) 답변이 완료되는 시점에 전체 프롬프트 토큰과 최대 토큰 한도를 기반으로 점유 비율을 계산하고, 대화 입력창 placeholder에 실시간 프롬프트 사용량(예: `[프롬프트 사용량: 40%]`)이 출력되도록 상태(`promptUsage`)와 placeholder 바인딩 로직을 개선했습니다. 대화가 초기화(`handleClearChat`)될 때는 해당 사용량 표시도 함께 리셋됩니다.
+      3) `agentProgram`, `isLlmAgent`, `currentAgentData` 상태를 추가하여 Ollama, LM Studio 등 순수 LLM 에이전트를 더욱 견고하게 식별(에이전트 타입/프로그램 지정 방식뿐만 아니라, endpoint 포트 `11434` / `1234` 및 모델명 `gemma`/`llama`/`mistral`/`qwen`/`phi` 포함 여부를 포괄적으로 판별하고, 렌더링 틱 지연 방지를 위해 `currentAgentData` 객체의 `agent_type`을 직접 교차 검증)하도록 구성했습니다. 해당 LLM 에이전트 연동 시 강좌 자료 다운로드 점검 프로세스를 생략하고, UI의 다운로드 관련 상태 뱃지들("자료 다운로드 오류/미완료", "자료 준비 완료", "자료 준비 상태 확인 중..." 등)을 완벽히 차단하여 노출되지 않도록 조치했습니다.
+  - **작업 내용**:
+    - AI 대화방의 첫 번째 웰컴 메시지는 복사할 필요성이 낮아 UI 간소화 목적으로 복사 아이콘과 텍스트 버튼이 나타나지 않도록 수정했습니다.
+    - AI의 응답 완료 시점에 예상 토큰 크기(`estTokens`)를 계산하여 입력 필드 placeholder에 `[프롬프트 사용량: N%]` 정보를 노출해, 사용자가 대화 맥락이 얼마나 차오르고 있는지(그리고 언제 압축이 임박할지) 쉽게 가늠하도록 안내 메시지를 보강했습니다.
+    - Ollama, LM Studio 등의 순수 LLM 에이전트는 로컬에 강좌 파일을 직접 다운로드하여 분석하는 기능(Hermes 에이전트 기반)을 수행할 필요가 없으므로 불필요한 시스템 자료 점검 통신을 스킵하고 UI에서도 사용자에 혼란을 줄 수 있는 다운로드 경고창을 제외시켰습니다. 포트나 모델명 기반의 포괄적인 판별과 직접적인 객체 검증(cross-validation)을 더해 에이전트 등록 형식이나 React 상태 업데이트 틱 지연에 구애받지 않고 오작동을 차단합니다.
+
+## 2026-07-09 (6th Session)
+
+- **[BUGFIX] 학습 대화창 내 중복 Key(동일 타임스탬프) 충돌 경고 해결**
+  - **수정/갱신 파일**:
+    - [client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx) — 고유 ID를 생성하는 `generateUniqueId` 유틸리티 함수를 추가하고, 메시지(ChatMessage) 객체의 `id` 값 생성 시 기존 `Date.now().toString()`을 대신해 이를 사용하도록 수정했습니다.
+  - **작업 내용**:
+    - 학습 대화창에서 질문 전송 시 유저 메시지와 에이전트 상태 메시지가 동일한 밀리초(Tick) 내에 생성되어 React 렌더링 루프(`key={msg.id}`)에서 중복 키 충돌 경고(`Encountered two children with the same key`)가 발생하는 버그를 해결했습니다. 타임스탬프에 난수 서픽스(base-36)를 조합하여 완벽한 고유 키를 보장합니다.
+
+## 2026-07-09 (5th Session)
+
+- **[UI] 설정 페이지 내 준비 중인 비활성화 카드 제거**
+  - **수정/갱신 파일**:
+    - [page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/settings/agent/page.tsx) — 하단에 불필요하게 '추후 제공 예정'으로 표시되던 '알림 및 크론 설정' 카드와 '에이전트 연동 관리' 카드를 제거했습니다.
+    - [page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/settings/course/page.tsx) — 하단에 '추후 제공 예정'으로 표시되던 '학습 환경 설정' 카드를 제거했습니다.
+  - **작업 내용**:
+    - 설정 각 탭 페이지에서 현재 동작하지 않거나 비활성화 상태인 레이아웃 자리차지용(opacity-60, 추후 제공 예정) 카드 요소들을 제거하여 UI의 군더더기를 없애고 사용성 혼란을 해소했습니다.
+
+## 2026-07-09 (4th Session)
+
+- **[FEATURE] AI 튜터 설정 내 자동 프롬프트 압축 시작 임계값(Threshold) 설정 기능 추가 및 불필요 알림 삭제**
+  - **수정/갱신 파일**:
+    - [use-agent-settings.ts](file:///C:/Workspace/Projects/OpenTutorials/hooks/use-agent-settings.ts) — 에이전트 설정 훅에 자동 압축 시작 비율(compressionThreshold)을 관리하는 로컬 상태 및 localStorage 로직을 추가했습니다. (기본값: 80)
+    - [layout.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/settings/layout.tsx) — 설정 페이지 전체 리셋 클릭 시 `open-tutorials-agent-compression-threshold` 키도 함께 삭제되도록 수정했습니다.
+    - [page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/settings/agent/page.tsx) — 설정 > 에이전트 화면에 자동 압축 시작 임계값(Compression Threshold)을 선택할 수 있는 Select(50% ~ 80%) UI와 변경 내역을 저장하는 핸들러를 추가하고, 화면 최상단의 불필요한 알림 배너(Alert) 및 사용되지 않는 아이콘/컴포넌트 임포트를 삭제했습니다.
+    - [client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx) — 기존에 80%(0.8)로 하드코딩되어 있던 에이전트 토큰 초과 시의 자동 압축 판단 로직에 사용자가 설정한 `compressionThreshold` 값을 참조하여 동적으로 자동 대화 요약/압축을 트리거하도록 리팩토링했습니다.
+  - **작업 내용**:
+    - AI 튜터 학습 환경의 유연성을 높이기 위해 사용자가 직접 프롬프트 크기 임계값 비율을 50% ~ 80% 사이에서 직접 커스터마이징할 수 있는 설정을 구현했습니다.
+    - 설정 페이지와 실시간 학습 화면 간의 상태 동기화를 위해 localStorage와 커스텀 훅을 통해 설정값을 전달하도록 설계하였습니다.
+    - UI 가독성을 향상시키기 위해 에이전트 설정 페이지 최상단에 존재하던 과도한 파란색 알림(Alert) 배너를 완전히 제거했습니다.
+
+## 2026-07-09 (3rd Session)
+
+- **[FEATURE] 강좌 번들 프로토콜 기반 AI 튜터 시스템 프롬프트 및 맥락 주입 효율화 개선**
+  - **수정/갱신 파일**:
+    - [index.ts](file:///C:/Workspace/Projects/OpenTutorials/lib/types/index.ts) — `CoursePackage` 인터페이스에 강좌 번들 명세(v1.1.0)에 따르는 대상 연령대(`target_age`)와 카테고리(`category`) 필드를 추가하여 타입 안정성을 마련했습니다.
+    - [client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx) — 중복해서 하드코딩되던 시스템 프롬프트 조립 로직을 단일화하기 위해 `buildSystemPrompt` 및 `buildCurrentCardContext` 헬퍼 함수를 추가하고, `sendMessage` 및 `Calculate estimated token size` 블록에서 이 헬퍼를 공통 호출하도록 리팩토링했습니다.
+  - **작업 내용**:
+    - **연령대 및 카테고리 맞춤 설명 어조 적용**: `coursePackage`에서 전달되는 `target_age`와 `category`, `tags` 정보를 파싱하여 튜터의 말투와 설명 깊이를 자동 조정하도록 AI 지침을 추가했습니다. (예: 초등학생 대상 시 쉽고 비유적인 아날로지를 사용하도록 지시)
+    - **동영상 카드 자막 정제 주입**: 동영상 카드(`.json` 타입) 수강 시, 지저분한 원본 JSON 파일 전체를 프롬프트에 주입하는 대신 `subtitles` 배열에서 시간별 자막 텍스트만 추출 및 스크립트 형태로 정제하여 `Content`로 전달하도록 개선하여 토큰 절약 및 영상 내용 이해도를 극대화했습니다.
+    - **학습 진행 정보 및 TOC 설명 연동**: 학생의 현재 학습 진행률(Card N of M / % 완료) 및 현재 속한 목차(`toc` 노드)의 챕터/섹션 제목과 단원 학습 목표(`description`)를 AI 튜터가 상시 인지할 수 있도록 프롬프트 맥락을 고도화했습니다.
+
+## 2026-07-09 (2nd Session)
+
+- **[FEATURE] AI 튜터 및 에이전트 대화창 마크다운 표(Table) 렌더링 구현 및 학습 화면 최상단 레이아웃 선택기 중앙 정렬**
+  - **수정/갱신 파일**:
+    - [client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx) — AI 튜터 답변에서 마크다운 형태의 표(`| ... | ... |`)가 전달되었을 때, 텍스트 그대로 노출되는 대신 정형화된 HTML Table 컴포넌트로 파싱 및 렌더링하도록 뷰 로직을 보완했습니다. 테이블 내 정렬 구분자(`:---`, `---:`, `:---:`)에 따라 셀 텍스트를 좌측/우측/중앙 정렬하도록 CSS 정렬 클래스를 동적으로 주입하며, 셀 내부 텍스트에도 볼드(**), 인라인 코드(\`), 마크다운/일반 링크 렌더링이 재귀적으로 올바르게 결합되도록 `renderInlineFormatting` 및 `parseTablesAndText` 파서 유틸리티를 적용했습니다.
+    - [AgentChatTab.tsx](file:///C:/Workspace/Projects/OpenTutorials/components/features/AgentChatTab.tsx) — 에이전트 상세 설정 화면 내 에이전트 채팅 탭에서도 학습 창과 동일한 마크다운 테이블 파싱 및 렌더링 스키마를 탑재하여 일관된 AI 튜터 렌더링 외관을 제공하도록 수정했습니다.
+    - [UserHeader.tsx](file:///C:/Workspace/Projects/OpenTutorials/components/layout/UserHeader.tsx) — 학습 화면 최상단 헤더에 위치한 레이어(레이아웃) 선택 컴포넌트가 좌측 정렬되어 쏠려있던 레이아웃을 3분할 Flex 컨테이너 구조로 수정하여 화면 가로축의 정중앙에 올바르게 배치되도록 변경했습니다.
+  - **작업 내용**:
+    - AI가 지식을 표(Table) 형식으로 전달할 때, 텍스트 원본 데이터가 날것 그대로 노출되던 문제를 분석하고, `react-markdown` 의존성을 늘리지 않고 기존 파싱 흐름을 보완하는 경량 라인 바이 라인(Line-by-Line) 테이블 파서 및 렌더러를 개발했습니다.
+    - 가로로 길어지는 테이블의 경우 대화창 레이아웃이 붕괴하는 것을 차단하기 위해 `overflow-x-auto max-w-full` 스크롤 뷰 컨테이너를 배치하고 테이블 구조에 세련된 테일윈드 스타일(zinc border, zebra-striping hover, font-semibold header bg 등)을 입혔습니다.
+    - 학습 화면(`isLearnPage === true`)에서 상단 레이아웃 선택 컴포넌트(3단 보기 등)의 시인성 및 대칭 균형을 높이기 위해 좌측 사이드바 트리거 공간과 우측 사용자 아바타 공간에 각각 `flex-1`을 배정하고 컴포넌트를 `flex-none` 중앙 영역에 안착시켜 완벽한 중앙 정렬을 달성했습니다.
+
+## 2026-07-09 (1st Session)
+
+- **[FEATURE] AI 튜터 채팅 기록 초기화, 말풍선 시간/복사 기능 및 AI 에이전트 기반 자동 컨텍스트 압축 구현**
+  - **수정/갱신 파일**:
+    - [client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx) — AI 튜터 컬럼 헤더에 `Trash2` 아이콘을 연동한 `채팅 지우기` 버튼을 배치했습니다. 클릭 시 로컬 상태의 메시지 기록을 초기화하고 DB 대화 내역(`DELETE /api/external-agents/[id]/messages`)을 리셋하여 질문 시 이전 히스토리가 AI 프롬프트에 흘러들어가지 않도록 설계했습니다.
+    - [client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx) — 메시지 말풍선 하단에 메시지 전송 시간(`timestamp`)과 클릭 시 텍스트 복사 및 피드백 상태(`복사됨`)를 노출하는 `복사하기` 버튼을 추가했습니다.
+    - [client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx) — 질문 전송 시 `systemPrompt`를 포함한 전체 메시지 크기를 실시간 토큰 추정 방식으로 계산하고, 에이전트 최대 토큰 설정값(`maxTokens`)의 80%에 임박할 때 AI 에이전트에게 현재까지의 대화 히스토리 압축(요약)을 자동으로 위임하는 메커니즘을 추가했습니다. 압축 완료 시 대화방에 압축률(%) 및 압축 후 프롬프트 크기(Tokens)를 알려주는 시스템 메시지 공지를 노출하도록 렌더링 스키마를 고도화했습니다. 압축 진행 중에는 전체 텍스트 입력창과 버튼을 비활성화하여 오작동을 차단합니다.
+    - [route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/external-agents/[id]/messages/route.ts) — 요약된 컨텍스트를 DB 대화 내역에 직접 삽입할 수 있도록 `POST` API 핸들러를 새로 신설하고 supabase DB에 메시지 레코드를 적재하여, 추후 에이전트 질문 시 이 요약본이 기본 컨텍스트로 전달되도록 파이프라인을 완성했습니다.
+  - **작업 내용**:
+    - AI 튜터와의 장기 대화 시 입력 토큰 제한으로 인한 대화 중단 현상을 극복하기 위해, 전역 토큰 설정값(maxTokens)의 80%를 감지하여 이전 대화를 AI가 스스로 자동 요약(압축)하는 스마트 컨텍스트 보존 기능을 완성했습니다.
+    - 압축이 끝나면 대화창에 시스템 메시지로 압축률(%) 및 압축 완료 후의 남은 프롬프트 크기(Tokens)를 주황색 배너 형태로 시각화하여 사용자가 한눈에 진행 상황을 추적할 수 있도록 개선했습니다.
+    - 또한 사용자의 편의성을 위해 채팅창 비우기(히스토리 완전 초기화), 개별 말풍선 복사 및 복사 성공 피드백(체크 아이콘), 전송 시각(HH:MM) 표시 등의 디테일을 더해 튜터링 경험을 강화했습니다.
+
 ## 2026-07-08 (4th Session)
 
 - **[FEATURE] 설정 화면 최상단 우측에 [전체 리셋] 기능 및 에이전트 설정 내 최대 토큰 수(Max Tokens) 기능 추가**

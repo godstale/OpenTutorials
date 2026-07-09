@@ -23,6 +23,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
       localStorage.removeItem('open-tutorials-toc-width');
       localStorage.removeItem('open-tutorials-tutor-width');
       localStorage.removeItem('open-tutorials-agent-max-tokens');
+      localStorage.removeItem('open-tutorials-agent-compression-threshold');
       localStorage.removeItem('open-tutorials-bypass-checkpoint');
       
       // Remove font class just in case

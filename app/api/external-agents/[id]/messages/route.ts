@@ -60,3 +60,38 @@ export async function DELETE(
     return NextResponse.json({ error: errMsg }, { status: 500 });
   }
 }
+
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const { role, content } = await req.json();
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { data, error } = await supabase
+      .from('user_external_agent_messages')
+      .insert({
+        agent_id: id,
+        role,
+        content,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(data);
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : 'Unknown error';
+    return NextResponse.json({ error: errMsg }, { status: 500 });
+  }
+}
+

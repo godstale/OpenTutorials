@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
-import { ChevronLeft, ChevronRight, Send, Bot, User, Captions, X, Copy, Check, Loader2, Lock, BookOpen, ChevronDown, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Send, Bot, User, Captions, X, Copy, Check, Loader2, Lock, BookOpen, ChevronDown, CheckCircle2, Trash2 } from 'lucide-react';
 import { MDXRemote, type MDXRemoteSerializeResult } from 'next-mdx-remote';
 import { Course, TocNode, CoursePackage } from '@/lib/types';
 import { createClient } from '@/lib/supabase/client';
@@ -13,6 +13,7 @@ import { updateExternalAgent } from '@/lib/api/external-agents';
 import { useSidebar } from '@/components/ui/sidebar';
 import { Badge } from '@/components/ui/badge';
 import { cn, agentLeaveTimers } from '@/lib/utils';
+import { useAgentSettings } from '@/hooks/use-agent-settings';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import dynamic from 'next/dynamic';
 import { useLearnLayout } from '@/lib/context/LearnLayoutContext';
@@ -22,8 +23,9 @@ const ReactPlayer = dynamic(() => import('react-player'), { ssr: false });
 
 interface ChatMessage {
   id: string;
-  role: 'agent' | 'user';
+  role: 'agent' | 'user' | 'system';
   content: string;
+  timestamp?: string;
 }
 
 interface LearnPageClientProps {
@@ -58,6 +60,18 @@ interface LearnPageClientProps {
     prompt: string;
   }>;
   coursePackage?: CoursePackage | null;
+}
+
+// Helper function to find a TOC node by its filename
+function findTocNodeByFilename(nodes: TocNode[], filename: string): TocNode | null {
+  for (const node of nodes) {
+    if (node.filename === filename) return node;
+    if (node.children && node.children.length > 0) {
+      const found = findTocNodeByFilename(node.children, filename);
+      if (found) return found;
+    }
+  }
+  return null;
 }
 
 // Helper function to render text with links (supporting both markdown links [label](url) and plain URLs)
@@ -116,6 +130,144 @@ function renderTextWithLinks(text: string) {
     );
   });
 }
+// Helper function to render inline markdown-like formatting (bold, code, links)
+function renderInlineFormatting(text: string) {
+  const subParts = text.split(/(`[^`\n]+`)/g);
+
+  return subParts.map((subPart, subIdx) => {
+    if (subPart.startsWith('`') && subPart.endsWith('`')) {
+      return (
+        <code key={subIdx} className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800/80 text-primary dark:text-zinc-200 font-mono text-xs border border-zinc-200/50 dark:border-zinc-700/50 break-words">
+          {subPart.slice(1, -1)}
+        </code>
+      );
+    }
+
+    const boldParts = subPart.split(/(\*\*[^*]+\*\*)/g);
+    return (
+      <span key={subIdx}>
+        {boldParts.map((boldPart, boldIdx) => {
+          if (boldPart.startsWith('**') && boldPart.endsWith('**')) {
+            return (
+              <strong key={boldIdx} className="font-semibold text-foreground">
+                {renderTextWithLinks(boldPart.slice(2, -2))}
+              </strong>
+            );
+          }
+          return renderTextWithLinks(boldPart);
+        })}
+      </span>
+    );
+  });
+}
+
+interface TableData {
+  type: 'table';
+  headers: string[];
+  alignments: ('left' | 'center' | 'right')[];
+  rows: string[][];
+}
+
+// Parses text into segments of plain text and parsed tables
+function parseTablesAndText(text: string): (string | TableData)[] {
+  const lines = text.split('\n');
+  const result: (string | TableData)[] = [];
+  
+  let currentTableLines: string[] = [];
+  let isInsideTable = false;
+  let textBuffer: string[] = [];
+
+  const flushTextBuffer = () => {
+    if (textBuffer.length > 0) {
+      result.push(textBuffer.join('\n'));
+      textBuffer = [];
+    }
+  };
+
+  const isSeparatorRow = (line: string): boolean => {
+    const trimmed = line.trim();
+    if (!trimmed.startsWith('|') || !trimmed.endsWith('|')) return false;
+    const parts = trimmed.slice(1, -1).split('|');
+    return parts.length > 0 && parts.every(p => /^[ \t]*:?-+:?[ \t]*$/.test(p));
+  };
+
+  const parseTable = (tableLines: string[]) => {
+    if (tableLines.length < 3) {
+      textBuffer.push(...tableLines);
+      return;
+    }
+
+    const headerLine = tableLines[0];
+    const separatorLine = tableLines[1];
+    const dataLines = tableLines.slice(2);
+
+    const sepParts = separatorLine.trim().slice(1, -1).split('|').map(s => s.trim());
+    const alignments: ('left' | 'center' | 'right')[] = sepParts.map(part => {
+      const start = part.startsWith(':');
+      const end = part.endsWith(':');
+      if (start && end) return 'center';
+      if (end) return 'right';
+      return 'left';
+    });
+
+    const headers = headerLine.trim().slice(1, -1).split('|').map(s => s.trim());
+
+    const rows = dataLines.map(line => {
+      const trimmed = line.trim();
+      let parts = trimmed;
+      if (trimmed.startsWith('|')) {
+        parts = trimmed.slice(1);
+      }
+      if (trimmed.endsWith('|')) {
+        parts = parts.slice(0, -1);
+      }
+      return parts.split('|').map(s => s.trim());
+    });
+
+    flushTextBuffer();
+    result.push({
+      type: 'table',
+      headers,
+      alignments,
+      rows
+    });
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+    const looksLikeTableRow = trimmed.startsWith('|') && trimmed.endsWith('|');
+
+    if (looksLikeTableRow) {
+      if (!isInsideTable) {
+        const nextLine = lines[i + 1];
+        if (nextLine && isSeparatorRow(nextLine)) {
+          flushTextBuffer();
+          isInsideTable = true;
+          currentTableLines = [line];
+        } else {
+          textBuffer.push(line);
+        }
+      } else {
+        currentTableLines.push(line);
+      }
+    } else {
+      if (isInsideTable) {
+        parseTable(currentTableLines);
+        isInsideTable = false;
+        currentTableLines = [];
+      }
+      textBuffer.push(line);
+    }
+  }
+
+  if (isInsideTable) {
+    parseTable(currentTableLines);
+  }
+  flushTextBuffer();
+
+  return result;
+}
 
 // Custom code-block copy button helper for AI Tutor replies
 function ChatMessageContent({ content }: { content: string }) {
@@ -171,37 +323,69 @@ function ChatMessageContent({ content }: { content: string }) {
           );
         }
 
-        // Parse inline formatting (bold, inline code)
-        // Inline code `code`
-        const text = part;
-        const subParts = text.split(/(`[^`\n]+`)/g);
+        // For non-code segments, parse tables and render them appropriately
+        const segments = parseTablesAndText(part);
 
         return (
-          <span key={index}>
-            {subParts.map((subPart, subIdx) => {
-              if (subPart.startsWith('`') && subPart.endsWith('`')) {
+          <span key={index} className="min-w-0">
+            {segments.map((segment, segIdx) => {
+              if (typeof segment === 'string') {
                 return (
-                  <code key={subIdx} className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800/80 text-primary dark:text-zinc-200 font-mono text-xs border border-zinc-200/50 dark:border-zinc-700/50 break-words">
-                    {subPart.slice(1, -1)}
-                  </code>
+                  <span key={segIdx}>
+                    {renderInlineFormatting(segment)}
+                  </span>
                 );
               }
 
-              // Bold **text**
-              const boldParts = subPart.split(/(\*\*[^*]+\*\*)/g);
+              // Render Table
               return (
-                <span key={subIdx}>
-                  {boldParts.map((boldPart, boldIdx) => {
-                    if (boldPart.startsWith('**') && boldPart.endsWith('**')) {
-                      return (
-                        <strong key={boldIdx} className="font-semibold text-foreground">
-                          {renderTextWithLinks(boldPart.slice(2, -2))}
-                        </strong>
-                      );
-                    }
-                    return renderTextWithLinks(boldPart);
-                  })}
-                </span>
+                <div key={segIdx} className="my-4 overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 max-w-full">
+                  <table className="w-full text-left border-collapse text-xs table-auto">
+                    <thead>
+                      <tr className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
+                        {segment.headers.map((header, hIdx) => {
+                          const alignment = segment.alignments[hIdx] || 'left';
+                          return (
+                            <th 
+                              key={hIdx} 
+                              className={cn(
+                                "px-4 py-2.5 font-semibold text-zinc-700 dark:text-zinc-300 border-r border-zinc-200 dark:border-zinc-800 last:border-r-0 whitespace-nowrap",
+                                alignment === 'center' && 'text-center',
+                                alignment === 'right' && 'text-right'
+                              )}
+                            >
+                              {renderInlineFormatting(header)}
+                            </th>
+                          );
+                        })}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {segment.rows.map((row, rIdx) => (
+                        <tr 
+                          key={rIdx} 
+                          className="border-b border-zinc-100 dark:border-zinc-900 last:border-b-0 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 transition-colors"
+                        >
+                          {row.map((cell, cIdx) => {
+                            const alignment = segment.alignments[cIdx] || 'left';
+                            return (
+                              <td 
+                                key={cIdx} 
+                                className={cn(
+                                  "px-4 py-2.5 text-zinc-600 dark:text-zinc-400 border-r border-zinc-200 dark:border-zinc-800 last:border-r-0 break-words",
+                                  alignment === 'center' && 'text-center',
+                                  alignment === 'right' && 'text-right'
+                                )}
+                              >
+                                {renderInlineFormatting(cell)}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               );
             })}
           </span>
@@ -285,6 +469,186 @@ function generateFallbackTocText(nodes: TocNode[], depth: number = 0): string {
     }
   });
   return text;
+}
+
+function buildSystemPrompt({
+  course,
+  coursePackage,
+  cards,
+  currentCardIndex,
+  wikiContent,
+  agentType,
+  isCheckpointMode,
+  activeCheckpoint,
+  isFallback,
+  isFirstQuestion,
+  finalResourceUrl,
+}: {
+  course: Course;
+  coursePackage?: CoursePackage | null;
+  cards: any[];
+  currentCardIndex: number;
+  wikiContent: string;
+  agentType: string;
+  isCheckpointMode: boolean;
+  activeCheckpoint: any;
+  isFallback: boolean;
+  isFirstQuestion: boolean;
+  finalResourceUrl: string;
+}) {
+  const currentCard = cards[currentCardIndex];
+  let cardContent = currentCard?.content || '';
+  
+  if (currentCard?.type === 'video' && currentCard?.videoInfo?.subtitles) {
+    const subtitleTexts = currentCard.videoInfo.subtitles.map(
+      (sub: { start: number; end: number; text: string }) => `[${Math.floor(sub.start / 60)}:${String(Math.floor(sub.start % 60)).padStart(2, '0')}] ${sub.text}`
+    );
+    cardContent = `이 카드는 동영상 강의입니다. 아래는 동영상의 자막 스크립트 내용입니다:\n---\n${subtitleTexts.join('\n')}\n---`;
+  }
+
+  let currentUnitContext = '';
+  if (course.toc && currentCard?.filename) {
+    const activeNode = findTocNodeByFilename(course.toc, currentCard.filename);
+    if (activeNode) {
+      currentUnitContext = `[Current Unit Details]\nUnit Title: ${activeNode.title}\nUnit Objective/Description: ${activeNode.description || 'No description available.'}`;
+    }
+  }
+
+  const targetAge = coursePackage?.target_age || '전연령';
+  const category = coursePackage?.category || 'General';
+  const tags = coursePackage?.tags?.join(', ') || 'None';
+  const totalCards = cards.length;
+
+  let systemPrompt = '';
+  if (agentType === 'llm') {
+    systemPrompt = `You are a helpful AI tutor for the course "${course.title}".
+Use the following information to answer the student's question and guide them through their learning.
+
+[Course Info]
+Title: ${course.title}
+Description: ${course.description || 'No description available.'}
+Category: ${category}
+Target Audience: ${targetAge}
+Tags: ${tags}
+
+[Learning Progress & Context]
+Progress: Card ${currentCardIndex + 1} of ${totalCards} (${Math.round(((currentCardIndex + 1) / totalCards) * 100)}% completed)
+${currentUnitContext}
+
+[Current Card Content]
+Title: ${currentCard?.title || 'Untitled'}
+Content:
+${cardContent}
+
+${wikiContent ? `[Relevant Course Wiki & Resources]\n${wikiContent}\n` : ''}
+
+[Instruction for AI Tutor]
+- Adapt your explanation depth, vocabulary complexity, and tone to suit the target audience: "${targetAge}". (e.g., use friendly, simple, and visual analogies for children/teens, and structured, professional context for adults.)
+- Guide the student step-by-step using the context above.
+- Keep your answer clear, informative, and formatted in markdown.`;
+
+    if (isCheckpointMode && activeCheckpoint) {
+      systemPrompt += `
+
+[Active Checkpoint QnA Evaluation]
+The student is currently undergoing a checkpoint QnA for the card "${currentCard?.title || 'Untitled'}".
+The evaluation instruction is:
+"${activeCheckpoint.prompt}"
+
+You must evaluate the student's response.
+If the student's response satisfies the criteria, respond with praise and details, and you MUST append the following exact HTML comment at the very end of your response:
+<!-- HIDDEN_MESSAGE: {"action": "checkpoint_evaluation", "passed": true} -->
+
+If the student's response does NOT satisfy the criteria, explain why and encourage them to try again, and you MUST append the following exact HTML comment at the very end of your response:
+<!-- HIDDEN_MESSAGE: {"action": "checkpoint_evaluation", "passed": false} -->`;
+    }
+  } else {
+    let fallbackTocText = '';
+    if (isFallback && isFirstQuestion) {
+      const tocItems = course.toc || [];
+      const tocTreeText = generateFallbackTocText(tocItems, 0);
+      fallbackTocText = `\n\n[Fallback Course Table of Contents]\n${tocTreeText}\n\nNote: The resource URL could not be loaded via external storage. Please refer to this Table of Contents to understand the overall course structure.`;
+    }
+
+    systemPrompt = `You are a helpful AI tutor for the course "${course.title}". 
+To minimize context payload, detailed course contents (summaries, chapters, and all card contents) are not sent directly in the chat messages.
+Instead, you must download the complete course materials from the following URL into a course-specific directory in your workspace (e.g. "courses/${course.slug || 'slug'}") if you don't already have them:
+${finalResourceUrl}
+ 
+If you have already downloaded/cached the course materials from this URL previously, DO NOT download them again.
+
+Additionally, you MUST communicate the status of the course materials download back to the system using a special format called a "Hidden Message".
+Whenever you respond (especially on the first system check or after download completes), append the following HTML comment at the end of your response:
+<!-- HIDDEN_MESSAGE: {"action": "download_status", "downloaded": true} -->
+Use "downloaded": true if the materials are successfully downloaded/extracted and analyzed in your workspace, otherwise use "downloaded": false.
+
+[Target Student Profile]
+Category: ${category}
+Target Audience: ${targetAge}
+Tags: ${tags}
+
+[Instruction]
+- Adapt your explanation depth, vocabulary complexity, and tone to suit the target audience: "${targetAge}". (e.g., use friendly, simple, and visual analogies for children/teens, and structured, professional context for adults.)
+- Please guide the student using the current card context provided in the user's message.${fallbackTocText}`;
+
+    if (isCheckpointMode && activeCheckpoint) {
+      systemPrompt += `
+
+[Active Checkpoint QnA Evaluation]
+The student is currently undergoing a checkpoint QnA for the card "${currentCard?.title || 'Untitled'}".
+The evaluation instruction is:
+"${activeCheckpoint.prompt}"
+
+You must evaluate the student's response.
+If the student's response satisfies the criteria, respond with praise and details, and you MUST append the following exact HTML comment at the very end of your response:
+<!-- HIDDEN_MESSAGE: {"action": "checkpoint_evaluation", "passed": true} -->
+
+If the student's response does NOT satisfy the criteria, explain why and encourage them to try again, and you MUST append the following exact HTML comment at the very end of your response:
+<!-- HIDDEN_MESSAGE: {"action": "checkpoint_evaluation", "passed": false} -->`;
+    }
+  }
+
+  return systemPrompt;
+}
+
+function buildCurrentCardContext({
+  course,
+  cards,
+  currentCardIndex,
+}: {
+  course: Course;
+  cards: any[];
+  currentCardIndex: number;
+}) {
+  const currentCard = cards[currentCardIndex];
+  let cardContent = currentCard?.content || '';
+  
+  if (currentCard?.type === 'video' && currentCard?.videoInfo?.subtitles) {
+    const subtitleTexts = currentCard.videoInfo.subtitles.map(
+      (sub: { start: number; end: number; text: string }) => `[${Math.floor(sub.start / 60)}:${String(Math.floor(sub.start % 60)).padStart(2, '0')}] ${sub.text}`
+    );
+    cardContent = `이 카드는 동영상 강의입니다. 아래는 동영상의 자막 스크립트 내용입니다:\n---\n${subtitleTexts.join('\n')}\n---`;
+  }
+
+  let currentUnitContext = '';
+  if (course.toc && currentCard?.filename) {
+    const activeNode = findTocNodeByFilename(course.toc, currentCard.filename);
+    if (activeNode) {
+      currentUnitContext = `[Current Unit Details]\nUnit Title: ${activeNode.title}\nUnit Objective/Description: ${activeNode.description || 'No description available.'}`;
+    }
+  }
+
+  const totalCards = cards.length;
+
+  return `[Current Card Context]
+Card Title: ${currentCard?.title || 'Untitled'}
+Progress: Card ${currentCardIndex + 1} of ${totalCards} (${Math.round(((currentCardIndex + 1) / totalCards) * 100)}% completed)
+${currentUnitContext}
+
+Card Content:
+${cardContent}
+--------------------------------------------------
+Student Question: `;
 }
 
 interface LearnTocNodeViewProps {
@@ -449,6 +813,39 @@ function cleanStreamingText(text: string): string {
   return text;
 }
 
+function getFormattedTime(): string {
+  return new Date().toLocaleTimeString('ko-KR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+}
+
+function generateUniqueId(): string {
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+}
+
+function estimateTokenCount(text: string): number {
+  if (!text) return 0;
+  const koreanCharCount = (text.match(/[\uac00-\ud7a3]/g) || []).length;
+  const otherCharCount = text.length - koreanCharCount;
+  return Math.ceil(koreanCharCount * 1.5 + otherCharCount * 0.5);
+}
+
+function getMaxTokenLimit(maxTokensStr: string): number {
+  const clean = maxTokensStr.toLowerCase().trim();
+  const match = clean.match(/^(\d+)k$/);
+  if (match) {
+    return parseInt(match[1], 10) * 1024;
+  }
+  const parsed = parseInt(clean, 10);
+  return isNaN(parsed) ? 16384 : parsed;
+}
+
+function calculateTotalTokens(apiMessages: { role: string; content: string }[]): number {
+  return apiMessages.reduce((sum, msg) => sum + estimateTokenCount(msg.content), 0);
+}
+
 export default function LearnPageClient({ 
   slug, 
   course, 
@@ -461,9 +858,11 @@ export default function LearnPageClient({
 }: LearnPageClientProps) {
   const router = useRouter();
   const { layout } = useLearnLayout();
+  const { maxTokens, compressionThreshold } = useAgentSettings();
   const totalCards = cards.length;
   const [currentCardIndex, setCurrentCardIndex] = useState(initialCardIndex);
   const [isCourseCompleted, setIsCourseCompleted] = useState<boolean>(() => !!userProgress?.completed);
+  const [isCompressing, setIsCompressing] = useState<boolean>(false);
 
   // Resizable panel widths
   const [tocWidth, setTocWidth] = useState<number>(256);
@@ -639,7 +1038,7 @@ export default function LearnPageClient({
     setIsCheckpointMode(false);
     setActiveCheckpoint(null);
     setMessages(prev => [...prev, {
-      id: Date.now().toString(),
+      id: generateUniqueId(),
       role: 'agent',
       content: '체크포인트를 건너뛰었습니다. 다음 단계로 진행하실 수 있습니다.'
     }]);
@@ -858,9 +1257,22 @@ Please ask the student the question now. Only ask the question itself, do not re
   };
   
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { id: '1', role: 'agent', content: `안녕하세요! "${course?.title || '강좌'}" 학습을 도와줄 AI 튜터입니다. 궁금한 점이 있다면 언제든 물어보세요.` }
+    { id: '1', role: 'agent', content: `안녕하세요! "${course?.title || '강좌'}" 학습을 도와줄 AI 튜터입니다. 궁금한 점이 있다면 언제든 물어보세요.`, timestamp: getFormattedTime() }
   ]);
   const [input, setInput] = useState('');
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [promptUsage, setPromptUsage] = useState<number | null>(null);
+
+  const handleCopyMessage = async (id: string, text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+    }
+  };
+
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const [agentId, setAgentId] = useState<string | null>(null);
@@ -893,6 +1305,9 @@ Please ask the student the question now. Only ask the question itself, do not re
   }, [agentId]);
 
   const [agentStatus, setAgentStatus] = useState<'loading' | 'online' | 'offline' | 'none'>('loading');
+  const [agentProgram, setAgentProgram] = useState<'hermes' | 'openclaw' | 'ollama' | 'lmstudio' | 'other' | null>(null);
+  const [isLlmAgent, setIsLlmAgent] = useState<boolean>(false);
+  const [currentAgentData, setCurrentAgentData] = useState<any>(null);
   const [supabaseResourceUrl, setSupabaseResourceUrl] = useState<string>('');
   const [isResourceUrlLoading, setIsResourceUrlLoading] = useState(true);
   const [hasCheckedInit, setHasCheckedInit] = useState(false);
@@ -932,9 +1347,35 @@ Please ask the student the question now. Only ask the question itself, do not re
         if (error || !currentAgent) {
           setAgentStatus('none');
           setAgentId(null);
+          setAgentProgram(null);
+          setIsLlmAgent(false);
+          setCurrentAgentData(null);
         } else {
           setAgentId(currentAgent.id);
           setAgentType(currentAgent.agent_type || 'harness');
+          setAgentProgram(currentAgent.agent_program || null);
+          setCurrentAgentData(currentAgent);
+
+          // 포괄적인 LLM 에이전트 식별 (타입, 프로그램, 엔드포인트 포트, 모델명 기반)
+          const endpointLower = (currentAgent.endpoint || '').toLowerCase();
+          const modelLower = (currentAgent.selected_model || '').toLowerCase();
+          const programLower = (currentAgent.agent_program || '').toLowerCase();
+          const typeLower = (currentAgent.agent_type || '').toLowerCase();
+          
+          const isLlm = 
+            typeLower === 'llm' || 
+            programLower === 'ollama' || 
+            programLower === 'lmstudio' || 
+            endpointLower.includes('11434') || 
+            endpointLower.includes('1234') ||  
+            modelLower.includes('gemma') || 
+            modelLower.includes('llama') ||
+            modelLower.includes('mistral') ||
+            modelLower.includes('qwen') ||
+            modelLower.includes('phi');
+            
+          setIsLlmAgent(isLlm);
+
           // Set initial status from DB
           setAgentStatus(currentAgent.status === 'online' ? 'online' : 'offline');
 
@@ -1003,7 +1444,16 @@ Please ask the student the question now. Only ask the question itself, do not re
   useEffect(() => {
     if (agentStatus === 'online' && agentId && !isResourceUrlLoading && !hasCheckedInit) {
       setHasCheckedInit(true);
-      if (agentType === 'llm') {
+      const isLlm = 
+        agentType?.toLowerCase() === 'llm' || 
+        agentProgram?.toLowerCase() === 'ollama' || 
+        agentProgram?.toLowerCase() === 'lmstudio' || 
+        isLlmAgent ||
+        currentAgentData?.agent_type?.toLowerCase() === 'llm' ||
+        currentAgentData?.agent_program?.toLowerCase() === 'ollama' ||
+        currentAgentData?.agent_program?.toLowerCase() === 'lmstudio';
+
+      if (isLlm) {
         setCourseDownloadStatus('downloaded');
         return;
       }
@@ -1045,7 +1495,7 @@ Please ask the student the question now. Only ask the question itself, do not re
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [agentStatus, agentId, isResourceUrlLoading, hasCheckedInit, supabaseResourceUrl, course, slug, messages, isUpdated, currentCardIndex, agentType]);
+  }, [agentStatus, agentId, isResourceUrlLoading, hasCheckedInit, supabaseResourceUrl, course, slug, messages, isUpdated, currentCardIndex, agentType, agentProgram, isLlmAgent, currentAgentData]);
 
 
 
@@ -1074,7 +1524,7 @@ Please ask the student the question now. Only ask the question itself, do not re
   ) {
     if (!text.trim() || agentStatus === 'loading') return;
 
-    const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', content: text };
+    const userMsg: ChatMessage = { id: generateUniqueId(), role: 'user', content: text, timestamp: getFormattedTime() };
     const newMessages = (isSystemCheck || isCheckpointTrigger) ? currentMessages : [...currentMessages, userMsg];
     
     if (!isSystemCheck && !isCheckpointTrigger) {
@@ -1086,21 +1536,23 @@ Please ask the student the question now. Only ask the question itself, do not re
         // Show warning message when no external agent is connected
         setTimeout(() => {
           setMessages(prev => [...prev, {
-            id: (Date.now() + 1).toString(),
+            id: generateUniqueId(),
             role: 'agent',
-            content: '온라인 상태의 외부 에이전트가 없습니다. 우측 상단 닉네임 클릭 -> 설정 -> 에이전트 관리에서 에이전트를 먼저 등록하고 활성화해주세요.'
+            content: '온라인 상태의 외부 에이전트가 없습니다. 우측 상단 닉네임 클릭 -> 설정 -> 에이전트 관리에서 에이전트를 먼저 등록하고 활성화해주세요.',
+            timestamp: getFormattedTime()
           }]);
         }, 500);
       }
       return;
     }
 
-    const assistantMsgId = (Date.now() + 1).toString();
+    const assistantMsgId = generateUniqueId();
     if (!isSystemCheck) {
       setMessages(prev => [...prev, { 
         id: assistantMsgId, 
         role: 'agent', 
-        content: isCheckpointTrigger ? '체크포인트 질문을 생성하는 중...' : '답변을 생성하는 중...' 
+        content: isCheckpointTrigger ? '체크포인트 질문을 생성하는 중...' : '답변을 생성하는 중...',
+        timestamp: getFormattedTime()
       }]);
     }
 
@@ -1115,84 +1567,26 @@ Please ask the student the question now. Only ask the question itself, do not re
 
 
 
-      let systemPrompt = '';
-      if (agentType === 'llm') {
-        systemPrompt = `You are a helpful AI tutor for the course "${course.title}".
-Use the following information to answer the student's question and guide them through their learning.
-
-[Course Info]
-Title: ${course.title}
-Description: ${course.description || 'No description available.'}
-
-[Current Card Content]
-Title: ${cards[currentCardIndex]?.title || 'Untitled'}
-Content:
-${cards[currentCardIndex]?.content || ''}
-
-${wikiContent ? `[Relevant Course Wiki & Resources]\n${wikiContent}\n` : ''}
-Please guide the student step-by-step using the context above. Keep your answer clear, informative, and formatted in markdown.`;
-
-        if (isCheckpointMode && activeCheckpoint) {
-          systemPrompt += `
-
-[Active Checkpoint QnA Evaluation]
-The student is currently undergoing a checkpoint QnA for the card "${cards[currentCardIndex]?.title}".
-The evaluation instruction is:
-"${activeCheckpoint.prompt}"
-
-You must evaluate the student's response.
-If the student's response satisfies the criteria, respond with praise and details, and you MUST append the following exact HTML comment at the very end of your response:
-<!-- HIDDEN_MESSAGE: {"action": "checkpoint_evaluation", "passed": true} -->
-
-If the student's response does NOT satisfy the criteria, explain why and encourage them to try again, and you MUST append the following exact HTML comment at the very end of your response:
-<!-- HIDDEN_MESSAGE: {"action": "checkpoint_evaluation", "passed": false} -->`;
-        }
-      } else {
-        let fallbackTocText = '';
-        if (isFallback && isFirstQuestion) {
-          const tocItems = course.toc || [];
-          const tocTreeText = generateFallbackTocText(tocItems, 0);
-          fallbackTocText = `\n\n[Fallback Course Table of Contents]\n${tocTreeText}\n\nNote: The resource URL could not be loaded via external storage. Please refer to this Table of Contents to understand the overall course structure.`;
-        }
-
-        systemPrompt = `You are a helpful AI tutor for the course "${course.title}". 
-To minimize context payload, detailed course contents (summaries, chapters, and all card contents) are not sent directly in the chat messages.
-Instead, you must download the complete course materials from the following URL into a course-specific directory in your workspace (e.g. "courses/${slug}") if you don't already have them:
-${finalResourceUrl}
- 
-If you have already downloaded/cached the course materials from this URL previously, DO NOT download them again.
-
-Additionally, you MUST communicate the status of the course materials download back to the system using a special format called a "Hidden Message".
-Whenever you respond (especially on the first system check or after download completes), append the following HTML comment at the end of your response:
-<!-- HIDDEN_MESSAGE: {"action": "download_status", "downloaded": true} -->
-Use "downloaded": true if the materials are successfully downloaded/extracted and analyzed in your workspace, otherwise use "downloaded": false.
- 
-Please guide the student using the current card context provided in the user's message.${fallbackTocText}`;
-
-        if (isCheckpointMode && activeCheckpoint) {
-          systemPrompt += `
-
-[Active Checkpoint QnA Evaluation]
-The student is currently undergoing a checkpoint QnA for the card "${cards[currentCardIndex]?.title}".
-The evaluation instruction is:
-"${activeCheckpoint.prompt}"
-
-You must evaluate the student's response.
-If the student's response satisfies the criteria, respond with praise and details, and you MUST append the following exact HTML comment at the very end of your response:
-<!-- HIDDEN_MESSAGE: {"action": "checkpoint_evaluation", "passed": true} -->
-
-If the student's response does NOT satisfy the criteria, explain why and encourage them to try again, and you MUST append the following exact HTML comment at the very end of your response:
-<!-- HIDDEN_MESSAGE: {"action": "checkpoint_evaluation", "passed": false} -->`;
-        }
-      }
+      const systemPrompt = buildSystemPrompt({
+        course,
+        coursePackage,
+        cards,
+        currentCardIndex,
+        wikiContent,
+        agentType,
+        isCheckpointMode,
+        activeCheckpoint,
+        isFallback,
+        isFirstQuestion,
+        finalResourceUrl,
+      });
 
       const currentCard = cards[currentCardIndex];
-      const currentCardContext = `[Current Card Context]
-Card Title: ${currentCard?.title || 'Untitled'}
-Card Content:
-${currentCard?.content || ''}
---------------------------------------------------
-Student Question: `;
+      const currentCardContext = buildCurrentCardContext({
+        course,
+        cards,
+        currentCardIndex,
+      });
 
       let apiMessages;
       if (isSystemCheck) {
@@ -1316,6 +1710,13 @@ Student Question: `;
         setMessages(prev => prev.map(m => 
           m.id === assistantMsgId ? { ...m, content: finalCleanText } : m
         ));
+
+        // Calculate and update prompt usage percentage after answer completion
+        const completedApiMessages = [...apiMessages, { role: 'assistant' as const, content: finalCleanText }];
+        const finalEstTokens = calculateTotalTokens(completedApiMessages);
+        const limit = getMaxTokenLimit(maxTokens);
+        const usagePercent = Math.min(100, Math.round((finalEstTokens / limit) * 100));
+        setPromptUsage(usagePercent);
       }
     } catch (err: unknown) {
       console.error('Failed to chat with agent:', err);
@@ -1328,11 +1729,242 @@ Student Question: `;
     }
   }
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  const handleClearChat = async () => {
+    if (isCompressing) return;
+    setMessages([
+      { id: '1', role: 'agent', content: `안녕하세요! "${course?.title || '강좌'}" 학습을 도와줄 AI 튜터입니다. 궁금한 점이 있다면 언제든 물어보세요.`, timestamp: getFormattedTime() }
+    ]);
+    setPromptUsage(null);
+    if (agentId) {
+      try {
+        await fetch(`/api/external-agents/${agentId}/messages`, {
+          method: 'DELETE',
+        });
+      } catch (err) {
+        console.error('Failed to clear database chat history:', err);
+      }
+    }
+  };
+
+  const handleSend = async () => {
+    if (!input.trim() || isCompressing) return;
     const userPrompt = input.trim();
     setInput('');
-    sendMessage(userPrompt, messages);
+
+    if (!agentId || agentStatus === 'none') {
+      sendMessage(userPrompt, messages);
+      return;
+    }
+
+    // 1. Calculate estimated token size
+    // We construct the newMessages and systemPrompt that WOULD be sent to the agent
+    const userMsg: ChatMessage = { id: generateUniqueId(), role: 'user', content: userPrompt };
+    const newMessages = [...messages, userMsg];
+    
+    // Generate the system prompt using the same logic as sendMessage
+    const defaultResourceUrl = `${window.location.origin}/api/courses/${encodeURIComponent(slug)}/resource`;
+    const finalResourceUrl = supabaseResourceUrl && supabaseResourceUrl.includes('.supabase.co')
+      ? supabaseResourceUrl
+      : defaultResourceUrl;
+
+    const isFallback = !finalResourceUrl.includes('.supabase.co');
+    const isFirstQuestion = messages.filter(m => m.role === 'user').length === 0;
+      const systemPrompt = buildSystemPrompt({
+        course,
+        coursePackage,
+        cards,
+        currentCardIndex,
+        wikiContent,
+        agentType,
+        isCheckpointMode,
+        activeCheckpoint,
+        isFallback,
+        isFirstQuestion,
+        finalResourceUrl,
+      });
+
+      const currentCard = cards[currentCardIndex];
+      const currentCardContext = buildCurrentCardContext({
+        course,
+        cards,
+        currentCardIndex,
+      });
+
+    let apiMessagesForEst = newMessages.map(m => ({
+      role: (m.role === 'agent' ? 'assistant' : 'user') as 'assistant' | 'user' | 'system',
+      content: m.content
+    }));
+
+    if (agentType === 'harness' && apiMessagesForEst.length > 0 && apiMessagesForEst[apiMessagesForEst.length - 1].role === 'user') {
+      apiMessagesForEst[apiMessagesForEst.length - 1].content = `${currentCardContext}${userPrompt}`;
+    }
+
+    apiMessagesForEst.unshift({
+      role: 'system',
+      content: systemPrompt
+    });
+
+    const estTokens = calculateTotalTokens(apiMessagesForEst);
+    const limit = getMaxTokenLimit(maxTokens);
+    const triggerRatio = compressionThreshold / 100;
+    const triggerLimit = limit * triggerRatio;
+
+    console.log(`[Token Check] Est Tokens: ${estTokens}, Limit: ${limit}, ${compressionThreshold}% Trigger: ${triggerLimit}`);
+
+    // If limit exceeded and we have chat history to compress
+    if (estTokens >= triggerLimit && messages.length > 2) {
+      console.log(`[Token Check] Limit exceeded (${compressionThreshold}%). Starting auto history compression...`);
+      setIsCompressing(true);
+      
+      // Add status message
+      const compressingMsgId = 'compressing-' + Date.now();
+      setMessages(prev => [...prev, {
+        id: compressingMsgId,
+        role: 'agent',
+        content: '💬 대화 기록이 너무 길어져 AI가 이전 대화를 요약/압축하고 있습니다. 잠시만 기다려주세요...'
+      }]);
+
+      try {
+        // Construct the history string to compress
+        const historyText = messages
+          .filter(m => m.id !== '1') // skip welcome message
+          .map(m => `${m.role === 'user' ? '학생' : '튜터'}: ${m.content}`)
+          .join('\n\n');
+
+        const compressionPrompt = `[System History Compression Instruction]
+이전까지의 모든 대화 기록입니다. 핵심 질문과 답변 위주로 가장 중요한 내용을 아주 간결하게 요약해 주세요. 
+향후 대화의 컨텍스트로 유지되어야 하므로, 중요한 코드 조각이나 핵심 개념은 생략하지 마세요. 
+인사말이나 부연 설명 없이 오직 요약 본문만 한국어로 답변해 주세요.
+
+[대화 기록]
+${historyText}`;
+
+        const compSystemPrompt = `You are an AI assistant designed to compress chat history. Summarize the given history concisely in Korean. Keep all essential code snippets and definitions. Do not include any greeting or explanation.`;
+
+        const compApiMessages = [
+          { role: 'system' as const, content: compSystemPrompt },
+          { role: 'user' as const, content: compressionPrompt }
+        ];
+
+        const response = await fetch(`/api/external-agents/${agentId}/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            messages: compApiMessages,
+            original_user_message: compressionPrompt
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`API error: ${response.statusText}`);
+        }
+
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+        if (!reader) throw new Error('No reader available');
+
+        let summaryText = '';
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            const cleanLine = line.trim();
+            if (cleanLine.startsWith('data:')) {
+              const dataStr = cleanLine.slice(cleanLine.indexOf(':') + 1).trim();
+              if (dataStr === '[DONE]') continue;
+              try {
+                const parsed = JSON.parse(dataStr);
+                const delta = parsed.choices?.[0]?.delta?.content || '';
+                summaryText += delta;
+              } catch {}
+            }
+          }
+        }
+
+        const cleanSummary = summaryText.replace(/<!--[\s\S]*?-->/g, '').trim();
+        const summaryContent = `[이전 대화 요약]\n\n${cleanSummary}`;
+
+        // Delete DB messages
+        await fetch(`/api/external-agents/${agentId}/messages`, {
+          method: 'DELETE',
+        });
+
+        // Insert new summary message
+        await fetch(`/api/external-agents/${agentId}/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            role: 'assistant',
+            content: summaryContent
+          })
+        });
+
+        const summaryMsg: ChatMessage = {
+          id: generateUniqueId(),
+          role: 'agent',
+          content: summaryContent,
+          timestamp: getFormattedTime()
+        };
+
+        const updatedMessages = [
+          messages[0], // Welcome message
+          summaryMsg
+        ];
+
+        // Calculate new estimated tokens after compression
+        const newApiMessagesForEst = [...updatedMessages, { id: 'dummy', role: 'user' as const, content: userPrompt }].map(m => ({
+          role: (m.role === 'agent' ? 'assistant' : 'user') as 'assistant' | 'user' | 'system',
+          content: m.content
+        }));
+
+        if (agentType === 'harness' && newApiMessagesForEst.length > 0 && newApiMessagesForEst[newApiMessagesForEst.length - 1].role === 'user') {
+          newApiMessagesForEst[newApiMessagesForEst.length - 1].content = `${currentCardContext}${userPrompt}`;
+        }
+
+        newApiMessagesForEst.unshift({
+          role: 'system',
+          content: systemPrompt
+        });
+
+        const newEstTokens = calculateTotalTokens(newApiMessagesForEst);
+        const compressionRate = Math.round((1 - (newEstTokens / estTokens)) * 100);
+
+        const systemNoticeMsg: ChatMessage = {
+          id: 'system-notice-' + generateUniqueId(),
+          role: 'system',
+          content: `대화 히스토리가 요약/압축되었습니다. (압축률: ${compressionRate}%, 현재 프롬프트 크기: ${newEstTokens.toLocaleString()} 토큰)`
+        };
+        
+        const finalLocalMessages = [
+          messages[0], // Welcome message
+          summaryMsg,
+          systemNoticeMsg
+        ];
+
+        setMessages(finalLocalMessages);
+        setIsCompressing(false);
+
+        // Proceed to send the actual user question using the updated messages (excluding system notice for LLM payload)
+        sendMessage(userPrompt, [messages[0], summaryMsg]);
+
+      } catch (compErr) {
+        console.error('Error during auto-compression:', compErr);
+        setIsCompressing(false);
+        // Fallback: clear status message and send as normal
+        setMessages(prev => prev.filter(m => m.id !== compressingMsgId));
+        sendMessage(userPrompt, messages);
+      }
+    } else {
+      // Normal message sending
+      sendMessage(userPrompt, messages);
+    }
   };
 
   const activeCard = cards[currentCardIndex];
@@ -1615,7 +2247,7 @@ Student Question: `;
           <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
             <Bot className="w-5 h-5" />
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <h3 className="font-semibold flex items-center gap-1.5">
               AI 튜터 (외부 에이전트)
               {isCheckpointMode && (
@@ -1636,28 +2268,40 @@ Student Question: `;
                     온라인 - 맞춤 학습 모드
                   </span>
                   
-                  {/* 강좌 자료 다운로드 상태 추가 */}
-                  {courseDownloadStatus === 'downloaded' ? (
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 w-fit">
-                      <span className="relative flex h-1.5 w-1.5">
-                        <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
-                      </span>
-                      자료 준비 완료
-                    </span>
-                  ) : courseDownloadStatus === 'not_downloaded' ? (
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-600 border border-amber-500/20 w-fit animate-pulse">
-                      <span className="relative flex h-1.5 w-1.5">
-                        <span className="absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75 animate-ping"></span>
-                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500"></span>
-                      </span>
-                      자료 다운로드 오류/미완료
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-600 border border-amber-500/20 w-fit animate-pulse">
-                      <Loader2 className="w-3 h-3 animate-spin text-amber-500" />
-                      자료 준비 상태 확인 중...
-                    </span>
+                  {/* 강좌 자료 다운로드 상태 추가 (Ollama, LM Studio 등 LLM 에이전트가 아닌 경우에만 렌더링) */}
+                  {!(
+                    agentType?.toLowerCase() === 'llm' || 
+                    agentProgram?.toLowerCase() === 'ollama' || 
+                    agentProgram?.toLowerCase() === 'lmstudio' || 
+                    isLlmAgent ||
+                    currentAgentData?.agent_type?.toLowerCase() === 'llm' ||
+                    currentAgentData?.agent_program?.toLowerCase() === 'ollama' ||
+                    currentAgentData?.agent_program?.toLowerCase() === 'lmstudio'
+                  ) && (
+                    <>
+                      {courseDownloadStatus === 'downloaded' ? (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 w-fit">
+                          <span className="relative flex h-1.5 w-1.5">
+                            <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                          </span>
+                          자료 준비 완료
+                        </span>
+                      ) : courseDownloadStatus === 'not_downloaded' ? (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-600 border border-amber-500/20 w-fit animate-pulse">
+                          <span className="relative flex h-1.5 w-1.5">
+                            <span className="absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75 animate-ping"></span>
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                          </span>
+                          자료 다운로드 오류/미완료
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-600 border border-amber-500/20 w-fit animate-pulse">
+                          <Loader2 className="w-3 h-3 animate-spin text-amber-500" />
+                          자료 준비 상태 확인 중...
+                        </span>
+                      )}
+                    </>
                   )}
                 </div>
               ) : agentStatus === 'offline' ? (
@@ -1673,28 +2317,80 @@ Student Question: `;
               )}
             </div>
           </div>
+          {agentStatus !== 'none' && agentId && (
+            <Button
+              variant="ghost"
+              size="icon"
+              title="채팅 지우기 (대화 기록 초기화)"
+              onClick={handleClearChat}
+              disabled={isCompressing}
+              className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          )}
         </div>
 
         <ScrollArea className="flex-1 min-h-0 p-4">
           <div className="space-y-4">
-            {messages.map(msg => (
-              <div key={msg.id} className={`flex gap-3 max-w-[85%] ${msg.role === 'user' ? 'ml-auto flex-row-reverse' : ''}`}>
-                <div className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center bg-muted">
-                  {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+            {messages.map(msg => {
+              if (msg.role === 'system') {
+                return (
+                  <div key={msg.id} className="flex justify-center my-2 w-full">
+                    <div className="bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5 max-w-[90%] text-center font-medium">
+                      <Bot className="w-3.5 h-3.5 shrink-0" />
+                      <span>{msg.content}</span>
+                    </div>
+                  </div>
+                );
+              }
+              return (
+                <div key={msg.id} className={`flex gap-3 max-w-[85%] ${msg.role === 'user' ? 'ml-auto flex-row-reverse' : ''}`}>
+                  <div className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center bg-muted">
+                    {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                  </div>
+                  <div className="flex flex-col gap-1 min-w-0 max-w-[calc(100%-2.5rem)]">
+                    <div className={`p-3 rounded-2xl text-sm min-w-0 ${
+                      msg.role === 'user' 
+                        ? 'bg-primary text-primary-foreground rounded-tr-none' 
+                        : 'bg-muted rounded-tl-none border'
+                    }`}>
+                      {msg.role === 'user' ? (
+                        <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                      ) : (
+                        <ChatMessageContent content={msg.content} />
+                      )}
+                    </div>
+                    <div className={`flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5 px-1 ${
+                      msg.role === 'user' ? 'justify-end' : 'justify-start'
+                    }`}>
+                      <span>{msg.timestamp || getFormattedTime()}</span>
+                      {msg.id !== '1' && (
+                        <>
+                          <span className="text-zinc-300 dark:text-zinc-700">•</span>
+                          <button 
+                            onClick={() => handleCopyMessage(msg.id, msg.content)}
+                            className="hover:text-primary transition-colors flex items-center gap-0.5 focus:outline-none"
+                          >
+                            {copiedId === msg.id ? (
+                              <>
+                                <Check className="w-3 h-3 text-green-500" />
+                                <span className="text-green-500 font-medium">복사됨</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3 h-3" />
+                                <span>복사</span>
+                              </>
+                            )}
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div className={`p-3 rounded-2xl text-sm min-w-0 ${
-                  msg.role === 'user' 
-                    ? 'bg-primary text-primary-foreground rounded-tr-none' 
-                    : 'bg-muted rounded-tl-none border'
-                }`}>
-                  {msg.role === 'user' ? (
-                    <p className="whitespace-pre-wrap break-words">{msg.content}</p>
-                  ) : (
-                    <ChatMessageContent content={msg.content} />
-                  )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
             <div ref={bottomRef} />
           </div>
         </ScrollArea>
@@ -1707,19 +2403,28 @@ Student Question: `;
               onKeyDown={e => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
-                  handleSend();
+                  if (!isCompressing) {
+                    handleSend();
+                  }
                 }
               }}
-              placeholder="질문을 입력하세요..."
-              className="resize-none pr-12 h-20 bg-muted/50 focus-visible:ring-primary"
+              placeholder={
+                isCompressing 
+                  ? "히스토리를 자동으로 압축하는 중입니다..." 
+                  : promptUsage !== null 
+                    ? `질문을 입력하세요. [프롬프트 사용량: ${promptUsage}%]` 
+                    : "질문을 입력하세요..."
+              }
+              disabled={isCompressing}
+              className="resize-none pr-12 h-20 bg-muted/50 focus-visible:ring-primary disabled:opacity-50"
             />
             <Button 
               size="icon" 
               className="absolute right-2 bottom-2 h-8 w-8"
               onClick={handleSend}
-              disabled={!input.trim()}
+              disabled={!input.trim() || isCompressing}
             >
-              <Send className="w-4 h-4" />
+              {isCompressing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             </Button>
           </div>
             {agentStatus === 'none' ? (

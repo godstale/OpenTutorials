@@ -30,9 +30,15 @@ export function UserHeader() {
   const initial = user?.email?.charAt(0).toUpperCase() ?? 'U';
 
   return (
-    <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-2 border-b bg-background px-6 justify-between">
-      <div className="flex items-center gap-4">
-        {isLearnPage ? (
+    <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center border-b bg-background px-6">
+      {/* Left section: SidebarTrigger (or empty spacer when learn page) */}
+      <div className="flex-1 flex items-center justify-start">
+        {!isLearnPage && <SidebarTrigger className="-ml-2" />}
+      </div>
+
+      {/* Center section: Layout Selection (when learn page) */}
+      <div className="flex-none flex items-center justify-center">
+        {isLearnPage && (
           <div className="flex items-center gap-1 bg-muted p-1 rounded-lg border text-xs">
             <Button
               variant={layout === '3-layout' ? 'secondary' : 'ghost'}
@@ -71,11 +77,11 @@ export function UserHeader() {
               <span className="hidden sm:inline">본문만</span>
             </Button>
           </div>
-        ) : (
-          <SidebarTrigger className="-ml-2" />
         )}
       </div>
-      <div className="flex items-center gap-4">
+
+      {/* Right section: Profile Link */}
+      <div className="flex-1 flex items-center justify-end gap-4">
         <Link href={ROUTES.SETTINGS}>
           <Avatar className="h-8 w-8 cursor-pointer hover:opacity-80 transition-opacity">
             <AvatarImage src={user?.user_metadata?.avatar_url} />
