@@ -30,6 +30,18 @@ Ran lint. See lint-report.md for details.
 
 <!-- Append-only. 최신 항목을 위에 추가. -->
 
+## 2026-07-09 (4th Session)
+
+- **[FEATURE] AI 튜터 설정 내 자동 프롬프트 압축 시작 임계값(Threshold) 설정 기능 추가**
+  - **수정/갱신 파일**:
+    - [use-agent-settings.ts](file:///C:/Workspace/Projects/OpenTutorials/hooks/use-agent-settings.ts) — 에이전트 설정 훅에 자동 압축 시작 비율(compressionThreshold)을 관리하는 로컬 상태 및 localStorage 로직을 추가했습니다. (기본값: 80)
+    - [layout.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/settings/layout.tsx) — 설정 페이지 전체 리셋 클릭 시 `open-tutorials-agent-compression-threshold` 키도 함께 삭제되도록 수정했습니다.
+    - [page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/settings/agent/page.tsx) — 설정 > 에이전트 화면에 자동 압축 시작 임계값(Compression Threshold)을 선택할 수 있는 Select(50% ~ 80%) UI와 변경 내역을 저장하는 핸들러를 추가했습니다.
+    - [client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx) — 기존에 80%(0.8)로 하드코딩되어 있던 에이전트 토큰 초과 시의 자동 압축 판단 로직에 사용자가 설정한 `compressionThreshold` 값을 참조하여 동적으로 자동 대화 요약/압축을 트리거하도록 리팩토링했습니다.
+  - **작업 내용**:
+    - AI 튜터 학습 환경의 유연성을 높이기 위해 사용자가 직접 프롬프트 크기 임계값 비율을 50% ~ 80% 사이에서 직접 커스터마이징할 수 있는 설정을 구현했습니다.
+    - 설정 페이지와 실시간 학습 화면 간의 상태 동기화를 위해 localStorage와 커스텀 훅을 통해 설정값을 전달하도록 설계하였습니다.
+
 ## 2026-07-09 (3rd Session)
 
 - **[FEATURE] 강좌 번들 프로토콜 기반 AI 튜터 시스템 프롬프트 및 맥락 주입 효율화 개선**

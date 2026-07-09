@@ -854,7 +854,7 @@ export default function LearnPageClient({
 }: LearnPageClientProps) {
   const router = useRouter();
   const { layout } = useLearnLayout();
-  const { maxTokens } = useAgentSettings();
+  const { maxTokens, compressionThreshold } = useAgentSettings();
   const totalCards = cards.length;
   const [currentCardIndex, setCurrentCardIndex] = useState(initialCardIndex);
   const [isCourseCompleted, setIsCourseCompleted] = useState<boolean>(() => !!userProgress?.completed);
@@ -1755,13 +1755,14 @@ Please ask the student the question now. Only ask the question itself, do not re
 
     const estTokens = calculateTotalTokens(apiMessagesForEst);
     const limit = getMaxTokenLimit(maxTokens);
-    const triggerLimit = limit * 0.8;
+    const triggerRatio = compressionThreshold / 100;
+    const triggerLimit = limit * triggerRatio;
 
-    console.log(`[Token Check] Est Tokens: ${estTokens}, Limit: ${limit}, 80% Trigger: ${triggerLimit}`);
+    console.log(`[Token Check] Est Tokens: ${estTokens}, Limit: ${limit}, ${compressionThreshold}% Trigger: ${triggerLimit}`);
 
     // If limit exceeded and we have chat history to compress
     if (estTokens >= triggerLimit && messages.length > 2) {
-      console.log(`[Token Check] Limit exceeded (80%). Starting auto history compression...`);
+      console.log(`[Token Check] Limit exceeded (${compressionThreshold}%). Starting auto history compression...`);
       setIsCompressing(true);
       
       // Add status message

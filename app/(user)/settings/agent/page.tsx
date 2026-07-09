@@ -9,7 +9,7 @@ import { useAgentSettings } from '@/hooks/use-agent-settings';
 import { useToast } from '@/components/ui/toast';
 
 export default function SettingsAgentPage() {
-  const { maxTokens, setMaxTokens } = useAgentSettings();
+  const { maxTokens, setMaxTokens, compressionThreshold, setCompressionThreshold } = useAgentSettings();
   const { toast } = useToast();
 
   const handleMaxTokensChange = (value: string) => {
@@ -18,6 +18,17 @@ export default function SettingsAgentPage() {
       title: '설정 저장 완료',
       description: `기본 에이전트의 최대 토큰 수가 ${value}으로 변경되었습니다.`,
     });
+  };
+
+  const handleThresholdChange = (value: string) => {
+    const parsed = parseInt(value, 10);
+    if (!isNaN(parsed)) {
+      setCompressionThreshold(parsed);
+      toast({
+        title: '설정 저장 완료',
+        description: `자동 압축 시작 임계값이 ${parsed}%로 변경되었습니다.`,
+      });
+    }
   };
 
   return (
@@ -62,6 +73,31 @@ export default function SettingsAgentPage() {
               </Select>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 에이전트가 응답 생성이나 문맥 파싱에 사용할 최대 토큰을 제한합니다. 모델과 요금 정책에 맞춰 권장 값을 선택하십시오.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-3 pt-6 border-t border-zinc-100 dark:border-zinc-800">
+            <Label htmlFor="compression-threshold" className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+              자동 압축 시작 임계값 (Compression Threshold)
+            </Label>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <Select value={compressionThreshold.toString()} onValueChange={handleThresholdChange}>
+                <SelectTrigger id="compression-threshold" className="w-[180px] bg-popover">
+                  <SelectValue placeholder="임계값 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="50">50%</SelectItem>
+                  <SelectItem value="55">55%</SelectItem>
+                  <SelectItem value="60">60%</SelectItem>
+                  <SelectItem value="65">65%</SelectItem>
+                  <SelectItem value="70">70%</SelectItem>
+                  <SelectItem value="75">75%</SelectItem>
+                  <SelectItem value="80">80%</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                대화방의 예상 프롬프트 크기가 최대 토큰 수 대비 설정 비율을 초과할 때, 이전 대화 기록을 자동으로 요약/압축하도록 트리거합니다. (50% ~ 80% 범위)
               </p>
             </div>
           </div>
