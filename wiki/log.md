@@ -30,6 +30,17 @@ Ran lint. See lint-report.md for details.
 
 <!-- Append-only. 최신 항목을 위에 추가. -->
 
+## 2026-07-09 (3rd Session)
+
+- **[FEATURE] 강좌 번들 프로토콜 기반 AI 튜터 시스템 프롬프트 및 맥락 주입 효율화 개선**
+  - **수정/갱신 파일**:
+    - [index.ts](file:///C:/Workspace/Projects/OpenTutorials/lib/types/index.ts) — `CoursePackage` 인터페이스에 강좌 번들 명세(v1.1.0)에 따르는 대상 연령대(`target_age`)와 카테고리(`category`) 필드를 추가하여 타입 안정성을 마련했습니다.
+    - [client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx) — 중복해서 하드코딩되던 시스템 프롬프트 조립 로직을 단일화하기 위해 `buildSystemPrompt` 및 `buildCurrentCardContext` 헬퍼 함수를 추가하고, `sendMessage` 및 `Calculate estimated token size` 블록에서 이 헬퍼를 공통 호출하도록 리팩토링했습니다.
+  - **작업 내용**:
+    - **연령대 및 카테고리 맞춤 설명 어조 적용**: `coursePackage`에서 전달되는 `target_age`와 `category`, `tags` 정보를 파싱하여 튜터의 말투와 설명 깊이를 자동 조정하도록 AI 지침을 추가했습니다. (예: 초등학생 대상 시 쉽고 비유적인 아날로지를 사용하도록 지시)
+    - **동영상 카드 자막 정제 주입**: 동영상 카드(`.json` 타입) 수강 시, 지저분한 원본 JSON 파일 전체를 프롬프트에 주입하는 대신 `subtitles` 배열에서 시간별 자막 텍스트만 추출 및 스크립트 형태로 정제하여 `Content`로 전달하도록 개선하여 토큰 절약 및 영상 내용 이해도를 극대화했습니다.
+    - **학습 진행 정보 및 TOC 설명 연동**: 학생의 현재 학습 진행률(Card N of M / % 완료) 및 현재 속한 목차(`toc` 노드)의 챕터/섹션 제목과 단원 학습 목표(`description`)를 AI 튜터가 상시 인지할 수 있도록 프롬프트 맥락을 고도화했습니다.
+
 ## 2026-07-09 (2nd Session)
 
 - **[FEATURE] AI 튜터 및 에이전트 대화창 마크다운 표(Table) 렌더링 구현 및 학습 화면 최상단 레이아웃 선택기 중앙 정렬**

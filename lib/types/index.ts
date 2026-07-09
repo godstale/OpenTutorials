@@ -202,6 +202,8 @@ export interface CoursePackage {
   sequential_play?: boolean;
   force_checkpoint?: boolean;
   github_url?: string | null;
+  target_age?: string | null;
+  category?: string | null;
   tags?: string[];
   created_at: string;
   updated_at: string;

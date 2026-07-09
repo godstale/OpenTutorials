@@ -62,6 +62,18 @@ interface LearnPageClientProps {
   coursePackage?: CoursePackage | null;
 }
 
+// Helper function to find a TOC node by its filename
+function findTocNodeByFilename(nodes: TocNode[], filename: string): TocNode | null {
+  for (const node of nodes) {
+    if (node.filename === filename) return node;
+    if (node.children && node.children.length > 0) {
+      const found = findTocNodeByFilename(node.children, filename);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
 // Helper function to render text with links (supporting both markdown links [label](url) and plain URLs)
 function renderTextWithLinks(text: string) {
   // First split by markdown link: [label](url)
@@ -457,6 +469,186 @@ function generateFallbackTocText(nodes: TocNode[], depth: number = 0): string {
     }
   });
   return text;
+}
+
+function buildSystemPrompt({
+  course,
+  coursePackage,
+  cards,
+  currentCardIndex,
+  wikiContent,
+  agentType,
+  isCheckpointMode,
+  activeCheckpoint,
+  isFallback,
+  isFirstQuestion,
+  finalResourceUrl,
+}: {
+  course: Course;
+  coursePackage?: CoursePackage | null;
+  cards: any[];
+  currentCardIndex: number;
+  wikiContent: string;
+  agentType: string;
+  isCheckpointMode: boolean;
+  activeCheckpoint: any;
+  isFallback: boolean;
+  isFirstQuestion: boolean;
+  finalResourceUrl: string;
+}) {
+  const currentCard = cards[currentCardIndex];
+  let cardContent = currentCard?.content || '';
+  
+  if (currentCard?.type === 'video' && currentCard?.videoInfo?.subtitles) {
+    const subtitleTexts = currentCard.videoInfo.subtitles.map(
+      (sub: { start: number; end: number; text: string }) => `[${Math.floor(sub.start / 60)}:${String(Math.floor(sub.start % 60)).padStart(2, '0')}] ${sub.text}`
+    );
+    cardContent = `이 카드는 동영상 강의입니다. 아래는 동영상의 자막 스크립트 내용입니다:\n---\n${subtitleTexts.join('\n')}\n---`;
+  }
+
+  let currentUnitContext = '';
+  if (course.toc && currentCard?.filename) {
+    const activeNode = findTocNodeByFilename(course.toc, currentCard.filename);
+    if (activeNode) {
+      currentUnitContext = `[Current Unit Details]\nUnit Title: ${activeNode.title}\nUnit Objective/Description: ${activeNode.description || 'No description available.'}`;
+    }
+  }
+
+  const targetAge = coursePackage?.target_age || '전연령';
+  const category = coursePackage?.category || 'General';
+  const tags = coursePackage?.tags?.join(', ') || 'None';
+  const totalCards = cards.length;
+
+  let systemPrompt = '';
+  if (agentType === 'llm') {
+    systemPrompt = `You are a helpful AI tutor for the course "${course.title}".
+Use the following information to answer the student's question and guide them through their learning.
+
+[Course Info]
+Title: ${course.title}
+Description: ${course.description || 'No description available.'}
+Category: ${category}
+Target Audience: ${targetAge}
+Tags: ${tags}
+
+[Learning Progress & Context]
+Progress: Card ${currentCardIndex + 1} of ${totalCards} (${Math.round(((currentCardIndex + 1) / totalCards) * 100)}% completed)
+${currentUnitContext}
+
+[Current Card Content]
+Title: ${currentCard?.title || 'Untitled'}
+Content:
+${cardContent}
+
+${wikiContent ? `[Relevant Course Wiki & Resources]\n${wikiContent}\n` : ''}
+
+[Instruction for AI Tutor]
+- Adapt your explanation depth, vocabulary complexity, and tone to suit the target audience: "${targetAge}". (e.g., use friendly, simple, and visual analogies for children/teens, and structured, professional context for adults.)
+- Guide the student step-by-step using the context above.
+- Keep your answer clear, informative, and formatted in markdown.`;
+
+    if (isCheckpointMode && activeCheckpoint) {
+      systemPrompt += `
+
+[Active Checkpoint QnA Evaluation]
+The student is currently undergoing a checkpoint QnA for the card "${currentCard?.title || 'Untitled'}".
+The evaluation instruction is:
+"${activeCheckpoint.prompt}"
+
+You must evaluate the student's response.
+If the student's response satisfies the criteria, respond with praise and details, and you MUST append the following exact HTML comment at the very end of your response:
+<!-- HIDDEN_MESSAGE: {"action": "checkpoint_evaluation", "passed": true} -->
+
+If the student's response does NOT satisfy the criteria, explain why and encourage them to try again, and you MUST append the following exact HTML comment at the very end of your response:
+<!-- HIDDEN_MESSAGE: {"action": "checkpoint_evaluation", "passed": false} -->`;
+    }
+  } else {
+    let fallbackTocText = '';
+    if (isFallback && isFirstQuestion) {
+      const tocItems = course.toc || [];
+      const tocTreeText = generateFallbackTocText(tocItems, 0);
+      fallbackTocText = `\n\n[Fallback Course Table of Contents]\n${tocTreeText}\n\nNote: The resource URL could not be loaded via external storage. Please refer to this Table of Contents to understand the overall course structure.`;
+    }
+
+    systemPrompt = `You are a helpful AI tutor for the course "${course.title}". 
+To minimize context payload, detailed course contents (summaries, chapters, and all card contents) are not sent directly in the chat messages.
+Instead, you must download the complete course materials from the following URL into a course-specific directory in your workspace (e.g. "courses/${course.slug || 'slug'}") if you don't already have them:
+${finalResourceUrl}
+ 
+If you have already downloaded/cached the course materials from this URL previously, DO NOT download them again.
+
+Additionally, you MUST communicate the status of the course materials download back to the system using a special format called a "Hidden Message".
+Whenever you respond (especially on the first system check or after download completes), append the following HTML comment at the end of your response:
+<!-- HIDDEN_MESSAGE: {"action": "download_status", "downloaded": true} -->
+Use "downloaded": true if the materials are successfully downloaded/extracted and analyzed in your workspace, otherwise use "downloaded": false.
+
+[Target Student Profile]
+Category: ${category}
+Target Audience: ${targetAge}
+Tags: ${tags}
+
+[Instruction]
+- Adapt your explanation depth, vocabulary complexity, and tone to suit the target audience: "${targetAge}". (e.g., use friendly, simple, and visual analogies for children/teens, and structured, professional context for adults.)
+- Please guide the student using the current card context provided in the user's message.${fallbackTocText}`;
+
+    if (isCheckpointMode && activeCheckpoint) {
+      systemPrompt += `
+
+[Active Checkpoint QnA Evaluation]
+The student is currently undergoing a checkpoint QnA for the card "${currentCard?.title || 'Untitled'}".
+The evaluation instruction is:
+"${activeCheckpoint.prompt}"
+
+You must evaluate the student's response.
+If the student's response satisfies the criteria, respond with praise and details, and you MUST append the following exact HTML comment at the very end of your response:
+<!-- HIDDEN_MESSAGE: {"action": "checkpoint_evaluation", "passed": true} -->
+
+If the student's response does NOT satisfy the criteria, explain why and encourage them to try again, and you MUST append the following exact HTML comment at the very end of your response:
+<!-- HIDDEN_MESSAGE: {"action": "checkpoint_evaluation", "passed": false} -->`;
+    }
+  }
+
+  return systemPrompt;
+}
+
+function buildCurrentCardContext({
+  course,
+  cards,
+  currentCardIndex,
+}: {
+  course: Course;
+  cards: any[];
+  currentCardIndex: number;
+}) {
+  const currentCard = cards[currentCardIndex];
+  let cardContent = currentCard?.content || '';
+  
+  if (currentCard?.type === 'video' && currentCard?.videoInfo?.subtitles) {
+    const subtitleTexts = currentCard.videoInfo.subtitles.map(
+      (sub: { start: number; end: number; text: string }) => `[${Math.floor(sub.start / 60)}:${String(Math.floor(sub.start % 60)).padStart(2, '0')}] ${sub.text}`
+    );
+    cardContent = `이 카드는 동영상 강의입니다. 아래는 동영상의 자막 스크립트 내용입니다:\n---\n${subtitleTexts.join('\n')}\n---`;
+  }
+
+  let currentUnitContext = '';
+  if (course.toc && currentCard?.filename) {
+    const activeNode = findTocNodeByFilename(course.toc, currentCard.filename);
+    if (activeNode) {
+      currentUnitContext = `[Current Unit Details]\nUnit Title: ${activeNode.title}\nUnit Objective/Description: ${activeNode.description || 'No description available.'}`;
+    }
+  }
+
+  const totalCards = cards.length;
+
+  return `[Current Card Context]
+Card Title: ${currentCard?.title || 'Untitled'}
+Progress: Card ${currentCardIndex + 1} of ${totalCards} (${Math.round(((currentCardIndex + 1) / totalCards) * 100)}% completed)
+${currentUnitContext}
+
+Card Content:
+${cardContent}
+--------------------------------------------------
+Student Question: `;
 }
 
 interface LearnTocNodeViewProps {
@@ -1332,84 +1524,26 @@ Please ask the student the question now. Only ask the question itself, do not re
 
 
 
-      let systemPrompt = '';
-      if (agentType === 'llm') {
-        systemPrompt = `You are a helpful AI tutor for the course "${course.title}".
-Use the following information to answer the student's question and guide them through their learning.
-
-[Course Info]
-Title: ${course.title}
-Description: ${course.description || 'No description available.'}
-
-[Current Card Content]
-Title: ${cards[currentCardIndex]?.title || 'Untitled'}
-Content:
-${cards[currentCardIndex]?.content || ''}
-
-${wikiContent ? `[Relevant Course Wiki & Resources]\n${wikiContent}\n` : ''}
-Please guide the student step-by-step using the context above. Keep your answer clear, informative, and formatted in markdown.`;
-
-        if (isCheckpointMode && activeCheckpoint) {
-          systemPrompt += `
-
-[Active Checkpoint QnA Evaluation]
-The student is currently undergoing a checkpoint QnA for the card "${cards[currentCardIndex]?.title}".
-The evaluation instruction is:
-"${activeCheckpoint.prompt}"
-
-You must evaluate the student's response.
-If the student's response satisfies the criteria, respond with praise and details, and you MUST append the following exact HTML comment at the very end of your response:
-<!-- HIDDEN_MESSAGE: {"action": "checkpoint_evaluation", "passed": true} -->
-
-If the student's response does NOT satisfy the criteria, explain why and encourage them to try again, and you MUST append the following exact HTML comment at the very end of your response:
-<!-- HIDDEN_MESSAGE: {"action": "checkpoint_evaluation", "passed": false} -->`;
-        }
-      } else {
-        let fallbackTocText = '';
-        if (isFallback && isFirstQuestion) {
-          const tocItems = course.toc || [];
-          const tocTreeText = generateFallbackTocText(tocItems, 0);
-          fallbackTocText = `\n\n[Fallback Course Table of Contents]\n${tocTreeText}\n\nNote: The resource URL could not be loaded via external storage. Please refer to this Table of Contents to understand the overall course structure.`;
-        }
-
-        systemPrompt = `You are a helpful AI tutor for the course "${course.title}". 
-To minimize context payload, detailed course contents (summaries, chapters, and all card contents) are not sent directly in the chat messages.
-Instead, you must download the complete course materials from the following URL into a course-specific directory in your workspace (e.g. "courses/${slug}") if you don't already have them:
-${finalResourceUrl}
- 
-If you have already downloaded/cached the course materials from this URL previously, DO NOT download them again.
-
-Additionally, you MUST communicate the status of the course materials download back to the system using a special format called a "Hidden Message".
-Whenever you respond (especially on the first system check or after download completes), append the following HTML comment at the end of your response:
-<!-- HIDDEN_MESSAGE: {"action": "download_status", "downloaded": true} -->
-Use "downloaded": true if the materials are successfully downloaded/extracted and analyzed in your workspace, otherwise use "downloaded": false.
- 
-Please guide the student using the current card context provided in the user's message.${fallbackTocText}`;
-
-        if (isCheckpointMode && activeCheckpoint) {
-          systemPrompt += `
-
-[Active Checkpoint QnA Evaluation]
-The student is currently undergoing a checkpoint QnA for the card "${cards[currentCardIndex]?.title}".
-The evaluation instruction is:
-"${activeCheckpoint.prompt}"
-
-You must evaluate the student's response.
-If the student's response satisfies the criteria, respond with praise and details, and you MUST append the following exact HTML comment at the very end of your response:
-<!-- HIDDEN_MESSAGE: {"action": "checkpoint_evaluation", "passed": true} -->
-
-If the student's response does NOT satisfy the criteria, explain why and encourage them to try again, and you MUST append the following exact HTML comment at the very end of your response:
-<!-- HIDDEN_MESSAGE: {"action": "checkpoint_evaluation", "passed": false} -->`;
-        }
-      }
+      const systemPrompt = buildSystemPrompt({
+        course,
+        coursePackage,
+        cards,
+        currentCardIndex,
+        wikiContent,
+        agentType,
+        isCheckpointMode,
+        activeCheckpoint,
+        isFallback,
+        isFirstQuestion,
+        finalResourceUrl,
+      });
 
       const currentCard = cards[currentCardIndex];
-      const currentCardContext = `[Current Card Context]
-Card Title: ${currentCard?.title || 'Untitled'}
-Card Content:
-${currentCard?.content || ''}
---------------------------------------------------
-Student Question: `;
+      const currentCardContext = buildCurrentCardContext({
+        course,
+        cards,
+        currentCardIndex,
+      });
 
       let apiMessages;
       if (isSystemCheck) {
@@ -1584,85 +1718,26 @@ Student Question: `;
 
     const isFallback = !finalResourceUrl.includes('.supabase.co');
     const isFirstQuestion = messages.filter(m => m.role === 'user').length === 0;
+      const systemPrompt = buildSystemPrompt({
+        course,
+        coursePackage,
+        cards,
+        currentCardIndex,
+        wikiContent,
+        agentType,
+        isCheckpointMode,
+        activeCheckpoint,
+        isFallback,
+        isFirstQuestion,
+        finalResourceUrl,
+      });
 
-    let systemPrompt = '';
-    if (agentType === 'llm') {
-      systemPrompt = `You are a helpful AI tutor for the course "${course.title}".
-Use the following information to answer the student's question and guide them through their learning.
-
-[Course Info]
-Title: ${course.title}
-Description: ${course.description || 'No description available.'}
-
-[Current Card Content]
-Title: ${cards[currentCardIndex]?.title || 'Untitled'}
-Content:
-${cards[currentCardIndex]?.content || ''}
-
-${wikiContent ? `[Relevant Course Wiki & Resources]\n${wikiContent}\n` : ''}
-Please guide the student step-by-step using the context above. Keep your answer clear, informative, and formatted in markdown.`;
-
-      if (isCheckpointMode && activeCheckpoint) {
-        systemPrompt += `
-
-[Active Checkpoint QnA Evaluation]
-The student is currently undergoing a checkpoint QnA for the card "${cards[currentCardIndex]?.title}".
-The evaluation instruction is:
-"${activeCheckpoint.prompt}"
-
-You must evaluate the student's response.
-If the student's response satisfies the criteria, respond with praise and details, and you MUST append the following exact HTML comment at the very end of your response:
-<!-- HIDDEN_MESSAGE: {"action": "checkpoint_evaluation", "passed": true} -->
-
-If the student's response does NOT satisfy the criteria, explain why and encourage them to try again, and you MUST append the following exact HTML comment at the very end of your response:
-<!-- HIDDEN_MESSAGE: {"action": "checkpoint_evaluation", "passed": false} -->`;
-      }
-    } else {
-      let fallbackTocText = '';
-      if (isFallback && isFirstQuestion) {
-        const tocItems = course.toc || [];
-        const tocTreeText = generateFallbackTocText(tocItems, 0);
-        fallbackTocText = `\n\n[Fallback Course Table of Contents]\n${tocTreeText}\n\nNote: The resource URL could not be loaded via external storage. Please refer to this Table of Contents to understand the overall course structure.`;
-      }
-
-      systemPrompt = `You are a helpful AI tutor for the course "${course.title}". 
-To minimize context payload, detailed course contents (summaries, chapters, and all card contents) are not sent directly in the chat messages.
-Instead, you must download the complete course materials from the following URL into a course-specific directory in your workspace (e.g. "courses/${slug}") if you don't already have them:
-${finalResourceUrl}
- 
-If you have already downloaded/cached the course materials from this URL previously, DO NOT download them again.
-
-Additionally, you MUST communicate the status of the course materials download back to the system using a special format called a "Hidden Message".
-Whenever you respond (especially on the first system check or after download completes), append the following HTML comment at the end of your response:
-<!-- HIDDEN_MESSAGE: {"action": "download_status", "downloaded": true} -->
-Use "downloaded": true if the materials are successfully downloaded/extracted and analyzed in your workspace, otherwise use "downloaded": false.
- 
-Please guide the student using the current card context provided in the user's message.${fallbackTocText}`;
-
-      if (isCheckpointMode && activeCheckpoint) {
-        systemPrompt += `
-
-[Active Checkpoint QnA Evaluation]
-The student is currently undergoing a checkpoint QnA for the card "${cards[currentCardIndex]?.title}".
-The evaluation instruction is:
-"${activeCheckpoint.prompt}"
-
-You must evaluate the student's response.
-If the student's response satisfies the criteria, respond with praise and details, and you MUST append the following exact HTML comment at the very end of your response:
-<!-- HIDDEN_MESSAGE: {"action": "checkpoint_evaluation", "passed": true} -->
-
-If the student's response does NOT satisfy the criteria, explain why and encourage them to try again, and you MUST append the following exact HTML comment at the very end of your response:
-<!-- HIDDEN_MESSAGE: {"action": "checkpoint_evaluation", "passed": false} -->`;
-      }
-    }
-
-    const currentCard = cards[currentCardIndex];
-    const currentCardContext = `[Current Card Context]
-Card Title: ${currentCard?.title || 'Untitled'}
-Card Content:
-${currentCard?.content || ''}
---------------------------------------------------
-Student Question: `;
+      const currentCard = cards[currentCardIndex];
+      const currentCardContext = buildCurrentCardContext({
+        course,
+        cards,
+        currentCardIndex,
+      });
 
     let apiMessagesForEst = newMessages.map(m => ({
       role: (m.role === 'agent' ? 'assistant' : 'user') as 'assistant' | 'user' | 'system',
