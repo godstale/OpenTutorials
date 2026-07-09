@@ -1261,6 +1261,7 @@ Please ask the student the question now. Only ask the question itself, do not re
   ]);
   const [input, setInput] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [promptUsage, setPromptUsage] = useState<number | null>(null);
 
   const handleCopyMessage = async (id: string, text: string) => {
     try {
@@ -1304,6 +1305,9 @@ Please ask the student the question now. Only ask the question itself, do not re
   }, [agentId]);
 
   const [agentStatus, setAgentStatus] = useState<'loading' | 'online' | 'offline' | 'none'>('loading');
+  const [agentProgram, setAgentProgram] = useState<'hermes' | 'openclaw' | 'ollama' | 'lmstudio' | 'other' | null>(null);
+  const [isLlmAgent, setIsLlmAgent] = useState<boolean>(false);
+  const [currentAgentData, setCurrentAgentData] = useState<any>(null);
   const [supabaseResourceUrl, setSupabaseResourceUrl] = useState<string>('');
   const [isResourceUrlLoading, setIsResourceUrlLoading] = useState(true);
   const [hasCheckedInit, setHasCheckedInit] = useState(false);
@@ -1343,9 +1347,35 @@ Please ask the student the question now. Only ask the question itself, do not re
         if (error || !currentAgent) {
           setAgentStatus('none');
           setAgentId(null);
+          setAgentProgram(null);
+          setIsLlmAgent(false);
+          setCurrentAgentData(null);
         } else {
           setAgentId(currentAgent.id);
           setAgentType(currentAgent.agent_type || 'harness');
+          setAgentProgram(currentAgent.agent_program || null);
+          setCurrentAgentData(currentAgent);
+
+          // 포괄적인 LLM 에이전트 식별 (타입, 프로그램, 엔드포인트 포트, 모델명 기반)
+          const endpointLower = (currentAgent.endpoint || '').toLowerCase();
+          const modelLower = (currentAgent.selected_model || '').toLowerCase();
+          const programLower = (currentAgent.agent_program || '').toLowerCase();
+          const typeLower = (currentAgent.agent_type || '').toLowerCase();
+          
+          const isLlm = 
+            typeLower === 'llm' || 
+            programLower === 'ollama' || 
+            programLower === 'lmstudio' || 
+            endpointLower.includes('11434') || 
+            endpointLower.includes('1234') ||  
+            modelLower.includes('gemma') || 
+            modelLower.includes('llama') ||
+            modelLower.includes('mistral') ||
+            modelLower.includes('qwen') ||
+            modelLower.includes('phi');
+            
+          setIsLlmAgent(isLlm);
+
           // Set initial status from DB
           setAgentStatus(currentAgent.status === 'online' ? 'online' : 'offline');
 
@@ -1414,7 +1444,16 @@ Please ask the student the question now. Only ask the question itself, do not re
   useEffect(() => {
     if (agentStatus === 'online' && agentId && !isResourceUrlLoading && !hasCheckedInit) {
       setHasCheckedInit(true);
-      if (agentType === 'llm') {
+      const isLlm = 
+        agentType?.toLowerCase() === 'llm' || 
+        agentProgram?.toLowerCase() === 'ollama' || 
+        agentProgram?.toLowerCase() === 'lmstudio' || 
+        isLlmAgent ||
+        currentAgentData?.agent_type?.toLowerCase() === 'llm' ||
+        currentAgentData?.agent_program?.toLowerCase() === 'ollama' ||
+        currentAgentData?.agent_program?.toLowerCase() === 'lmstudio';
+
+      if (isLlm) {
         setCourseDownloadStatus('downloaded');
         return;
       }
@@ -1456,7 +1495,7 @@ Please ask the student the question now. Only ask the question itself, do not re
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [agentStatus, agentId, isResourceUrlLoading, hasCheckedInit, supabaseResourceUrl, course, slug, messages, isUpdated, currentCardIndex, agentType]);
+  }, [agentStatus, agentId, isResourceUrlLoading, hasCheckedInit, supabaseResourceUrl, course, slug, messages, isUpdated, currentCardIndex, agentType, agentProgram, isLlmAgent, currentAgentData]);
 
 
 
@@ -1671,6 +1710,13 @@ Please ask the student the question now. Only ask the question itself, do not re
         setMessages(prev => prev.map(m => 
           m.id === assistantMsgId ? { ...m, content: finalCleanText } : m
         ));
+
+        // Calculate and update prompt usage percentage after answer completion
+        const completedApiMessages = [...apiMessages, { role: 'assistant' as const, content: finalCleanText }];
+        const finalEstTokens = calculateTotalTokens(completedApiMessages);
+        const limit = getMaxTokenLimit(maxTokens);
+        const usagePercent = Math.min(100, Math.round((finalEstTokens / limit) * 100));
+        setPromptUsage(usagePercent);
       }
     } catch (err: unknown) {
       console.error('Failed to chat with agent:', err);
@@ -1688,6 +1734,7 @@ Please ask the student the question now. Only ask the question itself, do not re
     setMessages([
       { id: '1', role: 'agent', content: `안녕하세요! "${course?.title || '강좌'}" 학습을 도와줄 AI 튜터입니다. 궁금한 점이 있다면 언제든 물어보세요.`, timestamp: getFormattedTime() }
     ]);
+    setPromptUsage(null);
     if (agentId) {
       try {
         await fetch(`/api/external-agents/${agentId}/messages`, {
@@ -2221,28 +2268,40 @@ ${historyText}`;
                     온라인 - 맞춤 학습 모드
                   </span>
                   
-                  {/* 강좌 자료 다운로드 상태 추가 */}
-                  {courseDownloadStatus === 'downloaded' ? (
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 w-fit">
-                      <span className="relative flex h-1.5 w-1.5">
-                        <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
-                      </span>
-                      자료 준비 완료
-                    </span>
-                  ) : courseDownloadStatus === 'not_downloaded' ? (
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-600 border border-amber-500/20 w-fit animate-pulse">
-                      <span className="relative flex h-1.5 w-1.5">
-                        <span className="absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75 animate-ping"></span>
-                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500"></span>
-                      </span>
-                      자료 다운로드 오류/미완료
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-600 border border-amber-500/20 w-fit animate-pulse">
-                      <Loader2 className="w-3 h-3 animate-spin text-amber-500" />
-                      자료 준비 상태 확인 중...
-                    </span>
+                  {/* 강좌 자료 다운로드 상태 추가 (Ollama, LM Studio 등 LLM 에이전트가 아닌 경우에만 렌더링) */}
+                  {!(
+                    agentType?.toLowerCase() === 'llm' || 
+                    agentProgram?.toLowerCase() === 'ollama' || 
+                    agentProgram?.toLowerCase() === 'lmstudio' || 
+                    isLlmAgent ||
+                    currentAgentData?.agent_type?.toLowerCase() === 'llm' ||
+                    currentAgentData?.agent_program?.toLowerCase() === 'ollama' ||
+                    currentAgentData?.agent_program?.toLowerCase() === 'lmstudio'
+                  ) && (
+                    <>
+                      {courseDownloadStatus === 'downloaded' ? (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 w-fit">
+                          <span className="relative flex h-1.5 w-1.5">
+                            <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                          </span>
+                          자료 준비 완료
+                        </span>
+                      ) : courseDownloadStatus === 'not_downloaded' ? (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-600 border border-amber-500/20 w-fit animate-pulse">
+                          <span className="relative flex h-1.5 w-1.5">
+                            <span className="absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75 animate-ping"></span>
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                          </span>
+                          자료 다운로드 오류/미완료
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-600 border border-amber-500/20 w-fit animate-pulse">
+                          <Loader2 className="w-3 h-3 animate-spin text-amber-500" />
+                          자료 준비 상태 확인 중...
+                        </span>
+                      )}
+                    </>
                   )}
                 </div>
               ) : agentStatus === 'offline' ? (
@@ -2306,23 +2365,27 @@ ${historyText}`;
                       msg.role === 'user' ? 'justify-end' : 'justify-start'
                     }`}>
                       <span>{msg.timestamp || getFormattedTime()}</span>
-                      <span className="text-zinc-300 dark:text-zinc-700">•</span>
-                      <button 
-                        onClick={() => handleCopyMessage(msg.id, msg.content)}
-                        className="hover:text-primary transition-colors flex items-center gap-0.5 focus:outline-none"
-                      >
-                        {copiedId === msg.id ? (
-                          <>
-                            <Check className="w-3 h-3 text-green-500" />
-                            <span className="text-green-500 font-medium">복사됨</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3 h-3" />
-                            <span>복사</span>
-                          </>
-                        )}
-                      </button>
+                      {msg.id !== '1' && (
+                        <>
+                          <span className="text-zinc-300 dark:text-zinc-700">•</span>
+                          <button 
+                            onClick={() => handleCopyMessage(msg.id, msg.content)}
+                            className="hover:text-primary transition-colors flex items-center gap-0.5 focus:outline-none"
+                          >
+                            {copiedId === msg.id ? (
+                              <>
+                                <Check className="w-3 h-3 text-green-500" />
+                                <span className="text-green-500 font-medium">복사됨</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3 h-3" />
+                                <span>복사</span>
+                              </>
+                            )}
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -2345,7 +2408,13 @@ ${historyText}`;
                   }
                 }
               }}
-              placeholder={isCompressing ? "히스토리를 자동으로 압축하는 중입니다..." : "질문을 입력하세요..."}
+              placeholder={
+                isCompressing 
+                  ? "히스토리를 자동으로 압축하는 중입니다..." 
+                  : promptUsage !== null 
+                    ? `질문을 입력하세요. [프롬프트 사용량: ${promptUsage}%]` 
+                    : "질문을 입력하세요..."
+              }
               disabled={isCompressing}
               className="resize-none pr-12 h-20 bg-muted/50 focus-visible:ring-primary disabled:opacity-50"
             />

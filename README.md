@@ -1,4 +1,4 @@
-# Open Tutorials (v0.3.1)
+# Open Tutorials (v0.3.3)
 
 Open Tutorials는 사용자가 로컬 환경에서 다양한 AI 에이전트와 상호작용하며 여러 강좌를 효과적으로 학습할 수 있도록 돕는 **데스크탑 친화형 AI 학습 오픈소스 플랫폼**입니다.
 
