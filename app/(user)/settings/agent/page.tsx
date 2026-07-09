@@ -1,7 +1,6 @@
 'use client';
 
-import { Info, Cpu } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Cpu } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -33,14 +32,6 @@ export default function SettingsAgentPage() {
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-800 shadow-sm transition-all duration-300">
-        <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-        <AlertTitle className="text-blue-800 dark:text-blue-300">알림</AlertTitle>
-        <AlertDescription className="text-blue-700 dark:text-blue-400">
-          에이전트의 최대 토큰 수 설정은 현재 앱 전체에서 참조할 수 있는 파라미터로 동작합니다. 실제 토큰 제어 기능은 추후 구현될 예정입니다.
-        </AlertDescription>
-      </Alert>
-
       {/* 기본 에이전트 설정 카드 - 이제 이 카드 부분은 활성화됨 */}
       <Card className="border-zinc-200/80 dark:border-zinc-800 shadow-md transition-all duration-300 hover:shadow-lg">
         <CardHeader className="pb-4">
