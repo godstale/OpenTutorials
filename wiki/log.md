@@ -30,6 +30,18 @@ Ran lint. See lint-report.md for details.
 
 <!-- Append-only. 최신 항목을 위에 추가. -->
 
+## 2026-07-09 (2nd Session)
+
+- **[FEATURE] AI 튜터 및 에이전트 대화창 마크다운 표(Table) 렌더링 구현 및 학습 화면 최상단 레이아웃 선택기 중앙 정렬**
+  - **수정/갱신 파일**:
+    - [client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx) — AI 튜터 답변에서 마크다운 형태의 표(`| ... | ... |`)가 전달되었을 때, 텍스트 그대로 노출되는 대신 정형화된 HTML Table 컴포넌트로 파싱 및 렌더링하도록 뷰 로직을 보완했습니다. 테이블 내 정렬 구분자(`:---`, `---:`, `:---:`)에 따라 셀 텍스트를 좌측/우측/중앙 정렬하도록 CSS 정렬 클래스를 동적으로 주입하며, 셀 내부 텍스트에도 볼드(**), 인라인 코드(\`), 마크다운/일반 링크 렌더링이 재귀적으로 올바르게 결합되도록 `renderInlineFormatting` 및 `parseTablesAndText` 파서 유틸리티를 적용했습니다.
+    - [AgentChatTab.tsx](file:///C:/Workspace/Projects/OpenTutorials/components/features/AgentChatTab.tsx) — 에이전트 상세 설정 화면 내 에이전트 채팅 탭에서도 학습 창과 동일한 마크다운 테이블 파싱 및 렌더링 스키마를 탑재하여 일관된 AI 튜터 렌더링 외관을 제공하도록 수정했습니다.
+    - [UserHeader.tsx](file:///C:/Workspace/Projects/OpenTutorials/components/layout/UserHeader.tsx) — 학습 화면 최상단 헤더에 위치한 레이어(레이아웃) 선택 컴포넌트가 좌측 정렬되어 쏠려있던 레이아웃을 3분할 Flex 컨테이너 구조로 수정하여 화면 가로축의 정중앙에 올바르게 배치되도록 변경했습니다.
+  - **작업 내용**:
+    - AI가 지식을 표(Table) 형식으로 전달할 때, 텍스트 원본 데이터가 날것 그대로 노출되던 문제를 분석하고, `react-markdown` 의존성을 늘리지 않고 기존 파싱 흐름을 보완하는 경량 라인 바이 라인(Line-by-Line) 테이블 파서 및 렌더러를 개발했습니다.
+    - 가로로 길어지는 테이블의 경우 대화창 레이아웃이 붕괴하는 것을 차단하기 위해 `overflow-x-auto max-w-full` 스크롤 뷰 컨테이너를 배치하고 테이블 구조에 세련된 테일윈드 스타일(zinc border, zebra-striping hover, font-semibold header bg 등)을 입혔습니다.
+    - 학습 화면(`isLearnPage === true`)에서 상단 레이아웃 선택 컴포넌트(3단 보기 등)의 시인성 및 대칭 균형을 높이기 위해 좌측 사이드바 트리거 공간과 우측 사용자 아바타 공간에 각각 `flex-1`을 배정하고 컴포넌트를 `flex-none` 중앙 영역에 안착시켜 완벽한 중앙 정렬을 달성했습니다.
+
 ## 2026-07-09 (1st Session)
 
 - **[FEATURE] AI 튜터 채팅 기록 초기화, 말풍선 시간/복사 기능 및 AI 에이전트 기반 자동 컨텍스트 압축 구현**

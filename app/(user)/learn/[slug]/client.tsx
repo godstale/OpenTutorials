@@ -118,6 +118,144 @@ function renderTextWithLinks(text: string) {
     );
   });
 }
+// Helper function to render inline markdown-like formatting (bold, code, links)
+function renderInlineFormatting(text: string) {
+  const subParts = text.split(/(`[^`\n]+`)/g);
+
+  return subParts.map((subPart, subIdx) => {
+    if (subPart.startsWith('`') && subPart.endsWith('`')) {
+      return (
+        <code key={subIdx} className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800/80 text-primary dark:text-zinc-200 font-mono text-xs border border-zinc-200/50 dark:border-zinc-700/50 break-words">
+          {subPart.slice(1, -1)}
+        </code>
+      );
+    }
+
+    const boldParts = subPart.split(/(\*\*[^*]+\*\*)/g);
+    return (
+      <span key={subIdx}>
+        {boldParts.map((boldPart, boldIdx) => {
+          if (boldPart.startsWith('**') && boldPart.endsWith('**')) {
+            return (
+              <strong key={boldIdx} className="font-semibold text-foreground">
+                {renderTextWithLinks(boldPart.slice(2, -2))}
+              </strong>
+            );
+          }
+          return renderTextWithLinks(boldPart);
+        })}
+      </span>
+    );
+  });
+}
+
+interface TableData {
+  type: 'table';
+  headers: string[];
+  alignments: ('left' | 'center' | 'right')[];
+  rows: string[][];
+}
+
+// Parses text into segments of plain text and parsed tables
+function parseTablesAndText(text: string): (string | TableData)[] {
+  const lines = text.split('\n');
+  const result: (string | TableData)[] = [];
+  
+  let currentTableLines: string[] = [];
+  let isInsideTable = false;
+  let textBuffer: string[] = [];
+
+  const flushTextBuffer = () => {
+    if (textBuffer.length > 0) {
+      result.push(textBuffer.join('\n'));
+      textBuffer = [];
+    }
+  };
+
+  const isSeparatorRow = (line: string): boolean => {
+    const trimmed = line.trim();
+    if (!trimmed.startsWith('|') || !trimmed.endsWith('|')) return false;
+    const parts = trimmed.slice(1, -1).split('|');
+    return parts.length > 0 && parts.every(p => /^[ \t]*:?-+:?[ \t]*$/.test(p));
+  };
+
+  const parseTable = (tableLines: string[]) => {
+    if (tableLines.length < 3) {
+      textBuffer.push(...tableLines);
+      return;
+    }
+
+    const headerLine = tableLines[0];
+    const separatorLine = tableLines[1];
+    const dataLines = tableLines.slice(2);
+
+    const sepParts = separatorLine.trim().slice(1, -1).split('|').map(s => s.trim());
+    const alignments: ('left' | 'center' | 'right')[] = sepParts.map(part => {
+      const start = part.startsWith(':');
+      const end = part.endsWith(':');
+      if (start && end) return 'center';
+      if (end) return 'right';
+      return 'left';
+    });
+
+    const headers = headerLine.trim().slice(1, -1).split('|').map(s => s.trim());
+
+    const rows = dataLines.map(line => {
+      const trimmed = line.trim();
+      let parts = trimmed;
+      if (trimmed.startsWith('|')) {
+        parts = trimmed.slice(1);
+      }
+      if (trimmed.endsWith('|')) {
+        parts = parts.slice(0, -1);
+      }
+      return parts.split('|').map(s => s.trim());
+    });
+
+    flushTextBuffer();
+    result.push({
+      type: 'table',
+      headers,
+      alignments,
+      rows
+    });
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+    const looksLikeTableRow = trimmed.startsWith('|') && trimmed.endsWith('|');
+
+    if (looksLikeTableRow) {
+      if (!isInsideTable) {
+        const nextLine = lines[i + 1];
+        if (nextLine && isSeparatorRow(nextLine)) {
+          flushTextBuffer();
+          isInsideTable = true;
+          currentTableLines = [line];
+        } else {
+          textBuffer.push(line);
+        }
+      } else {
+        currentTableLines.push(line);
+      }
+    } else {
+      if (isInsideTable) {
+        parseTable(currentTableLines);
+        isInsideTable = false;
+        currentTableLines = [];
+      }
+      textBuffer.push(line);
+    }
+  }
+
+  if (isInsideTable) {
+    parseTable(currentTableLines);
+  }
+  flushTextBuffer();
+
+  return result;
+}
 
 // Custom code-block copy button helper for AI Tutor replies
 function ChatMessageContent({ content }: { content: string }) {
@@ -173,37 +311,69 @@ function ChatMessageContent({ content }: { content: string }) {
           );
         }
 
-        // Parse inline formatting (bold, inline code)
-        // Inline code `code`
-        const text = part;
-        const subParts = text.split(/(`[^`\n]+`)/g);
+        // For non-code segments, parse tables and render them appropriately
+        const segments = parseTablesAndText(part);
 
         return (
-          <span key={index}>
-            {subParts.map((subPart, subIdx) => {
-              if (subPart.startsWith('`') && subPart.endsWith('`')) {
+          <span key={index} className="min-w-0">
+            {segments.map((segment, segIdx) => {
+              if (typeof segment === 'string') {
                 return (
-                  <code key={subIdx} className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800/80 text-primary dark:text-zinc-200 font-mono text-xs border border-zinc-200/50 dark:border-zinc-700/50 break-words">
-                    {subPart.slice(1, -1)}
-                  </code>
+                  <span key={segIdx}>
+                    {renderInlineFormatting(segment)}
+                  </span>
                 );
               }
 
-              // Bold **text**
-              const boldParts = subPart.split(/(\*\*[^*]+\*\*)/g);
+              // Render Table
               return (
-                <span key={subIdx}>
-                  {boldParts.map((boldPart, boldIdx) => {
-                    if (boldPart.startsWith('**') && boldPart.endsWith('**')) {
-                      return (
-                        <strong key={boldIdx} className="font-semibold text-foreground">
-                          {renderTextWithLinks(boldPart.slice(2, -2))}
-                        </strong>
-                      );
-                    }
-                    return renderTextWithLinks(boldPart);
-                  })}
-                </span>
+                <div key={segIdx} className="my-4 overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 max-w-full">
+                  <table className="w-full text-left border-collapse text-xs table-auto">
+                    <thead>
+                      <tr className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
+                        {segment.headers.map((header, hIdx) => {
+                          const alignment = segment.alignments[hIdx] || 'left';
+                          return (
+                            <th 
+                              key={hIdx} 
+                              className={cn(
+                                "px-4 py-2.5 font-semibold text-zinc-700 dark:text-zinc-300 border-r border-zinc-200 dark:border-zinc-800 last:border-r-0 whitespace-nowrap",
+                                alignment === 'center' && 'text-center',
+                                alignment === 'right' && 'text-right'
+                              )}
+                            >
+                              {renderInlineFormatting(header)}
+                            </th>
+                          );
+                        })}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {segment.rows.map((row, rIdx) => (
+                        <tr 
+                          key={rIdx} 
+                          className="border-b border-zinc-100 dark:border-zinc-900 last:border-b-0 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 transition-colors"
+                        >
+                          {row.map((cell, cIdx) => {
+                            const alignment = segment.alignments[cIdx] || 'left';
+                            return (
+                              <td 
+                                key={cIdx} 
+                                className={cn(
+                                  "px-4 py-2.5 text-zinc-600 dark:text-zinc-400 border-r border-zinc-200 dark:border-zinc-800 last:border-r-0 break-words",
+                                  alignment === 'center' && 'text-center',
+                                  alignment === 'right' && 'text-right'
+                                )}
+                              >
+                                {renderInlineFormatting(cell)}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               );
             })}
           </span>
