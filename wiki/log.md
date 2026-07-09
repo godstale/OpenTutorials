@@ -30,6 +30,19 @@ Ran lint. See lint-report.md for details.
 
 <!-- Append-only. 최신 항목을 위에 추가. -->
 
+## 2026-07-09 (1st Session)
+
+- **[FEATURE] AI 튜터 채팅 기록 초기화, 말풍선 시간/복사 기능 및 AI 에이전트 기반 자동 컨텍스트 압축 구현**
+  - **수정/갱신 파일**:
+    - [client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx) — AI 튜터 컬럼 헤더에 `Trash2` 아이콘을 연동한 `채팅 지우기` 버튼을 배치했습니다. 클릭 시 로컬 상태의 메시지 기록을 초기화하고 DB 대화 내역(`DELETE /api/external-agents/[id]/messages`)을 리셋하여 질문 시 이전 히스토리가 AI 프롬프트에 흘러들어가지 않도록 설계했습니다.
+    - [client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx) — 메시지 말풍선 하단에 메시지 전송 시간(`timestamp`)과 클릭 시 텍스트 복사 및 피드백 상태(`복사됨`)를 노출하는 `복사하기` 버튼을 추가했습니다.
+    - [client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx) — 질문 전송 시 `systemPrompt`를 포함한 전체 메시지 크기를 실시간 토큰 추정 방식으로 계산하고, 에이전트 최대 토큰 설정값(`maxTokens`)의 80%에 임박할 때 AI 에이전트에게 현재까지의 대화 히스토리 압축(요약)을 자동으로 위임하는 메커니즘을 추가했습니다. 압축 완료 시 대화방에 압축률(%) 및 압축 후 프롬프트 크기(Tokens)를 알려주는 시스템 메시지 공지를 노출하도록 렌더링 스키마를 고도화했습니다. 압축 진행 중에는 전체 텍스트 입력창과 버튼을 비활성화하여 오작동을 차단합니다.
+    - [route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/external-agents/[id]/messages/route.ts) — 요약된 컨텍스트를 DB 대화 내역에 직접 삽입할 수 있도록 `POST` API 핸들러를 새로 신설하고 supabase DB에 메시지 레코드를 적재하여, 추후 에이전트 질문 시 이 요약본이 기본 컨텍스트로 전달되도록 파이프라인을 완성했습니다.
+  - **작업 내용**:
+    - AI 튜터와의 장기 대화 시 입력 토큰 제한으로 인한 대화 중단 현상을 극복하기 위해, 전역 토큰 설정값(maxTokens)의 80%를 감지하여 이전 대화를 AI가 스스로 자동 요약(압축)하는 스마트 컨텍스트 보존 기능을 완성했습니다.
+    - 압축이 끝나면 대화창에 시스템 메시지로 압축률(%) 및 압축 완료 후의 남은 프롬프트 크기(Tokens)를 주황색 배너 형태로 시각화하여 사용자가 한눈에 진행 상황을 추적할 수 있도록 개선했습니다.
+    - 또한 사용자의 편의성을 위해 채팅창 비우기(히스토리 완전 초기화), 개별 말풍선 복사 및 복사 성공 피드백(체크 아이콘), 전송 시각(HH:MM) 표시 등의 디테일을 더해 튜터링 경험을 강화했습니다.
+
 ## 2026-07-08 (4th Session)
 
 - **[FEATURE] 설정 화면 최상단 우측에 [전체 리셋] 기능 및 에이전트 설정 내 최대 토큰 수(Max Tokens) 기능 추가**
