@@ -30,6 +30,14 @@ Ran lint. See lint-report.md for details.
 
 <!-- Append-only. 최신 항목을 위에 추가. -->
 
+## 2026-07-09 (6th Session)
+
+- **[BUGFIX] 학습 대화창 내 중복 Key(동일 타임스탬프) 충돌 경고 해결**
+  - **수정/갱신 파일**:
+    - [client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx) — 고유 ID를 생성하는 `generateUniqueId` 유틸리티 함수를 추가하고, 메시지(ChatMessage) 객체의 `id` 값 생성 시 기존 `Date.now().toString()`을 대신해 이를 사용하도록 수정했습니다.
+  - **작업 내용**:
+    - 학습 대화창에서 질문 전송 시 유저 메시지와 에이전트 상태 메시지가 동일한 밀리초(Tick) 내에 생성되어 React 렌더링 루프(`key={msg.id}`)에서 중복 키 충돌 경고(`Encountered two children with the same key`)가 발생하는 버그를 해결했습니다. 타임스탬프에 난수 서픽스(base-36)를 조합하여 완벽한 고유 키를 보장합니다.
+
 ## 2026-07-09 (5th Session)
 
 - **[UI] 설정 페이지 내 준비 중인 비활성화 카드 제거**

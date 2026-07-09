@@ -821,6 +821,10 @@ function getFormattedTime(): string {
   });
 }
 
+function generateUniqueId(): string {
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+}
+
 function estimateTokenCount(text: string): number {
   if (!text) return 0;
   const koreanCharCount = (text.match(/[\uac00-\ud7a3]/g) || []).length;
@@ -1034,7 +1038,7 @@ export default function LearnPageClient({
     setIsCheckpointMode(false);
     setActiveCheckpoint(null);
     setMessages(prev => [...prev, {
-      id: Date.now().toString(),
+      id: generateUniqueId(),
       role: 'agent',
       content: '체크포인트를 건너뛰었습니다. 다음 단계로 진행하실 수 있습니다.'
     }]);
@@ -1481,7 +1485,7 @@ Please ask the student the question now. Only ask the question itself, do not re
   ) {
     if (!text.trim() || agentStatus === 'loading') return;
 
-    const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', content: text, timestamp: getFormattedTime() };
+    const userMsg: ChatMessage = { id: generateUniqueId(), role: 'user', content: text, timestamp: getFormattedTime() };
     const newMessages = (isSystemCheck || isCheckpointTrigger) ? currentMessages : [...currentMessages, userMsg];
     
     if (!isSystemCheck && !isCheckpointTrigger) {
@@ -1493,7 +1497,7 @@ Please ask the student the question now. Only ask the question itself, do not re
         // Show warning message when no external agent is connected
         setTimeout(() => {
           setMessages(prev => [...prev, {
-            id: (Date.now() + 1).toString(),
+            id: generateUniqueId(),
             role: 'agent',
             content: '온라인 상태의 외부 에이전트가 없습니다. 우측 상단 닉네임 클릭 -> 설정 -> 에이전트 관리에서 에이전트를 먼저 등록하고 활성화해주세요.',
             timestamp: getFormattedTime()
@@ -1503,7 +1507,7 @@ Please ask the student the question now. Only ask the question itself, do not re
       return;
     }
 
-    const assistantMsgId = (Date.now() + 1).toString();
+    const assistantMsgId = generateUniqueId();
     if (!isSystemCheck) {
       setMessages(prev => [...prev, { 
         id: assistantMsgId, 
@@ -1707,7 +1711,7 @@ Please ask the student the question now. Only ask the question itself, do not re
 
     // 1. Calculate estimated token size
     // We construct the newMessages and systemPrompt that WOULD be sent to the agent
-    const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', content: userPrompt };
+    const userMsg: ChatMessage = { id: generateUniqueId(), role: 'user', content: userPrompt };
     const newMessages = [...messages, userMsg];
     
     // Generate the system prompt using the same logic as sendMessage
@@ -1856,7 +1860,7 @@ ${historyText}`;
         });
 
         const summaryMsg: ChatMessage = {
-          id: Date.now().toString(),
+          id: generateUniqueId(),
           role: 'agent',
           content: summaryContent,
           timestamp: getFormattedTime()
@@ -1886,7 +1890,7 @@ ${historyText}`;
         const compressionRate = Math.round((1 - (newEstTokens / estTokens)) * 100);
 
         const systemNoticeMsg: ChatMessage = {
-          id: 'system-notice-' + Date.now(),
+          id: 'system-notice-' + generateUniqueId(),
           role: 'system',
           content: `대화 히스토리가 요약/압축되었습니다. (압축률: ${compressionRate}%, 현재 프롬프트 크기: ${newEstTokens.toLocaleString()} 토큰)`
         };
