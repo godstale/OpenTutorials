@@ -1304,6 +1304,33 @@ Please ask the student the question now. Only ask the question itself, do not re
     };
   }, [agentId]);
 
+  // 카드 이동 또는 에이전트 변경(화면 진입 등) 시 대화 히스토리 및 UI 상태 자동 초기화
+  useEffect(() => {
+    if (!agentId) return;
+
+    const autoClearChat = async () => {
+      setMessages([
+        {
+          id: '1',
+          role: 'agent',
+          content: `안녕하세요! "${course?.title || '강좌'}" 학습을 도와줄 AI 튜터입니다. 궁금한 점이 있다면 언제든 물어보세요.`,
+          timestamp: getFormattedTime()
+        }
+      ]);
+      setPromptUsage(null);
+      try {
+        await fetch(`/api/external-agents/${agentId}/messages`, {
+          method: 'DELETE',
+        });
+        console.log('[LearnClient] Auto-cleared database chat history on card/agent change');
+      } catch (err) {
+        console.error('[LearnClient] Failed to auto-clear database chat history:', err);
+      }
+    };
+
+    autoClearChat();
+  }, [currentCardIndex, agentId, course?.title]);
+
   const [agentStatus, setAgentStatus] = useState<'loading' | 'online' | 'offline' | 'none'>('loading');
   const [agentProgram, setAgentProgram] = useState<'hermes' | 'openclaw' | 'ollama' | 'lmstudio' | 'other' | null>(null);
   const [isLlmAgent, setIsLlmAgent] = useState<boolean>(false);

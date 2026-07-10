@@ -1,6 +1,15 @@
 {
   "ingested": [
     {
+      "slug": "2026-07-10-local-llm-debugging-and-timeouts",
+      "title": "로컬 LLM(LM Studio) 타임아웃 트러블슈팅 및 디버깅 로그 강화",
+      "source_file": "app/api/external-agents/[id]/chat/route.ts",
+      "ingested_at": "2026-07-10T13:04:00Z",
+      "pages_created": [
+        "app/api/external-agents/[id]/chat/route.ts"
+      ]
+    },
+    {
       "slug": "2026-07-05-local-llm-ollama-lmstudio-integration",
       "title": "로컬 LLM(Ollama, LM Studio) 에이전트 연동 리서치",
       "source_file": "docs/research/2026-07-05-local-llm-ollama-lmstudio-integration.md",

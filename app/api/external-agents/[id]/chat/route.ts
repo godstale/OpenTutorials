@@ -4,7 +4,9 @@ import fs from 'fs';
 import path from 'path';
 import { normalizeAgentEndpoint } from '@/lib/utils/agent-endpoint';
 
-
+// Next.js Route Handler execution settings
+export const maxDuration = 300; // 5 minutes execution limit (Vercel Pro maximum)
+export const dynamic = 'force-dynamic';
 
 function estimateTokenSize(text: string): number {
   if (!text) return 0;
@@ -17,14 +19,25 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now();
+  let agentIdForLog = '';
   try {
-    const startTime = Date.now();
     const { id } = await params;
+    agentIdForLog = id;
     const { messages, original_user_message } = await req.json();
+
+    console.log(`[API CHAT LOG] [${id}] ===== Chat Request Started =====`);
+    console.log(`[API CHAT LOG] [${id}] Input messages count: ${messages?.length || 0}`);
+
+    // Client abort connection listener
+    req.signal.addEventListener('abort', () => {
+      console.warn(`[API CHAT LOG] [${id}] CLIENT ABORTED CONNECTION (elapsed: ${Date.now() - startTime}ms)`);
+    });
 
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
+      console.error(`[API CHAT LOG] [${id}] Unauthorized user access attempt`);
       return new Response('Unauthorized', { status: 401 });
     }
 
@@ -37,24 +50,33 @@ export async function POST(
       .single();
 
     if (error || !agent) {
+      console.error(`[API CHAT LOG] [${id}] Agent not found or access denied. Error:`, error);
       return new Response('Agent not found or access denied', { status: 404 });
     }
 
+    console.log(`[API CHAT LOG] [${id}] Agent info loaded: type=${agent.agent_type}, endpoint=${agent.endpoint}, selected_model=${agent.selected_model}`);
+
     // Get last user message to store in DB
     const lastUserMessage = messages[messages.length - 1];
-    if (lastUserMessage && lastUserMessage.role === 'user') {
+    const userContent = original_user_message || lastUserMessage?.content || '';
+    const isSystemCheck = userContent.includes('[시스템 점검]');
+
+    if (lastUserMessage && lastUserMessage.role === 'user' && !isSystemCheck) {
+      const displayMsg = userContent;
+      console.log(`[API CHAT LOG] [${id}] Saving user message to DB: "${displayMsg.slice(0, 60)}${displayMsg.length > 60 ? '...' : ''}"`);
       await supabase
         .from('user_external_agent_messages')
         .insert({
           agent_id: id,
           role: 'user',
-          content: original_user_message || lastUserMessage.content,
+          content: userContent,
         });
     }
 
     // Load accumulated messages from the database for LLM agent type session maintenance
     let requestMessages = messages;
     if (agent.agent_type === 'llm') {
+      console.log(`[API CHAT LOG] [${id}] Agent type is LLM. Fetching accumulated messages from DB...`);
       const { data: dbMessages } = await supabase
         .from('user_external_agent_messages')
         .select('*')
@@ -68,6 +90,7 @@ export async function POST(
       }
 
       if (dbMessages && dbMessages.length > 0) {
+        console.log(`[API CHAT LOG] [${id}] Found ${dbMessages.length} past messages in DB`);
         dbMessages.forEach((msg: { role: string; content: string }) => {
           tempMessages.push({
             role: msg.role === 'assistant' ? 'assistant' : 'user',
@@ -75,6 +98,8 @@ export async function POST(
           });
         });
         requestMessages = tempMessages;
+      } else {
+        console.log(`[API CHAT LOG] [${id}] No past messages found in DB`);
       }
     }
 
@@ -88,10 +113,16 @@ export async function POST(
 
     const targetModel = agent.selected_model || (agent.agent_type === 'harness' ? 'hermes-agent' : '');
     if (!targetModel) {
+      console.warn(`[API CHAT LOG] [${id}] Model not selected`);
       return new Response('모델이 선택되지 않았습니다. 에이전트 상세 설정에서 모델을 설정해 주세요.', { status: 400 });
     }
 
-    const response = await fetch(`${v1Url}/chat/completions`, {
+    const targetUrl = `${v1Url}/chat/completions`;
+    console.log(`[API CHAT LOG] [${id}] Connecting to LLM server: ${targetUrl}`);
+    console.log(`[API CHAT LOG] [${id}] Request payload: model="${targetModel}", messagesCount=${requestMessages.length}`);
+
+    const fetchStartTime = Date.now();
+    const response = await fetch(targetUrl, {
       method: 'POST',
       headers,
       body: JSON.stringify({
@@ -102,13 +133,18 @@ export async function POST(
       signal: req.signal,
     });
 
+    const fetchDuration = Date.now() - fetchStartTime;
+    console.log(`[API CHAT LOG] [${id}] LLM Response Headers Received. Status: ${response.status} ${response.statusText} (Took ${fetchDuration}ms)`);
+
     if (!response.ok) {
       const errorText = await response.text();
+      console.error(`[API CHAT LOG] [${id}] LLM server returned error status. Body:`, errorText);
       return new Response(`External Agent API error: ${errorText}`, { status: response.status });
     }
 
     const rawStream = response.body;
     if (!rawStream) {
+      console.error(`[API CHAT LOG] [${id}] Response body is null`);
       return new Response('Empty response body', { status: 500 });
     }
 
@@ -117,20 +153,33 @@ export async function POST(
     const decoder = new TextDecoder();
     let assistantText = '';
     let buffer = '';
+    let isFirstChunk = true;
+    let chunkCount = 0;
 
     const transformStream = new ReadableStream({
       async start(controller) {
         try {
           while (true) {
             const { done, value } = await reader.read();
+
+            if (isFirstChunk && !done) {
+              isFirstChunk = false;
+              const ttft = Date.now() - startTime;
+              console.log(`[API CHAT LOG] [${id}] First Chunk Received. Time-To-First-Token (TTFT): ${ttft}ms`);
+            }
+
             if (done) {
+              const totalDuration = Date.now() - startTime;
+              console.log(`[API CHAT LOG] [${id}] Stream reading complete. Total elapsed time: ${totalDuration}ms, Total chunks: ${chunkCount}, Total generated chars: ${assistantText.length}`);
+              
               // If there's leftover buffer content, process it
               if (buffer.trim()) {
                 processLine(buffer.trim());
               }
               
               // Save assistant message to Database on complete
-              if (assistantText.trim()) {
+              if (assistantText.trim() && !isSystemCheck) {
+                console.log(`[API CHAT LOG] [${id}] Saving assistant response to DB: "${assistantText.slice(0, 60)}${assistantText.length > 60 ? '...' : ''}"`);
                 await supabase
                   .from('user_external_agent_messages')
                   .insert({
@@ -140,6 +189,7 @@ export async function POST(
                   });
                 
                 // Call RPC function to prune to latest 100 messages
+                console.log(`[API CHAT LOG] [${id}] Pruning external agent messages...`);
                 await supabase.rpc('prune_external_agent_messages', { p_agent_id: id });
 
                 // 에이전트별 대화 기록 누적 저장 (파일)
@@ -161,7 +211,7 @@ export async function POST(
                       const fileData = fs.readFileSync(chatLogPath, 'utf8');
                       chatLogs = JSON.parse(fileData);
                     } catch (e) {
-                      console.error('Failed to parse existing chat log file, starting fresh:', e);
+                      console.error(`[API CHAT LOG] [${id}] Failed to parse existing chat log file, starting fresh:`, e);
                     }
                   }
 
@@ -175,15 +225,19 @@ export async function POST(
                   });
 
                   fs.writeFileSync(chatLogPath, JSON.stringify(chatLogs, null, 2), 'utf8');
+                  console.log(`[API CHAT LOG] [${id}] Successfully wrote log to public/agent-chats/${id}.json`);
                 } catch (fileErr) {
-                  console.error('Failed to write chat log to file:', fileErr);
+                  console.error(`[API CHAT LOG] [${id}] Failed to write chat log to file:`, fileErr);
                 }
+              } else {
+                console.warn(`[API CHAT LOG] [${id}] Assistant generated empty text. No DB save/file log.`);
               }
 
               controller.close();
               break;
             }
 
+            chunkCount++;
             // Forward chunks straight to browser client so user sees response instantly
             controller.enqueue(value);
 
@@ -197,6 +251,7 @@ export async function POST(
             }
           }
         } catch (err) {
+          console.error(`[API CHAT LOG] [${id}] Stream read error occurred:`, err);
           controller.error(err);
         }
 
@@ -215,6 +270,7 @@ export async function POST(
       }
     });
 
+    console.log(`[API CHAT LOG] [${id}] Returning Streaming Response to browser...`);
     return new Response(transformStream, {
       headers: {
         'Content-Type': 'text/event-stream',
@@ -226,6 +282,7 @@ export async function POST(
 
   } catch (err: unknown) {
     const errMsg = err instanceof Error ? err.message : 'Unknown error';
+    console.error(`[API CHAT LOG] [${agentIdForLog || 'unknown'}] Exception in POST handler:`, err);
     return new Response(errMsg, { status: 500 });
   }
 }
