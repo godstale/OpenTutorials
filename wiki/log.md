@@ -30,6 +30,30 @@ Ran lint. See lint-report.md for details.
 
 <!-- Append-only. 최신 항목을 위에 추가. -->
 
+## 2026-07-10 (2nd Session)
+
+- **[FEATURE] 강좌 진입 및 카드 이동 시 대화 히스토리 자동 초기화 및 시스템 점검(Handshake) 메시지의 DB 저장 차단**
+  - **수정/갱신 파일**:
+    - [client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx) — 
+      1) `currentCardIndex`, `agentId`가 변경될 때 트리거되는 `useEffect`를 추가하여, 강좌 화면에 처음 진입하거나 카드를 이동할 때 UI의 대화 상태(`messages`)를 웰컴 메시지로 리셋하고 백엔드 DB의 대화 히스토리(`DELETE` API 호출)를 자동으로 삭제하도록 개선했습니다.
+    - [route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/external-agents/[id]/chat/route.ts) — 
+      1) 강좌 첫 진입 시 구동환경 및 파일 준비 상태를 체크하기 위해 전송하는 `[시스템 점검]` 매개체/핸드셰이크 메시지 및 그에 따른 AI 응답이 DB(`user_external_agent_messages` 테이블)에 저장되지 않도록 필터링 규칙을 적용했습니다.
+  - **작업 내용**:
+    - 로컬 LLM 에이전트(Ollama, LM Studio 등)를 연동하여 사용할 때, 무거운 프롬프트로 인해 답변 생성이 극도로 지연되거나 타임아웃되는 것을 예방하기 위해 프롬프트 전송 맥락을 효율화했습니다.
+    - 강좌 진입 시 백그라운드로 작동하는 자동 `[시스템 점검]` 통신 및 답변 내역이 DB 대화 이력에 남지 않도록 차단하여, 사용자가 첫 질문을 던질 때 불필요한 시스템 안내 텍스트가 대화 히스토리에 포함되는 문제를 원천 차단했습니다.
+    - 또한 사용자가 강좌 내에서 카드 사이를 이동(단원 이동)하거나 페이지를 새로 진입하는 경우, 이전 카드의 Q&A 이력이 다음 카드로 넘어가지 않도록 자동으로 DB 및 UI 대화 이력을 초기화해 줌으로써 매 카드마다 가볍고 고도로 집중된 컨텍스트 환경에서 질의응답을 수행할 수 있도록 개선했습니다.
+
+## 2026-07-10 (1st Session)
+
+- **[BUGFIX/LOG] 로컬 LLM(LM Studio) 연동 시 답변 중단 및 타임아웃 분석을 위한 디버깅 로그 추가 및 Next.js Route Handler Execution Timeout 설정 보강**
+  - **수정/갱신 파일**:
+    - [route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/external-agents/[id]/chat/route.ts) — 
+      1) Next.js API Route Handler에 `maxDuration = 300` 및 `dynamic = 'force-dynamic'` 설정을 추가하여 호스팅 플랫폼 및 서버 단에서의 조기 타임아웃 차단을 보완했습니다.
+      2) 요청 접수, DB 조회 결과, LM Studio 연결 시작, Response Header 수신 시간, Time-to-First-Token(TTFT) 소요 시간, 클라이언트 중단 감지(`req.signal.aborted`), 스트림 청크 개수 및 완료/실패 여부를 백엔드 콘솔 터미널에 상세하게 출력하도록 풍부한 로그 작성을 적용했습니다.
+  - **작업 내용**:
+    - 질문 입력 후 로컬 LLM(LM Studio)의 동작 상태에도 불구하고 답변이 중단되는 주된 원인은 누적된 대화 기록(최대 100개)으로 인한 Prompt Ingestion/Processing 연산의 극심한 지연(TTFT 지연) 때문입니다.
+    - 백엔드 서버나 게이트웨이, 브라우저가 첫 토큰 수신 대기 임계값(Timeout)을 초과하여 연결을 차단(Abort)하는 문제를 파악할 수 있도록, 연결의 세부 구간별 성능 지표와 취소 시그널을 감지하는 디버깅 로그를 심어 개발자와 사용자가 지연 구간을 추적하기 쉽게 개선했습니다.
+
 ## 2026-07-09 (7th Session)
 
 - **[FEATURE] AI 대화창 내 첫 안내 메시지 복사 버튼 제거, 입력창 placeholder 내 프롬프트 사용량(%) 표시 및 로컬 LLM 에이전트(Ollama/LM Studio) 대상 자료 다운로드 체크 우회 구현**
