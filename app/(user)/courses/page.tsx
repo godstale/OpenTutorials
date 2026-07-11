@@ -2,28 +2,30 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
 import { 
-  Search, Plus, BookOpen, User, Mail, Globe, 
-  CheckCircle2, Compass, AlertCircle, Loader2, ArrowRight,
-  BookOpenCheck, Sparkles
+  Search, BookOpen, User, Mail, Globe, 
+  CheckCircle2, Loader2, ArrowRight,
+  BookOpenCheck
 } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
+import { CourseIcon } from '@/components/ui/course-icon';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from '@/components/ui/dialog';
-import { createClient } from '@/lib/supabase/client';
-import { CourseIcon, PREDEFINED_ICONS } from '@/components/ui/course-icon';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 
 interface CoursePackage {
   id: string;
@@ -40,6 +42,7 @@ interface CoursePackage {
   author_nickname?: string;
   author_email?: string;
   author_homepage?: string;
+  toc?: any[];
 }
 
 interface Subscription {
@@ -51,24 +54,64 @@ export default function CoursesPage() {
   const router = useRouter();
   const [courses, setCourses] = useState<CoursePackage[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
-  const [userProfile, setUserProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTab, setSelectedTab] = useState<'all' | 'subscribed' | 'unsubscribed' | 'created'>('all');
+  const [selectedCourse, setSelectedCourse] = useState<any | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
 
-  // Dialog state
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [dialogError, setDialogError] = useState('');
-  const [dialogSuccess, setDialogSuccess] = useState('');
+  // Online course states
+  const [onlineCourses, setOnlineCourses] = useState<any[]>([]);
+  const [onlineLoading, setOnlineLoading] = useState(false);
+  const [onlineError, setOnlineError] = useState('');
+  const [downloadingSlug, setDownloadingSlug] = useState<string | null>(null);
+  const [downloadStatus, setDownloadStatus] = useState<string>('');
 
-  // Form states
-  const [newTitle, setNewTitle] = useState('');
-  const [newSlug, setNewSlug] = useState('');
-  const [newDescription, setNewDescription] = useState('');
-  const [newIcon, setNewIcon] = useState('icon:book');
-  const [newSequential, setNewSequential] = useState(false);
-  const [newForceCheckpoint, setNewForceCheckpoint] = useState(false);
+  const useOfflineFallback = () => {
+    setOnlineCourses([
+      {
+        title: "아두이노 IoT 프로젝트 마스터 클래스",
+        slug: "iot-communication",
+        description: "USB·블루투스·WiFi·이더넷·RF 등 다양한 통신 기술을 활용해 실제 IoT 장치를 직접 만들어보는 아두이노 실전 프로젝트 강좌 패키지입니다.",
+        version: "1.0.0",
+        category: "Programming",
+        target_age: "전연령",
+        bundler_protocol_version: "1.1.1",
+        downloadUrl: "https://raw.githubusercontent.com/godstale/OpenTutorials-Browser/main/courses/iot-communication/iot-communication.zip",
+        thumbnail: "icon:cpu",
+        author: {
+          nickname: "Kailash",
+          email: "godstale@hotmail.com",
+          website: "https://hardcopyworld.com"
+        }
+      }
+    ]);
+  };
+
+  const fetchOnlineCourses = async () => {
+    setOnlineLoading(true);
+    setOnlineError('');
+    try {
+      const res = await fetch('https://raw.githubusercontent.com/godstale/OpenTutorials-Browser/main/courses.json');
+      if (!res.ok) {
+        console.warn('온라인 강좌 목록을 가져오지 못했습니다. 상태 코드:', res.status);
+        useOfflineFallback();
+        return;
+      }
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setOnlineCourses(data);
+      } else if (data && Array.isArray(data.courses)) {
+        setOnlineCourses(data.courses);
+      } else {
+        setOnlineCourses([]);
+      }
+    } catch (err: any) {
+      console.warn('온라인 강좌 목록을 가져오는 중 오류가 발생했습니다 (오프라인 모드 전환):', err.message || err);
+      useOfflineFallback();
+    } finally {
+      setOnlineLoading(false);
+    }
+  };
 
   const fetchCoursesAndSubs = async () => {
     try {
@@ -85,16 +128,6 @@ export default function CoursesPage() {
         const data = await resSubs.json();
         setSubscriptions(data);
       }
-
-      // 3. Fetch user profile for creator info
-      const supabase = createClient();
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', 'local-user-id')
-        .maybeSingle();
-      
-      setUserProfile(profile);
     } catch (err) {
       console.error('Failed to load courses or subscription data:', err);
     } finally {
@@ -104,15 +137,7 @@ export default function CoursesPage() {
 
   useEffect(() => {
     fetchCoursesAndSubs();
-
-    // Listen to profile updates so creator info refreshes instantly
-    const handleProfileUpdate = () => {
-      fetchCoursesAndSubs();
-    };
-    window.addEventListener('profile-updated', handleProfileUpdate);
-    return () => {
-      window.removeEventListener('profile-updated', handleProfileUpdate);
-    };
+    fetchOnlineCourses();
   }, []);
 
   const handleSubscribe = async (courseId: string) => {
@@ -133,118 +158,102 @@ export default function CoursesPage() {
     }
   };
 
-  const handleCreateCourse = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setDialogError('');
-    setDialogSuccess('');
-
-    // Validations
-    if (!newTitle.trim()) {
-      setDialogError('강좌 제목을 입력하세요.');
-      return;
-    }
-    if (!newSlug.trim()) {
-      setDialogError('주소 슬러그를 입력하세요.');
-      return;
-    }
-    if (!/^[a-z0-9-]+$/.test(newSlug.trim())) {
-      setDialogError('슬러그는 영문 소문자, 숫자, 하이픈(-)만 사용할 수 있습니다.');
-      return;
-    }
-    if (!newDescription.trim()) {
-      setDialogError('강좌 요약 설명을 입력하세요.');
-      return;
-    }
-
-    if (!userProfile?.nickname) {
-      setDialogError('강좌를 등록하기 전에 설정 > 프로필에서 닉네임을 먼저 설정해 주세요.');
-      return;
-    }
-
-    setSubmitting(true);
+  const handleDownloadCourse = async (onlineCourse: any) => {
+    setDownloadingSlug(onlineCourse.slug);
+    setDownloadStatus('로컬 패키지 확인 및 등록 중...');
     try {
-      const supabase = createClient();
-      const newPackageId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'pkg-' + Math.random().toString(36).substring(2, 11);
-      
-      const defaultToc = [
-        {
-          type: 'chapter',
-          title: 'Chapter 01. 학습 시작하기',
-          description: '이 강좌의 기본 소개와 오리엔테이션입니다.',
-          children: [
-            {
-              type: 'section',
-              title: 'LESSON 1-1: 환영합니다',
-              description: '강좌 수강을 진심으로 환영합니다. 아래 설명 카드를 읽고 AI 튜터와 대화를 시작해보세요.',
-              filename: 'welcome.mdx'
-            }
-          ]
+      let packageId = '';
+      let isImportedLocally = false;
+
+      // 1. 먼저 로컬 파일시스템에 해당 강좌 폴더가 있는지 감지하고 바로 등록(임포트) 시도
+      try {
+        const importRes = await fetch('/api/admin/packages/import-local', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            slug: onlineCourse.slug,
+            title: onlineCourse.title,
+            description: onlineCourse.description,
+            version: onlineCourse.version,
+            author: onlineCourse.author,
+            category: onlineCourse.category,
+            tags: onlineCourse.tags,
+            target_age: onlineCourse.target_age,
+            thumbnail: onlineCourse.thumbnail,
+            bundler_protocol_version: onlineCourse.bundler_protocol_version
+          })
+        });
+
+        if (importRes.ok) {
+          const result = await importRes.json();
+          packageId = result.packageId;
+          isImportedLocally = true;
+          console.log(`Successfully registered course package '${onlineCourse.slug}' from local folder.`);
         }
-      ];
+      } catch (importErr) {
+        console.warn('Local import attempt failed, falling back to download:', importErr);
+      }
 
-      // 1. Insert course package into local db
-      const { error: insertErr } = await supabase.from('course_packages').insert({
-        id: newPackageId,
-        slug: newSlug.trim(),
-        title: newTitle.trim(),
-        description: newDescription.trim(),
-        thumbnail: newIcon,
-        published: true,
-        sequential_play: newSequential,
-        force_checkpoint: newForceCheckpoint,
-        version: '1.0.0',
-        changelog: '최초 등록',
-        toc: defaultToc,
-        cards: ['welcome.mdx'],
-        author_id: 'local-user-id',
-        author_nickname: userProfile.nickname,
-        author_email: userProfile.email || null,
-        author_homepage: userProfile.homepage_url || null,
-      });
-
-      if (insertErr) throw insertErr;
-
-      // 2. Upload config.json to storage
-      const configData = {
-        cards: ['welcome.mdx'],
-        toc: defaultToc
-      };
-      const configBlob = new Blob([JSON.stringify(configData, null, 2)], { type: 'application/json' });
-      await supabase.storage.from('courses').upload(`${newSlug.trim()}/config.json`, configBlob);
-
-      // 3. Upload welcome.mdx to storage
-      const welcomeContent = `# 환영합니다!
-
-이 강좌는 **${newTitle.trim()}** 강좌의 첫 번째 카드입니다.
-제작자: **${userProfile.nickname}** ${userProfile.email ? `(${userProfile.email})` : ''}
-
-이제 우측의 AI 튜터와 대화하며 즐겁게 공부해보세요!`;
-      const welcomeBlob = new Blob([welcomeContent], { type: 'text/markdown' });
-      await supabase.storage.from('courses').upload(`${newSlug.trim()}/cards/welcome.mdx`, welcomeBlob);
-
-      setDialogSuccess('강좌가 성공적으로 등록되었습니다!');
+      // 2. 로컬에 폴더가 없어서 임포트에 실패한 경우 원격 ZIP 다운로드 진행
+      if (!isImportedLocally) {
+        setDownloadStatus('강좌 ZIP 파일 다운로드 중...');
+        let downloadUrl = onlineCourse.downloadUrl;
+        if (downloadUrl && !downloadUrl.startsWith('http://') && !downloadUrl.startsWith('https://')) {
+          downloadUrl = `https://raw.githubusercontent.com/godstale/OpenTutorials-Browser/main/${downloadUrl}`;
+        }
+        const downloadRes = await fetch(downloadUrl);
+        if (!downloadRes.ok) throw new Error('강좌 ZIP 파일을 다운로드하지 못했습니다.');
+        const zipBlob = await downloadRes.blob();
+        
+        // 3. FormData에 담기
+        setDownloadStatus('로컬 데이터베이스에 등록 중...');
+        const file = new File([zipBlob], `${onlineCourse.slug}.zip`, { type: 'application/zip' });
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('source', 'GITHUB');
+        
+        // 4. 로컬 업로드 API 호출
+        const uploadRes = await fetch('/api/admin/packages/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        if (!uploadRes.ok) {
+          let errMsg = '로컬 DB 등록에 실패했습니다.';
+          try {
+            const errData = await uploadRes.json();
+            errMsg = errData.error || errMsg;
+          } catch {}
+          throw new Error(errMsg);
+        }
+        
+        const result = await uploadRes.json();
+        packageId = result.packageId;
+      }
       
-      // Clear form
-      setNewTitle('');
-      setNewSlug('');
-      setNewDescription('');
-      setNewIcon('icon:book');
-      setNewSequential(false);
-      setNewForceCheckpoint(false);
-
-      // Refresh list
+      // 5. 자동 수강신청 처리
+      setDownloadStatus('수강 신청 등록 중...');
+      const subscribeRes = await fetch('/api/packages/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ package_id: packageId }),
+      });
+      
+      if (!subscribeRes.ok) {
+        console.error('Auto-subscribe failed:', await subscribeRes.text());
+      }
+      
+      setDownloadStatus('설치 완료!');
+      alert(`'${onlineCourse.title}' 강좌 다운로드 및 수강 신청이 완료되었습니다!`);
+      
+      // 데이터 갱신
       await fetchCoursesAndSubs();
-
-      // Close dialog after 1.5s
-      setTimeout(() => {
-        setIsDialogOpen(false);
-        setDialogSuccess('');
-      }, 1500);
     } catch (err: any) {
-      console.error('Failed to create course package:', err);
-      setDialogError(err.message || '강좌 등록 중 오류가 발생했습니다. (슬러그 중복 확인 필요)');
+      console.error(err);
+      alert(`강좌 설치 중 오류가 발생했습니다: ${err.message}`);
     } finally {
-      setSubmitting(false);
+      setDownloadingSlug(null);
+      setDownloadStatus('');
     }
   };
 
@@ -252,54 +261,33 @@ export default function CoursesPage() {
     return subscriptions.some(sub => sub.package_id === courseId);
   };
 
-  // Filtering logic
-  const filteredCourses = courses.filter((course) => {
-    // 1. Search Query Filter
+  const filteredOnlineCourses = onlineCourses.filter((course) => {
     const query = searchQuery.toLowerCase().trim();
-    const matchesSearch = 
+    const authorName = typeof course.author === 'string'
+      ? course.author
+      : course.author?.nickname || '';
+    return (
       course.title.toLowerCase().includes(query) ||
       (course.description && course.description.toLowerCase().includes(query)) ||
-      (course.author_nickname && course.author_nickname.toLowerCase().includes(query));
-
-    if (!matchesSearch) return false;
-
-    // 2. Tab Filter
-    const enrolled = isSubscribed(course.id);
-    const isMine = course.author_id === 'local-user-id';
-
-    if (selectedTab === 'subscribed') return enrolled;
-    if (selectedTab === 'unsubscribed') return !enrolled;
-    if (selectedTab === 'created') return isMine;
-
-    return true;
+      authorName.toLowerCase().includes(query)
+    );
   });
 
   return (
     <div className="space-y-8 w-full max-w-6xl mx-auto pt-1 pb-8 relative">
-      {/* Background Decorative Gradients */}
-      <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[350px] h-[350px] bg-emerald-500/10 blur-[120px] rounded-full -z-10 pointer-events-none" />
-
       {/* Header section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
-            <Compass className="size-8 text-green-700 dark:text-green-400" />
-            <span>강좌 검색</span>
+          <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+            강좌 검색
           </h2>
           <p className="text-muted-foreground mt-2">
-            다양한 분야의 AI 튜터 강좌를 찾아 수강신청하고, 직접 새로운 강좌를 등록해 보세요.
+            GitHub 저장소와 연동하여 AI 튜터 강좌를 실시간으로 검색하고 다운로드합니다.
           </p>
         </div>
-        <Button 
-          onClick={() => setIsDialogOpen(true)}
-          className="text-white bg-green-700 hover:bg-green-800 dark:bg-green-600 dark:hover:bg-green-700 shadow-sm flex items-center gap-1.5 self-start md:self-auto"
-        >
-          <Plus className="size-4" />
-          <span>직접 강좌 등록</span>
-        </Button>
       </div>
 
-      {/* Search & Tabs bar */}
+      {/* Search bar */}
       <div className="flex flex-col gap-4">
         <div className="relative w-full max-w-md">
           <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
@@ -310,328 +298,451 @@ export default function CoursesPage() {
             className="pl-9 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800"
           />
         </div>
-
-        <div className="flex border-b border-zinc-200 dark:border-zinc-800">
-          {(
-            [
-              { id: 'all', label: '전체 강좌' },
-              { id: 'subscribed', label: '수강 중' },
-              { id: 'unsubscribed', label: '미수강' },
-              { id: 'created', label: '내가 만든 강좌' },
-            ] as const
-          ).map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setSelectedTab(tab.id)}
-              className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors -mb-[2px] ${
-                selectedTab === tab.id
-                  ? 'border-green-700 text-green-700 dark:border-green-400 dark:text-green-400'
-                  : 'border-transparent text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
       </div>
 
-      {loading ? (
+      {onlineLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: 3 }).map((_, i) => (
             <Card key={i} className="flex flex-col h-[320px] animate-pulse bg-muted/20 border-zinc-200 dark:border-zinc-800" />
           ))}
         </div>
-      ) : filteredCourses.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCourses.map((course) => {
-            const enrolled = isSubscribed(course.id);
-            const isCreatorMe = course.author_id === 'local-user-id';
+      ) : (
+        <div className="space-y-6">
 
-            return (
-              <Card 
-                key={course.id}
-                className="group border border-zinc-200/80 dark:border-zinc-800/80 bg-white/60 dark:bg-zinc-950/60 backdrop-blur-sm shadow-sm flex flex-col justify-between overflow-hidden hover:shadow-md hover:border-green-700/30 dark:hover:border-green-500/30 transition-all duration-300"
-              >
-                <div>
-                  {/* Thumbnail / Icon Container */}
-                  <div className="h-40 w-full relative border-b border-zinc-100 dark:border-zinc-800/80 overflow-hidden">
-                    <CourseIcon thumbnail={course.thumbnail} className="transition-transform duration-500 group-hover:scale-105" />
-                    {enrolled && (
-                      <Badge className="absolute top-3 right-3 bg-emerald-600 hover:bg-emerald-600 text-white gap-1 shadow-sm">
-                        <CheckCircle2 className="size-3" />
-                        수강 중
-                      </Badge>
-                    )}
-                    {isCreatorMe && (
-                      <Badge className="absolute top-3 left-3 bg-blue-600 hover:bg-blue-600 text-white gap-1 shadow-sm">
-                        내가 만듦
-                      </Badge>
-                    )}
-                  </div>
+          {filteredOnlineCourses.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredOnlineCourses.map((course) => {
+                const localCourse = courses.find(c => c.slug === course.slug);
+                const enrolled = localCourse ? isSubscribed(localCourse.id) : false;
+                const isDownloading = downloadingSlug === course.slug;
 
-                  {/* Body Content */}
-                  <div className="p-5 space-y-3">
-                    <h3 className="font-bold text-zinc-900 dark:text-zinc-50 line-clamp-1 group-hover:text-green-700 dark:group-hover:text-green-400 transition-colors">
-                      {course.title}
-                    </h3>
-                    <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">
-                      {course.description || '상세 정보가 없습니다.'}
-                    </p>
-
-                    {/* Author Profile section */}
-                    {course.author_nickname && (
-                      <div className="flex items-center gap-2 pt-2 text-xs border-t border-zinc-100 dark:border-zinc-800/50 mt-4 text-zinc-500 dark:text-zinc-400">
-                        <User className="size-3.5 text-zinc-400" />
-                        <span className="font-medium truncate max-w-[120px]">
-                          {course.author_nickname}
-                        </span>
-                        
-                        <div className="flex items-center gap-1 ml-auto shrink-0">
-                          {course.author_homepage && (
-                            <a
-                              href={course.author_homepage}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-zinc-400 hover:text-green-700 dark:hover:text-green-400 p-0.5"
-                              title="제작자 홈페이지"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <Globe className="size-3.5" />
-                            </a>
-                          )}
-                          {course.author_email && (
-                            <a
-                              href={`mailto:${course.author_email}`}
-                              className="text-zinc-400 hover:text-green-700 dark:hover:text-green-400 p-0.5"
-                              title="제작자 이메일"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <Mail className="size-3.5" />
-                            </a>
+                return (
+                  <Card key={course.slug} className="overflow-hidden flex flex-col hover:border-primary/50 transition-all duration-300 bg-white py-0 pb-0">
+                    <div 
+                      className="flex-1 flex flex-col hover:opacity-95 transition-opacity cursor-pointer"
+                      onClick={() => {
+                        setSelectedCourse(course);
+                        setIsDetailOpen(true);
+                      }}
+                    >
+                      {/* Thumbnail / Icon Container */}
+                      <div className="h-32 relative overflow-hidden shrink-0">
+                        <CourseIcon thumbnail={course.thumbnail || 'icon:book'} className="w-full h-full" iconClassName="w-10 h-10" alt={course.title} />
+                        <div className="absolute top-2.5 left-2.5 flex flex-row gap-1.5 items-center">
+                          {enrolled && (
+                            <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white text-xs gap-1 shadow-sm">
+                              <CheckCircle2 className="size-3" />
+                              수강 중
+                            </Badge>
                           )}
                         </div>
                       </div>
-                    )}
-                  </div>
-                </div>
 
-                {/* Footer Action */}
-                <CardFooter className="p-5 pt-0">
-                  {enrolled ? (
-                    <Button 
-                      className="w-full text-white bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 gap-1.5"
-                      onClick={() => router.push(`/courses/${course.slug}`)}
-                    >
-                      <BookOpenCheck className="size-4" />
-                      <span>학습하러 가기</span>
-                    </Button>
-                  ) : (
-                    <Button 
-                      className="w-full text-white bg-green-700 hover:bg-green-800 dark:bg-green-600 dark:hover:bg-green-700 gap-1.5"
-                      onClick={() => handleSubscribe(course.id)}
-                    >
-                      <span>수강 신청하기</span>
-                      <ArrowRight className="size-4" />
-                    </Button>
-                  )}
-                </CardFooter>
-              </Card>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="py-16 text-center text-muted-foreground bg-muted/20 border border-dashed rounded-2xl flex flex-col items-center justify-center gap-4">
-          <BookOpen className="size-12 text-muted-foreground/40" />
-          <div className="space-y-1">
-            <p className="font-semibold text-zinc-700 dark:text-zinc-300">검색 조건에 맞는 강좌가 없습니다.</p>
-            <p className="text-xs">검색어를 변경하거나 다른 필터 탭을 선택해 보세요.</p>
-          </div>
+                      <CardHeader className="pb-0 pt-4">
+                        <div className="flex items-center justify-between gap-2">
+                          <CardTitle className="text-base line-clamp-1">{course.title}</CardTitle>
+                          <Badge variant="outline" className="text-[10px] shrink-0">
+                            v{course.version}
+                          </Badge>
+                        </div>
+                        <CardDescription className="line-clamp-1 text-xs">{course.description || '상세 정보가 없습니다.'}</CardDescription>
+                        {course.author && (
+                          <div className="flex items-center gap-2 mt-2 text-[11px] text-zinc-500">
+                            <div className="flex items-center gap-1 font-medium">
+                              <User className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                              <span className="truncate max-w-[120px]">
+                                {typeof course.author === 'string' ? course.author : course.author.nickname}
+                              </span>
+                            </div>
+                            {typeof course.author !== 'string' && (course.author.website || course.author.email) && (
+                              <div className="flex items-center gap-1 shrink-0 border-l pl-2 border-zinc-200 dark:border-zinc-800">
+                                {course.author.website && (
+                                  <a
+                                    href={course.author.website}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-zinc-400 hover:text-green-700 dark:hover:text-green-400 p-0.5"
+                                    title="제작자 홈페이지"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <Globe className="size-3.5" />
+                                  </a>
+                                )}
+                                {course.author.email && (
+                                  <a
+                                    href={`mailto:${course.author.email}`}
+                                    className="text-zinc-400 hover:text-green-700 dark:hover:text-green-400 p-0.5"
+                                    title="제작자 이메일"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <Mail className="size-3.5" />
+                                  </a>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </CardHeader>
+                    </div>
+
+                    {/* Footer Action */}
+                    <CardFooter className="pt-3 pb-3 border-t bg-muted/10 flex items-center justify-between gap-2">
+                      <span className="text-xs font-medium text-muted-foreground">
+                        {enrolled ? '학습 중' : localCourse ? '수강 대기' : '신규 강좌'}
+                      </span>
+                      {enrolled ? (
+                        <Button 
+                          size="sm"
+                          className="h-8 text-white bg-green-700 hover:bg-green-800 dark:bg-green-600 dark:hover:bg-green-700 gap-1.5"
+                          onClick={() => router.push(`/courses/${course.slug}`)}
+                        >
+                          <BookOpenCheck className="size-3.5" />
+                          <span>학습하기</span>
+                        </Button>
+                      ) : localCourse ? (
+                        <Button 
+                          size="sm"
+                          className="h-8 text-white bg-green-700 hover:bg-green-800 dark:bg-green-600 dark:hover:bg-green-700 gap-1.5"
+                          onClick={() => handleSubscribe(localCourse.id)}
+                        >
+                          <span>수강 신청</span>
+                          <ArrowRight className="size-3.5" />
+                        </Button>
+                      ) : (
+                        <Button 
+                          size="sm"
+                          className="h-8 text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-700 gap-1.5"
+                          onClick={() => handleDownloadCourse(course)}
+                          disabled={isDownloading}
+                        >
+                          {isDownloading ? (
+                            <>
+                              <Loader2 className="size-3.5 animate-spin mr-1" />
+                              <span>{downloadStatus || '다운 중...'}</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>다운로드</span>
+                              <ArrowRight className="size-3.5" />
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </CardFooter>
+                  </Card>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="py-16 text-center text-muted-foreground bg-muted/20 border border-dashed rounded-2xl flex flex-col items-center justify-center gap-4">
+              <BookOpen className="size-12 text-muted-foreground/40" />
+              <div className="space-y-1">
+                <p className="font-semibold text-zinc-700 dark:text-zinc-300">검색 조건에 맞는 온라인 강좌가 없습니다.</p>
+                <p className="text-xs">검색어를 변경하여 다시 시도해 보세요.</p>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Direct Registration Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold flex items-center gap-2 text-green-700 dark:text-green-400">
-              <Sparkles className="size-5" />
-              <span>새 강좌 만들기</span>
-            </DialogTitle>
-            <DialogDescription>
-              본인만의 목차와 카드를 구성할 수 있는 새로운 강좌 패키지를 생성하고 로컬 DB에 등록합니다.
-            </DialogDescription>
-          </DialogHeader>
-
-          {/* Validation Errors/Success Alert */}
-          {dialogError && (
-            <div className="flex items-start gap-2.5 p-3 rounded-lg bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-950/50 text-sm">
-              <AlertCircle className="size-4 shrink-0 mt-0.5" />
-              <span>{dialogError}</span>
-            </div>
-          )}
-          {dialogSuccess && (
-            <div className="flex items-start gap-2.5 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-950/50 text-sm">
-              <CheckCircle2 className="size-4 shrink-0 mt-0.5" />
-              <span>{dialogSuccess}</span>
-            </div>
-          )}
-
-          {!userProfile?.nickname ? (
-            <div className="p-4 rounded-xl border border-yellow-200 dark:border-yellow-900/50 bg-yellow-50/50 dark:bg-yellow-950/10 space-y-3">
-              <div className="flex gap-2 text-yellow-800 dark:text-yellow-300">
-                <AlertCircle className="size-5 shrink-0" />
-                <div className="text-sm font-semibold">프로필 설정 필요</div>
-              </div>
-              <p className="text-xs text-yellow-700 dark:text-yellow-400 leading-relaxed">
-                강좌를 생성하기 전에 먼저 설정 화면의 <strong>Profile</strong> 메뉴에서 제작자 닉네임을 설정해야 합니다. 제작자 정보는 강좌 저작권 및 뷰어에 표시됩니다.
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full text-xs font-semibold bg-white dark:bg-zinc-900 hover:bg-zinc-50 border-yellow-200"
-                onClick={() => {
-                  setIsDialogOpen(false);
-                  router.push('/settings/profile');
-                }}
-              >
-                프로필 설정하러 가기
-              </Button>
-            </div>
-          ) : (
-            <form onSubmit={handleCreateCourse} className="space-y-4">
-              {/* Creator Card */}
-              <div className="p-3.5 rounded-lg bg-zinc-50 dark:bg-zinc-900 border text-xs space-y-1">
-                <div className="font-semibold text-zinc-700 dark:text-zinc-300">제작자 프로필 정보 (동기화됨)</div>
-                <div className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground mt-1.5">
-                  <span className="flex items-center gap-1"><User className="size-3" /> 닉네임: <strong>{userProfile.nickname}</strong></span>
-                  {userProfile.email && <span className="flex items-center gap-1"><Mail className="size-3" /> 이메일: {userProfile.email}</span>}
-                  {userProfile.homepage_url && <span className="flex items-center gap-1"><Globe className="size-3" /> 웹사이트: {userProfile.homepage_url}</span>}
-                </div>
-                <p className="text-[10px] text-zinc-400 mt-1.5">※ 정보를 수정하려면 설정 &gt; 프로필 메뉴를 이용하세요.</p>
-              </div>
-
-              {/* Title */}
-              <div className="space-y-1.5">
-                <Label htmlFor="title" className="text-sm font-semibold">강좌 제목 <span className="text-rose-500">*</span></Label>
-                <Input
-                  id="title"
-                  placeholder="예: 현대 미술 감상과 AI 생성 아트 실습"
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  required
+      {/* Detail Dialog */}
+      <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
+        <DialogContent className="sm:max-w-[550px] max-h-[85vh] flex flex-col p-0 overflow-hidden border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
+          {selectedCourse && (
+            <>
+              {/* Top Banner / Icon Container */}
+              <div className="h-44 w-full relative overflow-hidden bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-pink-500/10 flex items-center justify-center border-b border-zinc-100 dark:border-zinc-800 shrink-0">
+                <div className="absolute inset-0 bg-grid-white/10" />
+                <CourseIcon
+                  thumbnail={selectedCourse.thumbnail || 'icon:book'}
+                  className="w-full h-full bg-transparent dark:bg-transparent"
+                  iconClassName="w-16 h-16 text-indigo-600 dark:text-indigo-400"
+                  alt={selectedCourse.title}
                 />
-              </div>
-
-              {/* Slug */}
-              <div className="space-y-1.5">
-                <Label htmlFor="slug" className="text-sm font-semibold">주소 슬러그 <span className="text-rose-500">*</span></Label>
-                <Input
-                  id="slug"
-                  placeholder="예: modern-art-ai (영문 소문자, 숫자, 하이픈만)"
-                  value={newSlug}
-                  onChange={(e) => setNewSlug(e.target.value)}
-                  required
-                />
-                <p className="text-[10px] text-muted-foreground">이 주소는 강좌 학습 경로(/learn/슬러그)로 사용됩니다. 중복될 수 없습니다.</p>
-              </div>
-
-              {/* Description */}
-              <div className="space-y-1.5">
-                <Label htmlFor="description" className="text-sm font-semibold">요약 설명 <span className="text-rose-500">*</span></Label>
-                <Textarea
-                  id="description"
-                  placeholder="강좌에 대한 간략한 요약 설명과 학습 내용을 작성해 주세요."
-                  value={newDescription}
-                  onChange={(e) => setNewDescription(e.target.value)}
-                  rows={3}
-                  required
-                />
-              </div>
-
-              {/* Icon / Thumbnail Selector */}
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold">대표 아이콘 선택</Label>
-                <div className="grid grid-cols-6 gap-2 max-h-36 overflow-y-auto p-2 border rounded-lg bg-zinc-50 dark:bg-zinc-900">
-                  {PREDEFINED_ICONS.map((item) => {
-                    const iconVal = `icon:${item.id}`;
-                    const IconComp = item.icon;
-                    const isSelected = newIcon === iconVal;
-
+                {/* Status Badge */}
+                <div className="absolute top-4 left-4">
+                  {(() => {
+                    const localCourse = courses.find(c => c.slug === selectedCourse.slug);
+                    const enrolled = localCourse ? isSubscribed(localCourse.id) : false;
+                    if (enrolled) {
+                      return (
+                        <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white text-xs gap-1 shadow-md">
+                          <CheckCircle2 className="size-3" />
+                          수강 중
+                        </Badge>
+                      );
+                    }
+                    if (localCourse) {
+                      return (
+                        <Badge variant="secondary" className="text-xs shadow-sm">
+                          수강 대기
+                        </Badge>
+                      );
+                    }
                     return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => setNewIcon(iconVal)}
-                        className={`flex flex-col items-center justify-center p-2 rounded-lg border transition-all ${
-                          isSelected 
-                            ? 'border-green-700 bg-green-50 text-green-700 dark:border-green-400 dark:bg-green-950/30 dark:text-green-400 ring-1 ring-green-700/30'
-                            : 'border-zinc-200 bg-white hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950'
-                        }`}
-                        title={item.label}
-                      >
-                        <IconComp className="size-5 shrink-0" />
-                        <span className="text-[8px] truncate max-w-full mt-1.5 text-zinc-500">{item.label}</span>
-                      </button>
+                      <Badge variant="outline" className="bg-white/85 dark:bg-zinc-900/85 text-xs shadow-sm">
+                        신규 강좌
+                      </Badge>
                     );
-                  })}
+                  })()}
                 </div>
               </div>
 
-              {/* Switches */}
-              <div className="grid grid-cols-2 gap-4 pt-2">
-                <div className="flex items-center justify-between p-3 rounded-lg border bg-zinc-50/50 dark:bg-zinc-900/50">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="sequential" className="text-xs font-semibold">순차 학습 강제</Label>
-                    <p className="text-[10px] text-muted-foreground">이전 장을 완료해야 다음 진입 가능</p>
+              {/* Body Content */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    {selectedCourse.category && (
+                      <Badge className="bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100/50 border-none text-[10px] font-semibold uppercase tracking-wider">
+                        {selectedCourse.category}
+                      </Badge>
+                    )}
+                    {selectedCourse.target_age && (
+                      <Badge variant="outline" className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                        {selectedCourse.target_age} 대상
+                      </Badge>
+                    )}
+                    <span className="text-[11px] text-zinc-400 dark:text-zinc-500 ml-auto">
+                      버전 v{selectedCourse.version}
+                    </span>
                   </div>
-                  <Switch
-                    id="sequential"
-                    checked={newSequential}
-                    onCheckedChange={setNewSequential}
-                  />
+                  
+                  <h3 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+                    {selectedCourse.title}
+                  </h3>
+                  
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed pt-1">
+                    {selectedCourse.description || '상세 정보가 없습니다.'}
+                  </p>
                 </div>
 
-                <div className="flex items-center justify-between p-3 rounded-lg border bg-zinc-50/50 dark:bg-zinc-900/50">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="checkpoint" className="text-xs font-semibold">체크포인트 필수</Label>
-                    <p className="text-[10px] text-muted-foreground">튜터 퀴즈를 통과해야 통과</p>
-                  </div>
-                  <Switch
-                    id="checkpoint"
-                    checked={newForceCheckpoint}
-                    onCheckedChange={setNewForceCheckpoint}
-                  />
-                </div>
-              </div>
+                {/* Author Info */}
+                {selectedCourse.author && (
+                  <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-xl p-4 border border-zinc-100 dark:border-zinc-800/80">
+                    <h4 className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-2.5">
+                      제작자 정보
+                    </h4>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="size-8 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center text-zinc-600 dark:text-zinc-400 font-bold text-sm">
+                          {(typeof selectedCourse.author === 'string' ? selectedCourse.author : selectedCourse.author.nickname).substring(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+                            {typeof selectedCourse.author === 'string' ? selectedCourse.author : selectedCourse.author.nickname}
+                          </p>
+                          {typeof selectedCourse.author !== 'string' && selectedCourse.author.email && (
+                            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                              {selectedCourse.author.email}
+                            </p>
+                          )}
+                        </div>
+                      </div>
 
-              <DialogFooter className="pt-4 border-t border-zinc-100 dark:border-zinc-800/80">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
-                  disabled={submitting}
-                >
-                  취소
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={submitting}
-                  className="text-white bg-green-700 hover:bg-green-800 dark:bg-green-600 dark:hover:bg-green-700"
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="size-4 animate-spin mr-1.5" />
-                      등록 중...
-                    </>
+                      {typeof selectedCourse.author !== 'string' && (selectedCourse.author.website || selectedCourse.author.email) && (
+                        <div className="flex items-center gap-1.5">
+                          {selectedCourse.author.website && (
+                            <a
+                              href={selectedCourse.author.website}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1.5 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors shadow-sm"
+                              title="제작자 홈페이지"
+                            >
+                              <Globe className="size-4" />
+                            </a>
+                          )}
+                          {selectedCourse.author.email && (
+                            <a
+                              href={`mailto:${selectedCourse.author.email}`}
+                              className="p-1.5 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors shadow-sm"
+                              title="제작자 이메일"
+                            >
+                              <Mail className="size-4" />
+                            </a>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Course TOC (Table of Contents) */}
+                {(() => {
+                  const localCourse = courses.find(c => c.slug === selectedCourse.slug);
+                  const toc = selectedCourse.toc || localCourse?.toc;
+
+                  return toc && toc.length > 0 ? (
+                    <div className="space-y-3 border-t pt-4 border-zinc-100 dark:border-zinc-800">
+                      <h4 className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <BookOpen className="size-3.5 text-indigo-500" />
+                        강좌 목차
+                      </h4>
+                      <div className="border border-zinc-100 dark:border-zinc-800/80 rounded-lg p-2 bg-zinc-50/30 dark:bg-zinc-900/10">
+                        <Accordion type="single" collapsible className="w-full">
+                          {toc.map((chapter: any, idx: number) => (
+                            <AccordionItem value={`chapter-${idx}`} key={idx} className="border-zinc-100 dark:border-zinc-800">
+                              <AccordionTrigger className="hover:no-underline py-2.5 text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+                                <div className="flex flex-col items-start gap-0.5">
+                                  <span className="text-indigo-600 dark:text-indigo-400 font-mono text-[9px] uppercase">
+                                    Chapter {String(idx + 1).padStart(2, '0')}
+                                  </span>
+                                  <span className="text-left line-clamp-1">{chapter.title}</span>
+                                </div>
+                              </AccordionTrigger>
+                              <AccordionContent className="pb-2 text-xs text-zinc-600 dark:text-zinc-400 space-y-2">
+                                {chapter.description && (
+                                  <p className="bg-white dark:bg-zinc-900/50 p-2 rounded text-[11px] text-zinc-500 dark:text-zinc-400 border border-zinc-100 dark:border-zinc-800/50 leading-relaxed">
+                                    {chapter.description}
+                                  </p>
+                                )}
+                                {chapter.children && chapter.children.length > 0 && (
+                                  <ul className="space-y-1.5 pl-1">
+                                    {chapter.children.map((section: any, sIdx: number) => (
+                                      <li key={sIdx} className="flex flex-col gap-0.5 border-l-2 border-zinc-200 dark:border-zinc-800 pl-3.5 py-0.5">
+                                        <span className="font-medium text-zinc-800 dark:text-zinc-200 text-[11px] line-clamp-1">
+                                          {section.title}
+                                        </span>
+                                        {section.description && (
+                                          <span className="text-[10px] text-zinc-500 dark:text-zinc-500 line-clamp-1">
+                                            {section.description}
+                                          </span>
+                                        )}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </AccordionContent>
+                            </AccordionItem>
+                          ))}
+                        </Accordion>
+                      </div>
+                    </div>
                   ) : (
-                    '강좌 등록하기'
+                    <div className="space-y-2 border-t pt-4 border-zinc-100 dark:border-zinc-800 text-xs text-zinc-500">
+                      <h4 className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <BookOpen className="size-3.5 text-zinc-400" />
+                        강좌 목차
+                      </h4>
+                      <p className="bg-zinc-50 dark:bg-zinc-900/50 p-3 rounded-lg border border-zinc-100 dark:border-zinc-800/80 text-center text-zinc-400 dark:text-zinc-500 text-[11px]">
+                        로컬에 설치되지 않은 강좌입니다. 강좌를 다운로드하면 상세 목차를 확인하실 수 있습니다.
+                      </p>
+                    </div>
+                  );
+                })()}
+
+                {/* Additional Settings */}
+                <div className="grid grid-cols-2 gap-4 text-xs">
+                  <div className="space-y-1.5">
+                    <span className="font-medium text-zinc-400 dark:text-zinc-500">순차 수강 규정</span>
+                    <p className="text-zinc-800 dark:text-zinc-200 font-medium">
+                      {selectedCourse.sequential_play ? '순차 진행 필요' : '자유로운 탐색'}
+                    </p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <span className="font-medium text-zinc-400 dark:text-zinc-500">체크포인트 규칙</span>
+                    <p className="text-zinc-800 dark:text-zinc-200 font-medium">
+                      {selectedCourse.force_checkpoint ? '체크포인트 필수' : '자율 권장'}
+                    </p>
+                  </div>
+                  {selectedCourse.bundler_protocol_version && (
+                    <div className="space-y-1.5 col-span-2 border-t pt-3 border-zinc-100 dark:border-zinc-800">
+                      <span className="font-medium text-zinc-400 dark:text-zinc-500">번들러 프로토콜 버전</span>
+                      <p className="text-zinc-600 dark:text-zinc-400">
+                        {selectedCourse.bundler_protocol_version}
+                      </p>
+                    </div>
                   )}
+                  {selectedCourse.tags && selectedCourse.tags.length > 0 && (
+                    <div className="col-span-2 space-y-2 border-t pt-3 border-zinc-100 dark:border-zinc-800">
+                      <span className="font-medium text-zinc-400 dark:text-zinc-500">태그</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {selectedCourse.tags.map((tag: string) => (
+                          <span
+                            key={tag}
+                            className="px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 text-[10px]"
+                          >
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Modal Footer Actions */}
+              <div className="p-6 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-900/20 shrink-0">
+                <Button
+                  variant="ghost"
+                  onClick={() => setIsDetailOpen(false)}
+                  className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-700"
+                >
+                  닫기
                 </Button>
-              </DialogFooter>
-            </form>
+
+                {(() => {
+                  const localCourse = courses.find(c => c.slug === selectedCourse.slug);
+                  const enrolled = localCourse ? isSubscribed(localCourse.id) : false;
+                  const isDownloading = downloadingSlug === selectedCourse.slug;
+
+                  if (enrolled) {
+                    return (
+                      <Button 
+                        className="text-white bg-green-700 hover:bg-green-800 dark:bg-green-600 dark:hover:bg-green-700 gap-1.5"
+                        onClick={() => {
+                          setIsDetailOpen(false);
+                          router.push(`/courses/${selectedCourse.slug}`);
+                        }}
+                      >
+                        <BookOpenCheck className="size-4" />
+                        <span>학습 시작하기</span>
+                      </Button>
+                    );
+                  }
+                  if (localCourse) {
+                    return (
+                      <Button 
+                        className="text-white bg-green-700 hover:bg-green-800 dark:bg-green-600 dark:hover:bg-green-700 gap-1.5"
+                        onClick={async () => {
+                          await handleSubscribe(localCourse.id);
+                        }}
+                      >
+                        <span>수강 신청하기</span>
+                        <ArrowRight className="size-4" />
+                      </Button>
+                    );
+                  }
+                  return (
+                    <Button 
+                      className="text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-700 gap-1.5"
+                      onClick={async () => {
+                        await handleDownloadCourse(selectedCourse);
+                      }}
+                      disabled={isDownloading}
+                    >
+                      {isDownloading ? (
+                        <>
+                          <Loader2 className="size-4 animate-spin mr-1" />
+                          <span>{downloadStatus || '다운 중...'}</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>강좌 다운로드</span>
+                          <ArrowRight className="size-4" />
+                        </>
+                      )}
+                    </Button>
+                  );
+                })()}
+              </div>
+            </>
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Background Decorative Gradients */}
+      <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[350px] h-[350px] bg-emerald-500/10 blur-[120px] rounded-full -z-10 pointer-events-none !mt-0" />
     </div>
   );
 }

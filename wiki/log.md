@@ -22,6 +22,30 @@ Ran lint. See lint-report.md for details.
 
 Ran lint. See lint-report.md for details.
 
+## [2026-07-01] lint | Wiki health check
+
+Ran lint. See lint-report.md for details.
+
+## [2026-06-21] lint | Wiki health check
+
+Ran lint. See lint-report.md for details.
+
+## [2026-06-21] lint | Wiki health check
+
+Ran lint. See lint-report.md for details.
+
+## [2026-06-20] lint | Wiki health check
+
+Ran lint. See lint-report.md for details.
+
+## [2026-06-20] lint | Wiki health check
+
+Ran lint. See lint-report.md for details.
+
+## [2026-06-20] lint | Wiki health check
+
+Ran lint. See lint-report.md for details.
+
 ## [2026-06-20] lint | Wiki health check
 
 Ran lint. See lint-report.md for details.
@@ -29,6 +53,178 @@ Ran lint. See lint-report.md for details.
 # Wiki Log
 
 <!-- Append-only. 최신 항목을 위에 추가. -->
+
+## 2026-07-11 (19th Session)
+
+- **[FEATURE/UI] 강좌 검색 화면 내 강좌 상세 정보 및 목차(TOC) 팝업 다이얼로그 구현 및 레이아웃 스크롤 최적화**
+  - **수정/갱신 파일**:
+    - [app/(user)/courses/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/page.tsx) — 강좌 검색 화면에서 강좌 카드를 클릭하면 해당 강좌의 상세 정보를 보여주는 프리미엄 스타일의 팝업 다이얼로그(Dialog)를 추가했습니다. 다이얼로그 안에는 상세 설명, 카테고리, 대상 연령, 제작자 프로필(웹사이트 및 이메일 링크), 순차 수강 규정, 체크포인트 강제 여부, 프로토콜 버전, 태그 목록이 종합적으로 표시되며, 수강 여부에 따라 "학습 시작하기", "수강 신청하기", "강좌 다운로드" 액션 버튼을 즉각 호출하고 결과를 실시간 연동하도록 구성했습니다. 또한 **Shadcn UI Accordion**을 활용해 로컬 강좌의 상세 목차를 조회할 수 있게 했습니다. 팝업이 화면 크기를 벗어나거나 내부 이중 스크롤이 발생하는 문제를 방지하기 위해 팝업의 최대 높이를 `85vh`로 한정하고, 상하단 배너/푸터는 `shrink-0`으로 고정된 채 중간의 본문 전체가 부드럽게 스크롤(`flex-1 overflow-y-auto`)되도록 다이얼로그 레이아웃을 고도화했습니다.
+    - [lib/types/index.ts](file:///C:/Workspace/Projects/OpenTutorials/lib/types/index.ts) — 공통 `CoursePackage` 인터페이스에 `toc?: TocNode[];` 타입을 추가하여 목차 정보가 안전하게 전달될 수 있도록 보정했습니다.
+  - **작업 내용**:
+    - 강좌 카드 클릭 시 풍부한 상세 정보와 수강/다운로드 조작을 함께 지원하는 팝업 인터페이스를 설계 및 적용하여 사용자 학습 진입 동선을 크게 개선하고 상세 목차 확인 및 레이아웃 스크롤 구조를 최적화했습니다.
+  - **Concepts**: [[DetailDialog]], [[InteractivePopup]], [[UserExperienceEnhancement]], [[AccordionTOC]], [[ScrollOptimization]]
+
+## 2026-07-11 (18th Session)
+
+- **[BUGFIX] 강좌 검색 화면 내 온라인 강좌 카드 저자(author) 정보 미출력 오류 해결**
+  - **수정/갱신 파일**:
+    - [app/(user)/courses/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/page.tsx) — 강좌 검색 화면에서 원격 GitHub 스토어(`courses.json`) 연동 시 `author` 정보가 객체가 아닌 단순 문자열 형식(예: `"Vivo Academy"`)으로 제공될 경우 카드에 저자 정보가 비어 있는 현상을 방지하도록 수정했습니다. `author` 타입이 문자열인 경우와 객체 형태(`{ nickname, website, email }`)인 경우 모두 유연하게 인식하여 닉네임을 올바르게 표시하도록 코드를 보완했습니다. 추가로, 저자명 기반의 강좌 검색이 문자열 형식일 때도 정상 필터링되도록 검색 조건 필터를 개선했습니다.
+  - **작업 내용**:
+    - 강좌 카드 내에서 저자명이 표시되지 않던 누락 현상을 해결하고, 저자명 기반 검색 기능이 정상 동작하도록 연동 사양을 수정했습니다.
+  - **Concepts**: [[AuthorTypeDifferentiate]], [[CardUIBugfix]], [[RobustDataBinding]]
+
+## 2026-07-11 (17th Session)
+
+- **[UI] 강좌 검색 화면 타이틀 상단 여백 불일치 수정**
+  - **수정/갱신 파일**:
+    - [app/(user)/courses/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/page.tsx) — 강좌 검색 화면에서 타이틀 헤더 상단 여백이 2배로 넓어지던 원인이었던 절대 위치의 데코레이션 그라디언트 `div`를 컨테이너 하단으로 이동시켰습니다. 또한 해당 `div`에 `!mt-0` 클래스를 부여하여 Tailwind CSS의 `space-y-8` 마진 정책에 영향을 주지 않도록 격리했습니다.
+  - **작업 내용**:
+    - 타이틀 텍스트의 상단 여백을 다른 대시보드나 나의 강좌 등의 페이지와 동일한 수준(기본 상하 패딩 `py-8` 레이아웃)으로 맞춰 디자인 일관성을 높였습니다.
+  - **Concepts**: [[UIPolishing]], [[LayoutConsistency]], [[TailwindSpaceYFix]]
+
+## 2026-07-11 (16th Session)
+
+- **[UI/FEATURE] 강좌 검색 화면 및 강좌 관리 화면 UI 개선 및 출처 표시 기능 추가**
+  - **수정/갱신 파일**:
+    - [app/(user)/courses/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/page.tsx) — 강좌 검색 화면의 헤더에서 `Search` 아이콘을 제거하고, 강좌 다운로드 시 메타데이터로 `source` 필드(`GITHUB`)를 함께 전송하도록 수정했습니다.
+    - [app/(user)/courses/manage/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/manage/page.tsx) — "새 강좌 등록" 버튼 명칭을 "강좌 파일 업로드"로 변경하고, 등록된 강좌 목록의 카드 내에 `source` 정보를 바탕으로 파일/GITHUB 출처 뱃지를 표시하도록 개선했습니다.
+    - [lib/types/index.ts](file:///C:/Workspace/Projects/OpenTutorials/lib/types/index.ts) — `CoursePackage` 인터페이스에 `source?: string | null;` 필드를 신설했습니다.
+    - [app/api/admin/packages/upload/route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/admin/packages/upload/route.ts) — 업로드 요청 시 `source` 파라미터를 읽어 데이터베이스에 적재하도록 보완했습니다. (기본값: '파일')
+    - [app/api/admin/packages/import-local/route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/admin/packages/import-local/route.ts) — 로컬 폴더 복원 등록 시 출처(`source`)를 `GITHUB`로 명시하여 저장하도록 처리했습니다.
+  - **작업 내용**:
+    - 검색 화면 타이틀 아이콘 제거, 강좌 등록 버튼 이름 현실화, 그리고 강좌별 등록 출처 구분 뱃지(파일/GITHUB)를 목록에 출력하여 로컬/원격 데이터 관리 가시성을 대폭 향상했습니다.
+  - **Concepts**: [[UIPolishing]], [[CourseSourceTracking]], [[InterfaceStandardization]]
+
+## 2026-07-11 (15th Session)
+
+- **[UI] 강좌 검색 카드 내 중복 정보("로컬에 있음" 뱃지) 제거**
+  - **수정/갱신 파일**:
+    - [app/(user)/courses/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/page.tsx) — 강좌 검색 화면 내 온라인 강좌 카드에서 "수강 중" 뱃지가 "로컬에 있음" 뱃지와 유사한 정보를 표기하므로 중복성을 낮추기 위해 "로컬에 있음" 뱃지를 렌더링하는 부분을 삭제했습니다.
+  - **작업 내용**:
+    - 카드의 뱃지를 "수강 중" 상태만 단독으로 표시되도록 간소화하여 UI 노이즈를 감소시켰습니다.
+  - **Concepts**: [[BadgeSimplification]], [[UICleanup]]
+
+## 2026-07-11 (14th Session)
+
+- **[UI] 강좌 검색 카드 레이아웃 정리 및 학습하기 버튼 색상 일관성 확보**
+  - **수정/갱신 파일**:
+    - [app/(user)/courses/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/page.tsx) — 강좌 검색 카드에서 불필요하게 여백을 만들던 빈 `CardContent` 컴포넌트를 제거하고, 기존에 카드 하단에 위치하던 작성자(author) 정보(닉네임, 웹사이트, 이메일 링크)를 `CardHeader` 내부의 `CardDescription` 바로 하단으로 재배치하여 정보 가독성을 높이고 여백을 최적화했습니다. 또한, '학습하기' 버튼을 대시보드와 수강 신청 상태의 초록색 버튼 디자인(`bg-green-700 hover:bg-green-800 ...`)과 일관되게 녹색 톤으로 수정했습니다.
+  - **작업 내용**:
+    - 강좌 카드 내 작성자 정보 위치 이동 및 여백 축소, '학습하기' 버튼 테마를 녹색으로 일관화하여 카드 UI 시각 효과를 극대화했습니다.
+  - **Concepts**: [[CardLayoutOptimization]], [[ColorConsistency]]
+
+## 2026-07-11 (13th Session)
+
+- **[UI] 강좌 검색 화면 내 카드의 뱃지 정렬 방식 개선**
+  - **수정/갱신 파일**:
+    - [app/(user)/courses/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/page.tsx) — 강좌 검색 화면의 강좌 카드에서 뱃지(로컬에 있음, 수강 중)들이 표시되는 레이아웃을 기존의 우측 상단 2열(세로) 배치에서 좌측 상단 1열(가로) 배치로 수정하여 시각적인 가시성을 개선했습니다.
+  - **작업 내용**:
+    - 강좌 카드의 뱃지들을 가로로 나란히 표시되도록 정렬 방식을 `absolute top-2.5 left-2.5 flex flex-row gap-1.5 items-center`로 조정했습니다.
+  - **Concepts**: [[BadgeLayoutImprovement]], [[CardUIPolishing]]
+
+## 2026-07-11 (12th Session)
+
+- **[AESTHETICS] 강좌 검색 화면의 카드 스타일을 대시보드 카드 스타일과 일치화**
+  - **수정/갱신 파일**:
+    - [app/(user)/courses/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/page.tsx) — 강좌 검색 화면 내 온라인 강좌 카드의 JSX 구조와 Tailwind CSS 클래스명을 대시보드의 "학습 중인 강좌" 리스트 카드와 동일하게 통일했습니다. 썸네일 높이를 32(`h-32`)로 맞추고, `CardHeader`와 `CardContent` 컴포넌트를 적용했으며, 푸터의 레이아웃 및 버튼 디자인도 동일하게 `pt-3 pb-3 border-t bg-muted/10`를 활용하도록 수정했습니다. 또한 상단에 사용되는 `CardHeader`, `CardTitle` 컴포넌트를 `import` 구문에 추가했습니다.
+  - **작업 내용**:
+    - 강좌 검색 화면의 카드 UI를 대시보드의 진행 중 강좌 카드 디자인과 완벽하게 동일하도록 동기화하여 서비스 전반의 시각적 일관성과 사용자 경험을 향상시켰습니다.
+  - **Concepts**: [[CardUIStandardization]], [[DesignSystemAlignment]], [[VisualConsistency]]
+
+## 2026-07-11 (11th Session)
+
+- **[BUGFIX] 강좌 검색 화면 내 온라인 강좌 ZIP 다운로드 404 및 오프라인 등록 실패 해결**
+  - **수정/갱신 파일**:
+    - [app/api/admin/packages/import-local/route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/admin/packages/import-local/route.ts) — 로컬 폴더(public/courses/[slug])에 강좌 리소스가 이미 존재하는 경우, ZIP 파일을 원격에서 다운로드하지 않고 로컬 디렉토리 내의 config.json, wiki.md 파일을 직접 분석하여 로컬 데이터베이스(db.json)에 등록할 수 있는 `import-local` API를 새로 신설했습니다.
+    - [app/(user)/courses/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/page.tsx) — 강좌 다운로드 및 수강 신청 버튼 클릭 시, 원격 GitHub 저장소로부터 ZIP 파일을 다운로드하기에 앞서 로컬 복원/등록 API를 먼저 호출하여 이미 로컬에 적재된 강좌 폴더로 즉시 오프라인 등록 처리되도록 흐름을 보완했습니다. 로컬에 폴더가 존재하지 않는 경우에만 원격 ZIP 다운로드로 안전하게 폴백(Fallback)합니다.
+  - **작업 내용**:
+    - "아두이노 IoT 프로젝트 마스터 클래스"(`iot-communication`) 등 GitHub 원격 저장소에 ZIP 파일이 누락되어 "강좌 ZIP 파일을 다운로드하지 못했습니다." 콘솔 에러가 발생하던 현상을 로컬 리소스를 즉시 검출하여 등록하는 온디바이스 친화적인 임포트 파이프라인으로 개선 및 버그 수정 완료했습니다.
+  - **Concepts**: [[LocalPackageImport]], [[DownloadOfflineFallback]], [[RobustOnDeviceCourseOnboarding]]
+
+## 2026-07-11 (10th Session)
+
+- **[CLEANUP] 강좌 관리 화면 내 "GITHUB 에서 추가" 섹션 및 관련 코드 제거**
+  - **수정/갱신 파일**:
+    - [app/(user)/courses/manage/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/manage/page.tsx) — "GITHUB 에서 추가" 섹션 카드를 제거하고 전체 등록 강좌 목록을 표시하도록 단일 카드 형태로 구조를 변경했습니다. 또한 사용하지 않는 `github_url` 필터링 로직 및 `Github`, `CheckCircle2` 아이콘 임포트 코드를 제거하고 화면 헤더 설명문 문구를 현실화했습니다.
+    - [lib/types/index.ts](file:///C:/Workspace/Projects/OpenTutorials/lib/types/index.ts) — `CoursePackage` 인터페이스에서 더 이상 사용되지 않는 `github_url?: string | null;` 타입을 정리했습니다.
+  - **작업 내용**:
+    - "강좌 관리" 화면 내의 사용하지 않는 GitHub 연동 목록 UI와 관련 필터링 로직 및 불필요해진 `github_url` 타입 정의를 정리하여 전체 프로젝트 코드 및 관리 화면의 명확성과 관리성을 향상시켰습니다.
+  - **Concepts**: [[CourseManagementCleanup]], [[InterfaceSimplification]]
+
+## 2026-07-11 (9th Session)
+
+- **[BUGFIX] 강좌 검색 화면 내 온라인 강좌 목록 로드 에러 및 UI 개선**
+  - **수정/갱신 파일**:
+    - [app/(user)/courses/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/page.tsx) — GitHub 공식 저장소에서 `courses.json`을 가져오는 중 오류(네트워크 미연결 등) 발생 시 Next.js 에러 바운더리나 콘솔 에러가 발생하지 않도록 `console.warn` 및 안전한 오프라인 폴백(`useOfflineFallback`) 흐름으로 처리되도록 개선했습니다. 또한 "GitHub 강좌 저장소 연동" 배너를 제거하고, 화면의 타이틀 아이콘을 `Compass`에서 `Search`로 변경했으며, 상대 경로 `downloadUrl`을 GitHub 공식 저장소 절대 경로로 자동 보간되도록 개선했습니다.
+    - [components/layout/UserSidebar.tsx](file:///C:/Workspace/Projects/OpenTutorials/components/layout/UserSidebar.tsx) — 사이드바의 "강좌 검색" 아이콘을 `GraduationCap`에서 `Search`로 변경하여 메인 화면과 일체감을 높였습니다.
+    - [lib/constants/routes.ts](file:///C:/Workspace/Projects/OpenTutorials/lib/constants/routes.ts) — 라우트 상수 `SIDEBAR_ITEMS` 배열 내의 "강좌 검색" 아이콘 명칭을 `Search`로, "강좌 관리" 아이콘 명칭을 `Wrench`로 동기화했습니다.
+  - **작업 내용**:
+    - 온라인 강좌 연동 실패 시의 에러 전파 제어 및 강좌 검색 화면 내 불필요한 배너를 지우고 아이콘 메타데이터를 통일하는 UI/UX 정교화 작업을 진행했습니다.
+  - **Concepts**: [[ErrorGracefulDegradation]], [[UICleanup]], [[IconConsistency]]
+
+## 2026-07-11 (8th Session)
+
+- **[FEATURE] 강좌 검색 화면 내 온라인 강좌 목록 즉시 노출 최적화**
+  - **수정/갱신 파일**:
+    - [app/(user)/courses/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/page.tsx) — 화면의 로딩 조건에서 로컬 DB 쿼리(`loading`) 완료 대기 조건을 제외하고, 오직 원격 `courses.json` 페칭(`onlineLoading`) 상태에만 반응하여 스켈레톤을 걷어내도록 개선했습니다.
+  - **작업 내용**:
+    - 사용자가 강좌 검색 화면에 진입하자마자 로컬 API 딜레이에 영향을 받지 않고 GitHub 스토어 강좌 목록이 즉각적으로 렌더링되도록 초기 렌더링 성능을 개선했습니다.
+  - Concept: [[UserExperienceOptimization]], [[ParallelDataFetching]], [[FastInitialRender]]
+
+## 2026-07-11 (7th Session)
+
+- **[FEATURE] 강좌 검색 화면 내 탭 바 삭제 및 GitHub 스토어 연동 전용 화면 개편**
+  - **수정/갱신 파일**:
+    - [app/(user)/courses/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/page.tsx) — 강좌 검색 페이지에 존재하던 "전체 강좌", "수강 중", "미수강", "내가 만든 강좌" 탭과 관련 필터링 상태(selectedTab)를 삭제했습니다. 로컬 강좌 등록을 위한 "직접 강좌 등록" 버튼과 "새 강좌 만들기" 다이얼로그 팝업(관련 state, handleCreateCourse 등) 역시 제거하여 해당 화면의 책임을 GitHub 저장소 연동 및 다운로드 스토어로 단일화했습니다. 화면 진입 시 GitHub Browser Repo(`courses.json`)에서 강좌 목록을 무조건 동기화해 렌더링하도록 흐름을 대폭 단순화했습니다.
+  - **작업 내용**:
+    - 강좌 검색 화면을 오직 GitHub 원격 저장소(`OpenTutorials-Browser`)와 연동하여 강좌를 검색, 다운로드 및 로컬 DB에 자동 등록하는 용도로 단순화 및 정립했습니다.
+  - **Concepts**: [[GitHubCourseStoreSync]], [[SearchPageSimplification]], [[SingleResponsibilityPattern]]
+
+## 2026-07-11 (6th Session)
+
+- **[FEATURE] 강좌 공유하기 기능 전면 삭제 및 GitHub 공식 저장소 연동 강화**
+  - **수정/갱신 파일**:
+    - [app/(user)/courses/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/page.tsx) — 원격 Supabase 스토리지 및 Edge Function을 통해 PR을 날리던 로컬 강좌 공유(기여) 기능을 제거했습니다. 사용되지 않는 `JSZip` 임포트, Mock Supabase 클라이언트, 관련 state 변수와 다이얼로그 모달을 삭제하여 코드를 슬림화했습니다. 또한 "공유 강좌 스토어" 탭의 명칭을 "GitHub 강좌 스토어"로 개선하고, 공식 GitHub 저장소([OpenTutorials-Browser](https://github.com/godstale/OpenTutorials-Browser)) 정보와 안내 배너를 추가하여 온라인 강좌 검색 및 다운로드 등록 사용성을 강화했습니다.
+    - [app/(user)/courses/manage/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/manage/page.tsx) — 강좌 관리 목록 내의 "공유하기" 액션 버튼을 제거하고, 관련 state, handleShareCourse 함수, 다이얼로그 모달 마크업을 완전히 걷어냈습니다.
+  - **작업 내용**:
+    - 복잡도가 높고 로컬-온디바이스 방향성에 어긋나던 원격 업로드 공유 기능을 정리하고, 대신 공식 GitHub 저장소와 연동된 강좌 검색 및 다운로드, 로컬 DB 등록 기능에 초점을 맞추어 사용자 흐름과 UI를 더욱 직관적으로 가다듬었습니다.
+  - **Concepts**: [[ShareFunctionalityRemoval]], [[GitHubCourseStoreSync]], [[OnDeviceCourseOnboarding]]
+
+## 2026-07-11 (5th Session)
+
+- **[FEATURE] 원격 공유 강좌 검색/다운로드 및 로컬 강좌 원격 저장소 기여(공유) 기능 구현**
+  - **수정/갱신 파일**:
+    - [app/(user)/courses/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/page.tsx) — "공유 강좌 스토어" 탭을 신설하고 원격 저장소(`OpenTutorials-Browser`)에 배포된 `courses.json`을 연동해 온라인 강좌를 실시간 검색할 수 있게 했습니다. 로컬에 없는 강좌는 원클릭으로 ZIP을 다운로드하여 자동 로컬 등록 및 수강신청이 가능하도록 구현했으며, "내가 만든 강좌"를 포함해 자신이 만든 로컬 강좌 카드의 하단 액션 버튼 영역에도 원격 저장소 "공유" 기능과 제출 진행률 다이얼로그 플로우를 동일하게 추가 탑재했습니다.
+    - [app/(user)/courses/manage/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/manage/page.tsx) — 로컬에서 제작한 강좌에 대해 "공유하기" 버튼을 배치했습니다. 클릭 시 로컬 스토리지에 보관 중인 강좌 리소스들(config.json, mdx 카드 파일, wiki.md 등)을 긁어모아 클라이언트 단에서 `JSZip`을 사용해 번들 ZIP을 만들고, 실제 Supabase Storage의 임시 버킷에 익명 업로드 후, Supabase Edge Function을 호출해 기여용 GitHub Pull Request(PR) 생성을 완료하는 진행률 기반의 다이얼로그 플로우를 구축했습니다.
+  - **작업 내용**:
+    - 일반 사용자가 자신이 구축한 로컬 강좌를 원격 저장소에 쉽고 안전하게 업로드하여 기여할 수 있는 연동 파이프라인을 완성하고, 동시에 원격 강좌들을 검색해 원클릭으로 다운로드 및 로컬 등록까지 이르는 온디바이스 클라이언트 에코시스템을 구축했습니다.
+  - **Concepts**: [[RemoteCourseCatalogSync]], [[CourseBundleZipping]], [[AnonymousCourseContribution]], [[SupabaseStorageEdgeFunctionIntegration]]
+
+## 2026-07-11 (4th Session)
+
+- **[BUGFIX] 새 강좌 번들 직접 등록 화면에서 사전 유효성 검증 실패 시 브라우저 콘솔에 빈 객체 `{}`만 표시되던 로직 개선**
+  - **수정/갱신 파일**:
+    - [app/(user)/courses/manage/upload/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/manage/upload/page.tsx) — 사전 검증(`runPreValidation`) 도중 예외가 발생할 때 `console.error`에 `err`만 그대로 넘기지 않고 `message`, `stepId`, `stack`, `raw` 속성으로 구조화한 상세 객체를 출력하도록 개선했습니다. 이를 통해 `{}`로만 출력되어 에러 원인을 추적하기 어렵던 현상을 해결하고, 실제 에러의 원인 속성과 스택 트레이스를 콘솔에서 명확히 인지할 수 있도록 보완했습니다.
+  - **Concepts**: [[ValidationErrorLogging]], [[ConsoleErrorDetailedDisplay]]
+
+## 2026-07-11 (3rd Session)
+
+- **[FEATURE] Bundler Protocol v1.1.1 업데이트 및 강좌 패키지 직접 업로드 내 작성자(author) 정보 유효성 검증 적용, 기존 강좌 필드 업데이트 및 카드 저자 노출 기능 추가**
+  - **수정/갱신 파일**:
+    - [protocol/](file:///C:/Workspace/Projects/OpenTutorials/protocol) — Git Submodule을 최신 커밋(`9bbb309`)으로 업데이트하여, `package-manifest.json` 내 `author` 필드가 필수(Mandatory)로 추가된 v1.1.1 프로토콜 명세 사양을 반영했습니다.
+    - [db.json](file:///C:/Workspace/Projects/OpenTutorials/db.json) — 기존 등록되어 있는 2개의 강좌 패키지("아두이노 IoT 프로젝트 마스터 클래스", "신경망과 LLM 개론")에 새로 생긴 필드값(`author` 객체 정보: nickname은 Kailash, email은 godstale@hotmail.com, 홈페이지는 null 및 `bundler_protocol_version: "1.1.1"`)을 적재/최신화하였습니다.
+    - [lib/types/index.ts](file:///C:/Workspace/Projects/OpenTutorials/lib/types/index.ts) — `CourseAuthor` 인터페이스 타입을 추가하고 `CoursePackage` 내에 `author`, `author_id`, `author_nickname`, `author_email`, `author_homepage`, `bundler_protocol_version` 필드를 추가하여 최신 프로토콜 명세를 TypeScript 인터페이스 수준에서 동기화했습니다.
+    - [app/(user)/courses/manage/upload/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/manage/upload/page.tsx) — 강좌 패키지 ZIP 직접 등록 화면 내의 클라이언트 사이드 매니페스트 유효성 검증(`manifest-fields` 스텝) 시 `author` 객체 정보의 누락 및 `author.nickname` 값의 누락 여부를 판단하는 필수 검증 로직을 추가했으며, 등록 완료 전 분석 결과 UI에 작성자의 닉네임, 이메일, 블로그/홈페이지 주소를 함께 노출하도록 사용자 경험(UX)을 개편했습니다.
+    - [app/api/admin/packages/upload/route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/admin/packages/upload/route.ts) — 백엔드 패키지 업로드 API 라우터에 `author` 필드 누락 검증을 신설하고, 로컬 데이터베이스(`db.json` 내 `course_packages` 테이블)에 강좌 패키지를 Upsert 할 때 `author` 원본 및 `author_nickname`, `author_email`, `author_homepage` 필드가 모두 올바르게 적재되도록 연동 로직을 고도화했습니다.
+    - [app/(user)/courses/manage/upload/guide/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/manage/upload/guide/page.tsx) — 강좌 제작 가이드 페이지 내 `package-manifest.json` 예시 구조와 필수 유효성 검증 가이드라인을 최신 v1.1.1 프로토콜 버전 및 `author` 정보 필수화 기준에 맞추어 전면 보완했습니다.
+    - [app/(user)/dashboard/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/dashboard/page.tsx) — 대시보드 내 "학습 중인 강좌" 카드 목록에 저자 닉네임을 표시하는 레이아웃을 구현하고 `User` 아이콘(lucide-react)을 연동했습니다.
+    - [app/(user)/my-courses/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/my-courses/page.tsx) — "나의 강좌" 내 수강 중인/완료한 강좌 카드에 `author_nickname`을 표기하는 메커니즘을 신설하고 인터페이스 타입을 동기화했습니다.
+    - [app/api/packages/subscribe/route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/packages/subscribe/route.ts) & [app/api/courses/subscribe/route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/courses/subscribe/route.ts) — 구독 강좌 패키지 목록 조회 GET API의 반환 객체 정보에 `author_nickname` 필드가 정상적으로 반환되도록 Response 포맷 구조를 최신화했습니다.
+    - [app/(user)/courses/[slug]/client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/[slug]/client.tsx) — 개별 강좌 상세 페이지 최상단 헤더 카드에 저자 정보 닉네임 및 `User` 아이콘을 추가하여 통일성을 유지했습니다.
+    - [app/(user)/courses/manage/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/manage/page.tsx) — "강좌 관리" 리스트 화면에 저자(닉네임) 정보를 표시하는 영역을 추가하고 `PackageItem` 인터페이스 정의에 관련 정보를 보완했습니다.
+  - **작업 내용**:
+    - 외부 강좌 빌더 및 배포 에코시스템과의 호환성을 위한 Open Tutorials Course Bundler Protocol v1.1.1 변경 사양(`author` 정보 필수 지정 규칙)을 클라이언트와 백엔드 API, 가이드 화면 전 영역에 걸쳐 신속하게 업데이트 및 유효성 검증을 완성하여 에코시스템 안정성을 유지했습니다.
+  - **Concepts**: [[BundlerProtocolUpgrade]], [[AuthorMetadataValidation]], [[CourseEcosystemCompatibility]], [[CourseCardAuthorDisplay]]
 
 ## 2026-07-11 (2nd Session)
 

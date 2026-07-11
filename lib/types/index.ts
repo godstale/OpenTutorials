@@ -192,6 +192,12 @@ export interface UserProgress {
   updated_at: string;
 }
 
+export interface CourseAuthor {
+  nickname: string;
+  email?: string | null;
+  website?: string | null;
+}
+
 export interface CoursePackage {
   id: string;
   slug: string;
@@ -201,13 +207,20 @@ export interface CoursePackage {
   published: boolean;
   sequential_play?: boolean;
   force_checkpoint?: boolean;
-  github_url?: string | null;
   target_age?: string | null;
   category?: string | null;
   tags?: string[];
+  author?: CourseAuthor | null;
+  author_id?: string | null;
+  author_nickname?: string | null;
+  author_email?: string | null;
+  author_homepage?: string | null;
+  bundler_protocol_version?: string | null;
+  source?: string | null;
   created_at: string;
   updated_at: string;
   courses?: Course[];
+  toc?: TocNode[];
 }
 
 export interface CoursePackageItem {
