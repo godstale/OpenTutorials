@@ -58,7 +58,6 @@ Thumbs.db
 /docs/*
 !/docs/architecture/
 !/docs/manual/
-!/docs/bundler/
 
 # Local Database
 /db.json
