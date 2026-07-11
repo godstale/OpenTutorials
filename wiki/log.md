@@ -30,6 +30,30 @@ Ran lint. See lint-report.md for details.
 
 <!-- Append-only. 최신 항목을 위에 추가. -->
 
+## 2026-07-11 (2nd Session)
+
+- **[CHORE] OpenTutorials-Protocol Git Submodule 연동 및 문서 이관**
+  - **수정/갱신 파일**:
+    - [.gitmodules](file:///C:/Workspace/Projects/OpenTutorials/.gitmodules) — 외부 리포지토리(`OpenTutorials-Protocol`)를 `protocol/` 경로로 서브모듈로 신규 등록했습니다.
+    - [protocol/](file:///C:/Workspace/Projects/OpenTutorials/protocol) — (신규 서브모듈) 프로토콜 정의 및 공용 지침 문서들을 포함하고 있습니다.
+    - [.agents/rules/bundler-protocol.md](file:///C:/Workspace/Projects/OpenTutorials/.agents/rules/bundler-protocol.md) — 프로토콜 문서의 참조 경로를 기존 `docs/bundler/`에서 서브모듈인 `protocol/` 하위 경로로 수정하여 빌더 동작 검증 경로를 최신화했습니다.
+    - [.gitignore](file:///C:/Workspace/Projects/OpenTutorials/.gitignore) — 서브모듈로 대체되어 삭제된 `docs/bundler/` 예외 규칙을 제거했습니다.
+  - **작업 내용**:
+    - 강좌 번들링에 사용되는 공식 프로토콜 문서를 외부 에이전트 및 번들러 프로젝트와 손쉽게 공유하고 최신 버전으로 관리할 수 있도록, 공용 GitHub 리포지토리(`OpenTutorials-Protocol`)를 서브모듈 형태로 연동했습니다.
+    - 기존 로컬 프로젝트 내부에서 개별적으로 들고 있던 `docs/bundler/`의 사본 문서들을 완전히 제거하고, 서브모듈 `protocol` 내의 단일 진실 공급원(Single Source of Truth) 문서를 참조하게 하여 협업 및 버전 관리 효율을 극대화했습니다.
+  - **Concepts**: [[GitSubmoduleIntegration]], [[ProtocolSubmoduleMigration]], [[SingleSourceOfTruthDocs]]
+
+## 2026-07-11 (1st Session)
+
+- **[FEATURE] 강좌 검색 브라우저 및 직접 등록 기능 구현, 설정 내 프로필 서브메뉴 추가**
+  - **수정 파일**:
+    - [app/(user)/settings/layout.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/settings/layout.tsx) — 설정 페이지의 프로필 서브메뉴 링크(User 아이콘) 주석 해제하여 활성화.
+    - [app/(user)/settings/profile/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/settings/profile/page.tsx) — 닉네임(필수), 이메일, 홈페이지 URL을 입력 및 수정할 수 있고, 로컬 DB `user_profiles`에 저장 및 연동하는 미려한 프로필 편집 카드 UI 구현.
+    - [app/(user)/courses/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/page.tsx) — "강좌 검색 기능 준비 중" Coming Soon 화면을 대체하여 전체 강좌 검색, 수강 여부 필터 탭(전체/수강 중/미수강/내가 만듦), 수강 신청 처리, 직접 새 강좌를 입력하여 local-db 및 storage(config.json, welcome.mdx)에 동적으로 등록하는 프리미엄 강좌 검색 & 생성 대시보드로 전면 개편.
+  - **작업 내용**:
+    - 사용자가 닉네임과 홈페이지, 이메일을 프로필에 설정하면 이를 작성자(제작자) 정보로 연동하여 즉각적으로 새로운 강좌를 직접 만들고 수강신청을 거쳐 바로 학습할 수 있는 엔드투엔드 온디바이스 강좌 생태계 순환 고리를 완성하였습니다.
+  - **Concepts**: [[ProfileSettingsSubmenu]], [[LocalUserProfiles]], [[CourseSearchAndBrowser]], [[DirectCourseCreationDialog]]
+
 ## 2026-07-10 (2nd Session)
 
 - **[FEATURE] 강좌 진입 및 카드 이동 시 대화 히스토리 자동 초기화 및 시스템 점검(Handshake) 메시지의 DB 저장 차단**
@@ -1944,4 +1968,3 @@ Ran lint. See lint-report.md for details.
     - **미리보기 라우팅 정상화**: `courses` 유실로 인해 미리보기가 작동하지 않던 버그를 해결하고자, `/learn/${course.slug}?card=1&preview=true` 경로로 즉시 라우팅되도록 프리뷰 버튼 클릭 이벤트를 업데이트했습니다.
     - **강좌 상세 페이지 내 테마 색상 통일**: 강좌 상세 및 커리큘럼 화면에서 기존 혼재되어 사용되던 `emerald` 계열 테마 색상 및 일부 `green-500` 코드를 `green-700`으로 일관되게 변경하여 디자인 일관성을 높였으며, 완료 뱃지의 스타일을 차분한 `bg-zinc-400`으로 변경했습니다.
   - **Concepts**: [[CourseCardStatsFix]], [[PackageLevelAgentMapping]], [[PreviewRoutingNormalization]], [[DetailColorThemeUnification]]
-

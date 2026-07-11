@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
 const SETTINGS_NAV = [
-  // { label: '프로필', href: '/settings/profile', icon: User },
+  { label: '프로필', href: '/settings/profile', icon: User },
   { label: '에이전트', href: '/settings/agent', icon: Bot },
   { label: '강좌', href: '/settings/course', icon: BookOpen },
   { label: 'UI', href: '/settings/ui', icon: Palette },
