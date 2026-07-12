@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Search, BookOpen, User, Mail, Globe, 
   CheckCircle2, Loader2, ArrowRight,
-  BookOpenCheck
+  BookOpenCheck, Info, ExternalLink, Github
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { CourseIcon } from '@/components/ui/course-icon';
@@ -26,6 +26,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { useLanguage } from '@/lib/context/LanguageContext';
 
 interface CoursePackage {
   id: string;
@@ -43,6 +44,8 @@ interface CoursePackage {
   author_email?: string;
   author_homepage?: string;
   toc?: any[];
+  license?: string;
+  license_file?: string;
 }
 
 interface Subscription {
@@ -50,14 +53,42 @@ interface Subscription {
   package_id: string;
 }
 
+const LICENSE_MAP: Record<string, { ko: string; en: string }> = {
+  'CC-BY-4.0': { ko: 'CC BY 4.0 (저작자 표시)', en: 'CC BY 4.0 (Attribution)' },
+  'CC-BY-SA-4.0': { ko: 'CC BY-SA 4.0 (저작자표시-동일조건변경허락)', en: 'CC BY-SA 4.0 (Attribution-ShareAlike)' },
+  'CC-BY-NC-4.0': { ko: 'CC BY-NC 4.0 (저작자표시-비영리)', en: 'CC BY-NC 4.0 (Attribution-NonCommercial)' },
+  'CC-BY-NC-SA-4.0': { ko: 'CC BY-NC-SA 4.0 (저작자표시-비영리-동일조건변경허락)', en: 'CC BY-NC-SA 4.0 (Attribution-NonCommercial-ShareAlike)' },
+  'CC-BY-ND-4.0': { ko: 'CC BY-ND 4.0 (저작자표시-변경금지)', en: 'CC BY-ND 4.0 (Attribution-NoDerivatives)' },
+  'CC-BY-NC-ND-4.0': { ko: 'CC BY-NC-ND 4.0 (저작자표시-비영리-변경금지)', en: 'CC BY-NC-ND 4.0 (Attribution-NonCommercial-NoDerivatives)' },
+  'CC0-1.0': { ko: 'CC0 1.0 (퍼블릭 도메인)', en: 'CC0 1.0 (Public Domain Dedication)' },
+  'all-rights-reserved': { ko: '모든 권리 보유 (All Rights Reserved)', en: 'All Rights Reserved' },
+  'custom': { ko: '커스텀 라이선스 (Custom)', en: 'Custom License' }
+};
+
+const isVersionNewer = (local: string, online: string) => {
+  if (!local || !online) return false;
+  const parseVersion = (v: string) => v.replace(/^v/, '').split('.').map(Number);
+  const localParts = parseVersion(local);
+  const onlineParts = parseVersion(online);
+  for (let i = 0; i < Math.max(localParts.length, onlineParts.length); i++) {
+    const l = localParts[i] || 0;
+    const o = onlineParts[i] || 0;
+    if (o > l) return true;
+    if (l > o) return false;
+  }
+  return false;
+};
+
 export default function CoursesPage() {
   const router = useRouter();
+  const { t, language } = useLanguage();
   const [courses, setCourses] = useState<CoursePackage[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCourse, setSelectedCourse] = useState<any | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+
 
   // Online course states
   const [onlineCourses, setOnlineCourses] = useState<any[]>([]);
@@ -72,39 +103,111 @@ export default function CoursesPage() {
         title: "아두이노 IoT 프로젝트 마스터 클래스",
         slug: "iot-communication",
         description: "USB·블루투스·WiFi·이더넷·RF 등 다양한 통신 기술을 활용해 실제 IoT 장치를 직접 만들어보는 아두이노 실전 프로젝트 강좌 패키지입니다.",
-        version: "1.0.0",
+        version: "1.0.1",
         category: "Programming",
-        target_age: "전연령",
-        bundler_protocol_version: "1.1.1",
+        target_age: "all",
+        bundler_protocol_version: "1.1.3",
         downloadUrl: "https://raw.githubusercontent.com/godstale/OpenTutorials-Browser/main/courses/iot-communication/iot-communication.zip",
         thumbnail: "icon:cpu",
+        license: "CC-BY-NC-4.0",
+        license_file: "LICENSE",
         author: {
           nickname: "Kailash",
           email: "godstale@hotmail.com",
           website: "https://hardcopyworld.com"
         }
+      },
+      {
+        title: "신경망과 LLM 개론",
+        slug: "neutral-network-and-llm",
+        description: "3Blue1Brown의 시각적인 설명 영상을 바탕으로, 인공 신경망의 기본 원리부터 트랜스포머 기반의 대규모 언어 모델(LLM) 핵심 메커니즘까지 마스터하는 입문 강좌입니다.",
+        version: "1.0.0",
+        category: "Programming",
+        target_age: "all",
+        bundler_protocol_version: "1.1.3",
+        downloadUrl: "https://raw.githubusercontent.com/godstale/OpenTutorials-Browser/main/courses/neutral-network-and-llm/neutral-network-and-llm.zip",
+        thumbnail: "icon:brain",
+        license: "CC-BY-NC-4.0",
+        license_file: "LICENSE",
+        author: {
+          nickname: "3Blue1Brown",
+          email: null,
+          website: null
+        },
+        tags: [
+          "신경망",
+          "LLM",
+          "딥러닝",
+          "트랜스포머",
+          "인공지능"
+        ]
       }
     ]);
+  };
+
+  const ensureRequiredCourses = (list: any[]) => {
+    const defaultCourses = [
+      {
+        title: "신경망과 LLM 개론",
+        slug: "neutral-network-and-llm",
+        description: "3Blue1Brown의 시각적인 설명 영상을 바탕으로, 인공 신경망의 기본 원리부터 트랜스포머 기반의 대규모 언어 모델(LLM) 핵심 메커니즘까지 마스터하는 입문 강좌입니다.",
+        version: "1.0.0",
+        category: "Programming",
+        target_age: "all",
+        bundler_protocol_version: "1.1.3",
+        downloadUrl: "https://raw.githubusercontent.com/godstale/OpenTutorials-Browser/main/courses/neutral-network-and-llm/neutral-network-and-llm.zip",
+        thumbnail: "icon:brain",
+        license: "CC-BY-NC-4.0",
+        license_file: "LICENSE",
+        author: {
+          nickname: "3Blue1Brown",
+          email: null,
+          website: null
+        },
+        tags: [
+          "신경망",
+          "LLM",
+          "딥러닝",
+          "트랜스포머",
+          "인공지능"
+        ]
+      }
+    ];
+
+    const result = [...list];
+    for (const def of defaultCourses) {
+      if (!result.some(c => c.slug === def.slug)) {
+        result.push(def);
+      }
+    }
+    return result;
   };
 
   const fetchOnlineCourses = async () => {
     setOnlineLoading(true);
     setOnlineError('');
     try {
-      const res = await fetch('https://raw.githubusercontent.com/godstale/OpenTutorials-Browser/main/courses.json');
+      const res = await fetch(
+        `https://raw.githubusercontent.com/godstale/OpenTutorials-Browser/main/courses.json?t=${Date.now()}`,
+        {
+          cache: 'no-store'
+        }
+      );
       if (!res.ok) {
         console.warn('온라인 강좌 목록을 가져오지 못했습니다. 상태 코드:', res.status);
         useOfflineFallback();
         return;
       }
       const data = await res.json();
+      let coursesList = [];
       if (Array.isArray(data)) {
-        setOnlineCourses(data);
+        coursesList = data;
       } else if (data && Array.isArray(data.courses)) {
-        setOnlineCourses(data.courses);
+        coursesList = data.courses;
       } else {
-        setOnlineCourses([]);
+        coursesList = [];
       }
+      setOnlineCourses(ensureRequiredCourses(coursesList));
     } catch (err: any) {
       console.warn('온라인 강좌 목록을 가져오는 중 오류가 발생했습니다 (오프라인 모드 전환):', err.message || err);
       useOfflineFallback();
@@ -243,14 +346,14 @@ export default function CoursesPage() {
         console.error('Auto-subscribe failed:', await subscribeRes.text());
       }
       
-      setDownloadStatus('설치 완료!');
-      alert(`'${onlineCourse.title}' 강좌 다운로드 및 수강 신청이 완료되었습니다!`);
+      setDownloadStatus(language === 'en' ? 'Installation complete!' : '설치 완료!');
+      alert(language === 'en' ? `Course '${onlineCourse.title}' download and enrollment completed!` : `'${onlineCourse.title}' 강좌 다운로드 및 수강 신청이 완료되었습니다!`);
       
       // 데이터 갱신
       await fetchCoursesAndSubs();
     } catch (err: any) {
       console.error(err);
-      alert(`강좌 설치 중 오류가 발생했습니다: ${err.message}`);
+      alert(language === 'en' ? `An error occurred while installing the course: ${err.message}` : `강좌 설치 중 오류가 발생했습니다: ${err.message}`);
     } finally {
       setDownloadingSlug(null);
       setDownloadStatus('');
@@ -279,10 +382,32 @@ export default function CoursesPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-            강좌 검색
+            {t('searchCourses')}
           </h2>
           <p className="text-muted-foreground mt-2">
-            GitHub 저장소와 연동하여 AI 튜터 강좌를 실시간으로 검색하고 다운로드합니다.
+            {t('searchCoursesDesc2')}
+          </p>
+        </div>
+      </div>
+
+      {/* Info Message Box */}
+      <div className="rounded-xl border border-indigo-100 bg-indigo-50/30 p-4 dark:border-indigo-900/20 dark:bg-indigo-950/5 flex items-start gap-3 w-full">
+        <Github className="size-5 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
+        <div className="space-y-1">
+          <h4 className="text-sm font-semibold text-indigo-950 dark:text-indigo-50">
+            {t('infoRegisterCourse')}
+          </h4>
+          <p className="text-xs text-indigo-900/80 dark:text-indigo-200/80 leading-relaxed">
+            {t('infoRegisterCourseDesc')}<br />
+            <a
+              href="https://github.com/godstale/OpenTutorials-Browser"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-700 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
+            >
+              <span>{t('visitGithub')}</span>
+              <ExternalLink className="size-3" />
+            </a>
           </p>
         </div>
       </div>
@@ -292,7 +417,7 @@ export default function CoursesPage() {
         <div className="relative w-full max-w-md">
           <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
           <Input
-            placeholder="강좌명, 설명, 제작자 검색..."
+            placeholder={t('searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800"
@@ -315,6 +440,7 @@ export default function CoursesPage() {
                 const localCourse = courses.find(c => c.slug === course.slug);
                 const enrolled = localCourse ? isSubscribed(localCourse.id) : false;
                 const isDownloading = downloadingSlug === course.slug;
+                const hasUpdate = enrolled && localCourse && isVersionNewer(localCourse.version || '1.0.0', course.version || '1.0.0');
 
                 return (
                   <Card key={course.slug} className="overflow-hidden flex flex-col hover:border-primary/50 transition-all duration-300 bg-white py-0 pb-0">
@@ -332,7 +458,12 @@ export default function CoursesPage() {
                           {enrolled && (
                             <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white text-xs gap-1 shadow-sm">
                               <CheckCircle2 className="size-3" />
-                              수강 중
+                              {t('statusEnrolled')}
+                            </Badge>
+                          )}
+                          {hasUpdate && (
+                            <Badge className="bg-amber-500 hover:bg-amber-600 text-white text-xs gap-1 shadow-sm">
+                              {t('updateAvailable')}
                             </Badge>
                           )}
                         </div>
@@ -345,7 +476,7 @@ export default function CoursesPage() {
                             v{course.version}
                           </Badge>
                         </div>
-                        <CardDescription className="line-clamp-1 text-xs">{course.description || '상세 정보가 없습니다.'}</CardDescription>
+                        <CardDescription className="line-clamp-1 text-xs">{course.description || t('noIntroduction')}</CardDescription>
                         {course.author && (
                           <div className="flex items-center gap-2 mt-2 text-[11px] text-zinc-500">
                             <div className="flex items-center gap-1 font-medium">
@@ -388,7 +519,7 @@ export default function CoursesPage() {
                     {/* Footer Action */}
                     <CardFooter className="pt-3 pb-3 border-t bg-muted/10 flex items-center justify-between gap-2">
                       <span className="text-xs font-medium text-muted-foreground">
-                        {enrolled ? '학습 중' : localCourse ? '수강 대기' : '신규 강좌'}
+                        {enrolled ? t('statusLearning') : localCourse ? t('statusWaitEnroll') : t('statusNewCourse')}
                       </span>
                       {enrolled ? (
                         <Button 
@@ -397,7 +528,7 @@ export default function CoursesPage() {
                           onClick={() => router.push(`/courses/${course.slug}`)}
                         >
                           <BookOpenCheck className="size-3.5" />
-                          <span>학습하기</span>
+                          <span>{t('btnLearn')}</span>
                         </Button>
                       ) : localCourse ? (
                         <Button 
@@ -405,7 +536,7 @@ export default function CoursesPage() {
                           className="h-8 text-white bg-green-700 hover:bg-green-800 dark:bg-green-600 dark:hover:bg-green-700 gap-1.5"
                           onClick={() => handleSubscribe(localCourse.id)}
                         >
-                          <span>수강 신청</span>
+                          <span>{t('btnEnroll')}</span>
                           <ArrowRight className="size-3.5" />
                         </Button>
                       ) : (
@@ -418,11 +549,11 @@ export default function CoursesPage() {
                           {isDownloading ? (
                             <>
                               <Loader2 className="size-3.5 animate-spin mr-1" />
-                              <span>{downloadStatus || '다운 중...'}</span>
+                              <span>{downloadStatus || t('btnDownloading')}</span>
                             </>
                           ) : (
                             <>
-                              <span>다운로드</span>
+                              <span>{t('btnDownload')}</span>
                               <ArrowRight className="size-3.5" />
                             </>
                           )}
@@ -464,24 +595,32 @@ export default function CoursesPage() {
                   {(() => {
                     const localCourse = courses.find(c => c.slug === selectedCourse.slug);
                     const enrolled = localCourse ? isSubscribed(localCourse.id) : false;
+                    const hasUpdate = enrolled && localCourse && isVersionNewer(localCourse.version || '1.0.0', selectedCourse.version || '1.0.0');
                     if (enrolled) {
                       return (
-                        <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white text-xs gap-1 shadow-md">
-                          <CheckCircle2 className="size-3" />
-                          수강 중
-                        </Badge>
+                        <div className="flex gap-1.5">
+                          <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white text-xs gap-1 shadow-md">
+                            <CheckCircle2 className="size-3" />
+                            {t('statusEnrolled')}
+                          </Badge>
+                          {hasUpdate && (
+                            <Badge className="bg-amber-500 hover:bg-amber-600 text-white text-xs gap-1 shadow-md">
+                              {t('updateAvailable')}
+                            </Badge>
+                          )}
+                        </div>
                       );
                     }
                     if (localCourse) {
                       return (
                         <Badge variant="secondary" className="text-xs shadow-sm">
-                          수강 대기
+                          {t('statusWaitEnroll')}
                         </Badge>
                       );
                     }
                     return (
                       <Badge variant="outline" className="bg-white/85 dark:bg-zinc-900/85 text-xs shadow-sm">
-                        신규 강좌
+                        {t('statusNewCourse')}
                       </Badge>
                     );
                   })()}
@@ -499,12 +638,29 @@ export default function CoursesPage() {
                     )}
                     {selectedCourse.target_age && (
                       <Badge variant="outline" className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                        {selectedCourse.target_age} 대상
+                        {language === 'en' ? (
+                          selectedCourse.target_age === 'all' ? 'All Ages' : `${selectedCourse.target_age} years old`
+                        ) : (
+                          selectedCourse.target_age === 'all' ? '전연령' : `${selectedCourse.target_age}세`
+                        )}
                       </Badge>
                     )}
-                    <span className="text-[11px] text-zinc-400 dark:text-zinc-500 ml-auto">
-                      버전 v{selectedCourse.version}
-                    </span>
+                    {(() => {
+                      const localCourse = courses.find(c => c.slug === selectedCourse.slug);
+                      const hasUpdate = localCourse && isVersionNewer(localCourse.version || '1.0.0', selectedCourse.version || '1.0.0');
+                      if (hasUpdate) {
+                        return (
+                          <span className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold ml-auto">
+                            {language === 'en' ? `Update available: v${localCourse.version} → v${selectedCourse.version}` : `v${localCourse.version} → v${selectedCourse.version} 업데이트 가능`}
+                          </span>
+                        );
+                      }
+                      return (
+                        <span className="text-[11px] text-zinc-400 dark:text-zinc-500 ml-auto">
+                          {language === 'en' ? `Version v${selectedCourse.version}` : `버전 v${selectedCourse.version}`}
+                        </span>
+                      );
+                    })()}
                   </div>
                   
                   <h3 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
@@ -512,7 +668,7 @@ export default function CoursesPage() {
                   </h3>
                   
                   <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed pt-1">
-                    {selectedCourse.description || '상세 정보가 없습니다.'}
+                    {selectedCourse.description || t('noIntroduction')}
                   </p>
                 </div>
 
@@ -520,7 +676,7 @@ export default function CoursesPage() {
                 {selectedCourse.author && (
                   <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-xl p-4 border border-zinc-100 dark:border-zinc-800/80">
                     <h4 className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-2.5">
-                      제작자 정보
+                      {language === 'en' ? 'Author Info' : '제작자 정보'}
                     </h4>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
@@ -547,7 +703,7 @@ export default function CoursesPage() {
                               target="_blank"
                               rel="noopener noreferrer"
                               className="p-1.5 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors shadow-sm"
-                              title="제작자 홈페이지"
+                              title={t('authorHomepage')}
                             >
                               <Globe className="size-4" />
                             </a>
@@ -556,7 +712,7 @@ export default function CoursesPage() {
                             <a
                               href={`mailto:${selectedCourse.author.email}`}
                               className="p-1.5 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors shadow-sm"
-                              title="제작자 이메일"
+                              title={t('authorEmail')}
                             >
                               <Mail className="size-4" />
                             </a>
@@ -576,7 +732,7 @@ export default function CoursesPage() {
                     <div className="space-y-3 border-t pt-4 border-zinc-100 dark:border-zinc-800">
                       <h4 className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
                         <BookOpen className="size-3.5 text-indigo-500" />
-                        강좌 목차
+                        {t('courseCurriculum')}
                       </h4>
                       <div className="border border-zinc-100 dark:border-zinc-800/80 rounded-lg p-2 bg-zinc-50/30 dark:bg-zinc-900/10">
                         <Accordion type="single" collapsible className="w-full">
@@ -622,10 +778,10 @@ export default function CoursesPage() {
                     <div className="space-y-2 border-t pt-4 border-zinc-100 dark:border-zinc-800 text-xs text-zinc-500">
                       <h4 className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
                         <BookOpen className="size-3.5 text-zinc-400" />
-                        강좌 목차
+                        {t('courseCurriculum')}
                       </h4>
                       <p className="bg-zinc-50 dark:bg-zinc-900/50 p-3 rounded-lg border border-zinc-100 dark:border-zinc-800/80 text-center text-zinc-400 dark:text-zinc-500 text-[11px]">
-                        로컬에 설치되지 않은 강좌입니다. 강좌를 다운로드하면 상세 목차를 확인하실 수 있습니다.
+                        {language === 'en' ? 'This course is not installed locally. Download it to view the detailed table of contents.' : '로컬에 설치되지 않은 강좌입니다. 강좌를 다운로드하면 상세 목차를 확인하실 수 있습니다.'}
                       </p>
                     </div>
                   );
@@ -634,28 +790,62 @@ export default function CoursesPage() {
                 {/* Additional Settings */}
                 <div className="grid grid-cols-2 gap-4 text-xs">
                   <div className="space-y-1.5">
-                    <span className="font-medium text-zinc-400 dark:text-zinc-500">순차 수강 규정</span>
+                    <span className="font-medium text-zinc-400 dark:text-zinc-500">
+                      {language === 'en' ? 'Sequence Rule' : '순차 수강 규정'}
+                    </span>
                     <p className="text-zinc-800 dark:text-zinc-200 font-medium">
-                      {selectedCourse.sequential_play ? '순차 진행 필요' : '자유로운 탐색'}
+                      {selectedCourse.sequential_play ? (
+                        language === 'en' ? 'Sequential required' : '순차 진행 필요'
+                      ) : (
+                        language === 'en' ? 'Free exploration' : '자유로운 탐색'
+                      )}
                     </p>
                   </div>
                   <div className="space-y-1.5">
-                    <span className="font-medium text-zinc-400 dark:text-zinc-500">체크포인트 규칙</span>
+                    <span className="font-medium text-zinc-400 dark:text-zinc-500">
+                      {language === 'en' ? 'Checkpoint Rule' : '체크포인트 규칙'}
+                    </span>
                     <p className="text-zinc-800 dark:text-zinc-200 font-medium">
-                      {selectedCourse.force_checkpoint ? '체크포인트 필수' : '자율 권장'}
+                      {selectedCourse.force_checkpoint ? (
+                        language === 'en' ? 'Checkpoint required' : '체크포인트 필수'
+                      ) : (
+                        language === 'en' ? 'Self-guided/Recommended' : '자율 권장'
+                      )}
                     </p>
                   </div>
                   {selectedCourse.bundler_protocol_version && (
                     <div className="space-y-1.5 col-span-2 border-t pt-3 border-zinc-100 dark:border-zinc-800">
-                      <span className="font-medium text-zinc-400 dark:text-zinc-500">번들러 프로토콜 버전</span>
+                      <span className="font-medium text-zinc-400 dark:text-zinc-500">{t('bundlerVersion')}</span>
                       <p className="text-zinc-600 dark:text-zinc-400">
                         {selectedCourse.bundler_protocol_version}
                       </p>
                     </div>
                   )}
+                  <div className="space-y-1.5 col-span-2 border-t pt-3 border-zinc-100 dark:border-zinc-800">
+                    <span className="font-medium text-zinc-400 dark:text-zinc-500">{t('courseLicense')}</span>
+                    <p className="text-zinc-600 dark:text-zinc-400 flex items-center gap-1.5 font-medium">
+                      {(() => {
+                        const licenseKey = selectedCourse.license || 'CC-BY-NC-4.0';
+                        const licenseInfo = LICENSE_MAP[licenseKey] || { ko: licenseKey, en: licenseKey };
+                        const licenseText = language === 'en' ? licenseInfo.en : licenseInfo.ko;
+                        return (
+                          <>
+                            <span>{licenseText}</span>
+                            {selectedCourse.license_file && (
+                              <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono font-normal">
+                                ({selectedCourse.license_file})
+                              </span>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </p>
+                  </div>
                   {selectedCourse.tags && selectedCourse.tags.length > 0 && (
                     <div className="col-span-2 space-y-2 border-t pt-3 border-zinc-100 dark:border-zinc-800">
-                      <span className="font-medium text-zinc-400 dark:text-zinc-500">태그</span>
+                      <span className="font-medium text-zinc-400 dark:text-zinc-500">
+                        {language === 'en' ? 'Tags' : '태그'}
+                      </span>
                       <div className="flex flex-wrap gap-1.5">
                         {selectedCourse.tags.map((tag: string) => (
                           <span
@@ -678,7 +868,7 @@ export default function CoursesPage() {
                   onClick={() => setIsDetailOpen(false)}
                   className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-700"
                 >
-                  닫기
+                  {language === 'en' ? 'Close' : '닫기'}
                 </Button>
 
                 {(() => {
@@ -696,7 +886,7 @@ export default function CoursesPage() {
                         }}
                       >
                         <BookOpenCheck className="size-4" />
-                        <span>학습 시작하기</span>
+                        <span>{t('startLearning')}</span>
                       </Button>
                     );
                   }
@@ -708,7 +898,7 @@ export default function CoursesPage() {
                           await handleSubscribe(localCourse.id);
                         }}
                       >
-                        <span>수강 신청하기</span>
+                        <span>{language === 'en' ? 'Enroll' : '수강 신청하기'}</span>
                         <ArrowRight className="size-4" />
                       </Button>
                     );

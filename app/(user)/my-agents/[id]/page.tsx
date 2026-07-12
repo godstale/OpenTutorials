@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState, use, Suspense, useRef } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Bot, RefreshCw, AlertTriangle, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Bot, RefreshCw, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -14,6 +14,7 @@ import type { UserExternalAgent } from '@/lib/types';
 import AgentChatTab from '@/components/features/AgentChatTab';
 import AgentSettingsTab from '@/components/features/AgentSettingsTab';
 import { agentLeaveTimers, cn } from '@/lib/utils';
+import { useLanguage } from '@/lib/context/LanguageContext';
 
 interface ChatLog {
   timestamp: string;
@@ -65,6 +66,7 @@ function buildMonthSeries(
 }
 
 function AgentStatisticsTab({ agent, coursesCount }: { agent: UserExternalAgent; coursesCount: number }) {
+  const { t, language } = useLanguage();
   const [chatLogs, setChatLogs] = useState<ChatLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const now = new Date();
@@ -96,31 +98,39 @@ function AgentStatisticsTab({ agent, coursesCount }: { agent: UserExternalAgent;
   const avgTokens = totalLogs > 0 ? Math.round(totalTokens / totalLogs) : 0;
 
   const formatTotalDuration = (ms: number) => {
-    if (ms <= 0) return '0초';
+    if (ms <= 0) return language === 'en' ? '0s' : '0초';
     const totalSeconds = ms / 1000;
     if (totalSeconds < 60) {
-      return `${totalSeconds.toFixed(1)}초`;
+      return language === 'en'
+        ? `${totalSeconds.toFixed(1)}s`
+        : `${totalSeconds.toFixed(1)}초`;
     }
     if (totalSeconds < 3600) {
       const minutes = Math.floor(totalSeconds / 60);
       const seconds = Math.round(totalSeconds % 60);
-      return `${minutes}분 ${seconds}초`;
+      return language === 'en'
+        ? `${minutes}m ${seconds}s`
+        : `${minutes}분 ${seconds}초`;
     }
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
-    return `${hours}시간 ${minutes}분`;
+    return language === 'en'
+      ? `${hours}h ${minutes}m`
+      : `${hours}시간 ${minutes}분`;
   };
 
   const formatAvgResponse = (ms: number) => {
-    if (ms <= 0) return '0초';
-    return `${(ms / 1000).toFixed(1)}초`;
+    if (ms <= 0) return language === 'en' ? '0s' : '0초';
+    return language === 'en'
+      ? `${(ms / 1000).toFixed(1)}s`
+      : `${(ms / 1000).toFixed(1)}초`;
   };
 
   const stats = {
     totalHours: formatTotalDuration(totalMs),
     avgResponse: formatAvgResponse(avgMs),
-    totalTokens: `${totalTokens.toLocaleString()} 토큰`,
-    avgTokens: `${avgTokens.toLocaleString()} 토큰`
+    totalTokens: `${totalTokens.toLocaleString()} ${t('agentStatsTokenUnit')}`,
+    avgTokens: `${avgTokens.toLocaleString()} ${t('agentStatsTokenUnit')}`
   };
 
   const monthSeries = buildMonthSeries(dailyBuckets, viewYear, viewMonth);
@@ -147,19 +157,38 @@ function AgentStatisticsTab({ agent, coursesCount }: { agent: UserExternalAgent;
     }
   };
 
+  const yearMonthLabel = t('agentStatsYearMonthFmt')
+    .replace('{year}', String(viewYear))
+    .replace('{month}', String(viewMonth + 1));
+
+  const timeTooltipFormatter = (value: any) => [
+    `${parseFloat(value).toFixed(1)}${language === 'en' ? 'm' : '분'}`,
+    t('agentStatsTimeTooltip'),
+  ];
+
+  const dayLabelFormatter = (day: any) =>
+    t('agentStatsDayFmt')
+      .replace('{month}', String(viewMonth + 1))
+      .replace('{day}', String(day));
+
+  const tokenTooltipFormatter = (value: any) => [
+    `${parseInt(value).toLocaleString()} ${t('agentStatsTokenUnit')}`,
+    t('agentStatsTokenTooltip'),
+  ];
+
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="md:col-span-2 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-lg font-bold">에이전트 사용량 통계</CardTitle>
+            <CardTitle className="text-lg font-bold">{t('agentDetailStatsTitle')}</CardTitle>
             <CardDescription className="text-xs">
-              현재 에이전트 인스턴스의 누적 및 평균 학습 지원 메트릭을 모니터링합니다. (챗 요청부터 응답까지의 누적 시간 기준)
+              {t('agentDetailStatsDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-4">
             <div className="p-4 bg-zinc-50 dark:bg-zinc-900/40 rounded-xl border flex flex-col justify-center h-24">
-              <span className="text-xs text-muted-foreground font-semibold">누적 사용 시간</span>
+              <span className="text-xs text-muted-foreground font-semibold">{t('agentStatsAccumTime')}</span>
               {isLoading ? (
                 <span className="h-6 w-24 bg-zinc-200 dark:bg-zinc-800 animate-pulse rounded mt-1" />
               ) : (
@@ -167,7 +196,7 @@ function AgentStatisticsTab({ agent, coursesCount }: { agent: UserExternalAgent;
               )}
             </div>
             <div className="p-4 bg-zinc-50 dark:bg-zinc-900/40 rounded-xl border flex flex-col justify-center h-24">
-              <span className="text-xs text-muted-foreground font-semibold">평균 응답 시간</span>
+              <span className="text-xs text-muted-foreground font-semibold">{t('agentStatsAvgResponse')}</span>
               {isLoading ? (
                 <span className="h-6 w-24 bg-zinc-200 dark:bg-zinc-800 animate-pulse rounded mt-1" />
               ) : (
@@ -175,7 +204,7 @@ function AgentStatisticsTab({ agent, coursesCount }: { agent: UserExternalAgent;
               )}
             </div>
             <div className="p-4 bg-zinc-50 dark:bg-zinc-900/40 rounded-xl border flex flex-col justify-center h-24">
-              <span className="text-xs text-muted-foreground font-semibold">누적 사용 토큰</span>
+              <span className="text-xs text-muted-foreground font-semibold">{t('agentStatsAccumTokens')}</span>
               {isLoading ? (
                 <span className="h-6 w-24 bg-zinc-200 dark:bg-zinc-800 animate-pulse rounded mt-1" />
               ) : (
@@ -183,7 +212,7 @@ function AgentStatisticsTab({ agent, coursesCount }: { agent: UserExternalAgent;
               )}
             </div>
             <div className="p-4 bg-zinc-50 dark:bg-zinc-900/40 rounded-xl border flex flex-col justify-center h-24">
-              <span className="text-xs text-muted-foreground font-semibold">회당 평균 사용 토큰</span>
+              <span className="text-xs text-muted-foreground font-semibold">{t('agentStatsAvgTokensPerSession')}</span>
               {isLoading ? (
                 <span className="h-6 w-24 bg-zinc-200 dark:bg-zinc-800 animate-pulse rounded mt-1" />
               ) : (
@@ -195,20 +224,20 @@ function AgentStatisticsTab({ agent, coursesCount }: { agent: UserExternalAgent;
 
         <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-lg font-bold">강좌 할당 통계</CardTitle>
+            <CardTitle className="text-lg font-bold">{t('agentDetailAssignTitle')}</CardTitle>
             <CardDescription className="text-xs">
-              현재 튜터가 전담하여 관리하는 로컬 강좌 개수입니다.
+              {t('agentDetailAssignDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-center justify-center py-6 gap-2">
             <div className="size-20 bg-indigo-50 dark:bg-indigo-950/30 rounded-full border border-indigo-200/50 dark:border-indigo-900/40 flex items-center justify-center">
               <span className="text-3xl font-black text-indigo-600 dark:text-indigo-400">{coursesCount}</span>
             </div>
-            <span className="text-sm font-semibold mt-2">할당 강좌 수</span>
+            <span className="text-sm font-semibold mt-2">{t('agentDetailAssignedCount')}</span>
             <span className="text-xs text-muted-foreground text-center">
               {coursesCount > 0
-                ? `현재 ${coursesCount}개의 강좌에 학습 튜터로 활성화되어 활동 중입니다.`
-                : '현재 이 튜터가 할당된 강좌가 없습니다. 강좌 상세 화면에서 튜터를 지정할 수 있습니다.'}
+                ? t('agentDetailAssignedActive').replace('{count}', String(coursesCount))
+                : t('agentDetailAssignedNone')}
             </span>
           </CardContent>
         </Card>
@@ -217,15 +246,15 @@ function AgentStatisticsTab({ agent, coursesCount }: { agent: UserExternalAgent;
       <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <div>
-            <CardTitle className="text-lg font-bold">일별 사용 현황</CardTitle>
-            <CardDescription className="text-xs">선택한 달의 일별 사용 시간과 토큰 사용량입니다.</CardDescription>
+            <CardTitle className="text-lg font-bold">{t('agentDetailChartTitle')}</CardTitle>
+            <CardDescription className="text-xs">{t('agentDetailChartDesc')}</CardDescription>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="icon" className="size-8" onClick={goPrevMonth}>
               <ChevronLeft className="size-4" />
             </Button>
             <span className="text-sm font-semibold min-w-[92px] text-center">
-              {viewYear}년 {viewMonth + 1}월
+              {yearMonthLabel}
             </span>
             <Button
               variant="outline"
@@ -242,34 +271,34 @@ function AgentStatisticsTab({ agent, coursesCount }: { agent: UserExternalAgent;
           {isLoading ? (
             <div className="h-64 bg-zinc-100 dark:bg-zinc-900/40 animate-pulse rounded-lg" />
           ) : !hasDataInMonth ? (
-            <div className="py-12 text-center text-sm text-muted-foreground">이 달에는 기록된 대화가 없습니다.</div>
+            <div className="py-12 text-center text-sm text-muted-foreground">{t('agentDetailNoData')}</div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="h-64">
-                <p className="text-xs font-semibold text-muted-foreground mb-2">일별 사용 시간 (분)</p>
+                <p className="text-xs font-semibold text-muted-foreground mb-2">{t('agentDetailTimeChart')}</p>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={monthSeries} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="day" fontSize={11} tickLine={false} />
                     <YAxis fontSize={11} tickLine={false} allowDecimals={false} />
                     <Tooltip
-                      formatter={(value: any) => [`${parseFloat(value).toFixed(1)}분`, '사용 시간']}
-                      labelFormatter={(day: any) => `${viewMonth + 1}월 ${day}일`}
+                      formatter={timeTooltipFormatter}
+                      labelFormatter={dayLabelFormatter}
                     />
                     <Bar dataKey="minutes" fill="#6366f1" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
               <div className="h-64">
-                <p className="text-xs font-semibold text-muted-foreground mb-2">일별 사용 토큰</p>
+                <p className="text-xs font-semibold text-muted-foreground mb-2">{t('agentDetailTokenChart')}</p>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={monthSeries} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="day" fontSize={11} tickLine={false} />
                     <YAxis fontSize={11} tickLine={false} allowDecimals={false} />
                     <Tooltip
-                      formatter={(value: any) => [`${parseInt(value).toLocaleString()} 토큰`, '토큰']}
-                      labelFormatter={(day: any) => `${viewMonth + 1}월 ${day}일`}
+                      formatter={tokenTooltipFormatter}
+                      labelFormatter={dayLabelFormatter}
                     />
                     <Bar dataKey="tokens" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
                   </BarChart>
@@ -291,6 +320,7 @@ interface PageProps {
 
 function AgentPortalContent({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const { t } = useLanguage();
   const [agent, setAgent] = useState<UserExternalAgent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -395,7 +425,7 @@ function AgentPortalContent({ params }: { params: Promise<{ id: string }> }) {
       } catch (err) {
         if (!active) return;
         console.error('Failed to fetch agent:', err);
-        setError(err instanceof Error ? err.message : '에이전트 정보를 불러오는데 실패했습니다.');
+        setError(err instanceof Error ? err.message : t('agentDetailNotFound'));
       } finally {
         if (active) {
           setIsLoading(false);
@@ -417,7 +447,7 @@ function AgentPortalContent({ params }: { params: Promise<{ id: string }> }) {
       active = false;
       window.removeEventListener('agents-updated', handleAgentsUpdated);
     };
-  }, [id]);
+  }, [id, t]);
 
   const handleRefreshStatus = async () => {
     if (!agent) return;
@@ -475,7 +505,7 @@ function AgentPortalContent({ params }: { params: Promise<{ id: string }> }) {
           <div className="size-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
           <Bot className="size-6 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
         </div>
-        <p className="text-muted-foreground text-sm font-medium animate-pulse">에이전트 연결 정보 로드 중...</p>
+        <p className="text-muted-foreground text-sm font-medium animate-pulse">{t('agentDetailLoadingText')}</p>
       </div>
     );
   }
@@ -486,12 +516,12 @@ function AgentPortalContent({ params }: { params: Promise<{ id: string }> }) {
         <div className="size-14 bg-destructive/10 text-destructive rounded-full flex items-center justify-center mx-auto">
           <AlertTriangle className="size-8" />
         </div>
-        <h3 className="font-semibold text-lg text-foreground">접근 오류</h3>
-        <p className="text-sm text-muted-foreground leading-relaxed">{error || '에이전트를 찾을 수 없습니다.'}</p>
+        <h3 className="font-semibold text-lg text-foreground">{t('agentDetailAccessError')}</h3>
+        <p className="text-sm text-muted-foreground leading-relaxed">{error || t('agentDetailNotFound')}</p>
         <Button variant="outline" size="sm" asChild className="mt-2 border-border/80 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors">
           <Link href="/my-agents" className="gap-2">
             <ArrowLeft className="size-4" />
-            외부 에이전트 목록으로
+            {t('agentDetailBack')}
           </Link>
         </Button>
       </div>
@@ -506,7 +536,7 @@ function AgentPortalContent({ params }: { params: Promise<{ id: string }> }) {
           <Link href="/my-agents">
             <Button variant="ghost" size="sm" className="group text-muted-foreground hover:text-foreground pl-0 -ml-1 transition-all duration-200">
               <ArrowLeft className="size-4 mr-1 group-hover:-translate-x-1 transition-transform" />
-              외부 에이전트 목록
+              {t('agentDetailBack')}
             </Button>
           </Link>
         </div>
@@ -522,15 +552,15 @@ function AgentPortalContent({ params }: { params: Promise<{ id: string }> }) {
                 <h1 className="text-2xl font-bold tracking-tight text-foreground">{agent.name}</h1>
                 {agent.status === 'online' ? (
                   <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/15 transition-all">
-                    ● 온라인
+                    ● {t('agentStatusOnline')}
                   </Badge>
                 ) : agent.status === 'error' ? (
                   <Badge className="bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 hover:bg-rose-500/15 transition-all">
-                    ● 에러
+                    ● {t('agentStatusError')}
                   </Badge>
                 ) : (
                   <Badge className="bg-zinc-500/10 text-zinc-500 dark:text-zinc-400 border-zinc-500/20 hover:bg-zinc-500/15 transition-all">
-                    ● 오프라인
+                    ● {t('agentStatusOffline')}
                   </Badge>
                 )}
               </div>
@@ -552,7 +582,7 @@ function AgentPortalContent({ params }: { params: Promise<{ id: string }> }) {
               )}
             >
               <RefreshCw className={`size-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-              연결 확인
+              {t('agentDetailConnCheck')}
             </Button>
           </div>
         </div>
@@ -562,10 +592,10 @@ function AgentPortalContent({ params }: { params: Promise<{ id: string }> }) {
         <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 flex items-center justify-between text-amber-800 dark:text-amber-300 text-sm shadow-sm animate-fade-in mb-6">
           <div className="flex items-center gap-2">
             <AlertTriangle className="size-4 shrink-0 text-amber-500" />
-            <span>일정 시간 동안 입력이 없어 연결이 자동으로 종료되었습니다. 다시 연결하려면 상단의 <strong>[연결 확인]</strong> 버튼을 클릭하세요.</span>
+            <span>{t('agentDetailIdleDisconnected')}</span>
           </div>
           <Button variant="ghost" size="sm" onClick={() => setIsIdleDisconnected(false)} className="text-amber-800 hover:bg-amber-500/10 dark:text-amber-300 h-8">
-            닫기
+            {t('agentDetailClose')}
           </Button>
         </div>
       )}
@@ -574,7 +604,7 @@ function AgentPortalContent({ params }: { params: Promise<{ id: string }> }) {
         <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4 flex items-center justify-between text-rose-800 dark:text-rose-300 text-sm shadow-sm animate-fade-in mb-6">
           <div className="flex items-center gap-2">
             <AlertTriangle className="size-4 shrink-0 text-rose-500" />
-            <span>에이전트 연결에 실패했습니다. 엔드포인트 URL 및 API Key 설정을 확인하거나 서버 상태를 점검해 주세요.</span>
+            <span>{t('agentDetailErrorBanner')}</span>
           </div>
         </div>
       )}
@@ -583,7 +613,7 @@ function AgentPortalContent({ params }: { params: Promise<{ id: string }> }) {
         <div className="bg-sky-500/10 border border-sky-500/20 rounded-xl p-4 flex items-center justify-between text-sky-800 dark:text-sky-300 text-sm shadow-sm animate-fade-in mb-6">
           <div className="flex items-center gap-2">
             <Bot className="size-4 shrink-0 text-sky-500" />
-            <span>현재 에이전트와 연결되지 않은 상태입니다. 대화를 시작하고 에이전트 기능을 사용하려면 상단의 <strong>[연결 확인]</strong> 버튼을 클릭하여 연결을 수립해 주세요.</span>
+            <span>{t('agentDetailOfflineBanner')}</span>
           </div>
         </div>
       )}
@@ -592,13 +622,13 @@ function AgentPortalContent({ params }: { params: Promise<{ id: string }> }) {
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full space-y-4">
         <TabsList className="w-full sm:max-w-md grid grid-cols-3">
           <TabsTrigger value="statistics">
-            통계
+            {t('agentDetailTabStats')}
           </TabsTrigger>
           <TabsTrigger value="chat">
-            대화 (Chat)
+            {t('agentDetailTabChat')}
           </TabsTrigger>
           <TabsTrigger value="settings">
-            설정
+            {t('agentDetailTabSettings')}
           </TabsTrigger>
         </TabsList>
 
@@ -626,7 +656,7 @@ export default function AgentPortalPage({ params }: PageProps) {
           <div className="size-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
           <Bot className="size-6 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
         </div>
-        <p className="text-muted-foreground text-sm font-medium animate-pulse">에이전트 연결 정보 로드 중...</p>
+        <p className="text-muted-foreground text-sm font-medium animate-pulse">Loading...</p>
       </div>
     }>
       <AgentPortalContent params={params} />

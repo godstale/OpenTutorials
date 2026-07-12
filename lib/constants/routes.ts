@@ -18,9 +18,9 @@ export const ROUTES = {
 
 export const SIDEBAR_ITEMS = [
   { label: '대시보드', href: ROUTES.DASHBOARD, icon: 'LayoutDashboard' },
-  { label: '강좌 검색', href: ROUTES.COURSES, icon: 'GraduationCap' },
+  { label: '강좌 검색', href: ROUTES.COURSES, icon: 'Search' },
   { label: '나의 강좌', href: ROUTES.MY_COURSES, icon: 'BookOpen' },
-  { label: '강좌 관리', href: ROUTES.COURSES_MANAGE, icon: 'GraduationCap' },
+  { label: '강좌 관리', href: ROUTES.COURSES_MANAGE, icon: 'Wrench' },
   { label: '설정', href: ROUTES.SETTINGS, icon: 'Settings' },
 ] as const;
 

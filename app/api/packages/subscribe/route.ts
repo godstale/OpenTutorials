@@ -119,6 +119,7 @@ export async function GET(request: NextRequest) {
           thumbnail: pkg?.thumbnail,
           published: pkg?.published,
           agent_id: pkg?.agent_id,
+          author_nickname: pkg?.author_nickname,
         }
       };
     });

@@ -9,6 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.3.6] - 2026-07-12
+
+### 다국어(ko/en) 지원 및 라이선스 정보 수정 (v0.3.6)
+
+전체 레이아웃 및 설정 화면에 다국어(한국어/영어) 선택 및 적용 기능을 구현하고, Next.js Hydration Mismatch 오류를 동적 임포트(dynamic SSR: false)로 해결하였으며, 강좌 기본 라이선스 정보 표기 오류(All Rights Reserved -> CC-BY-NC-4.0)를 로컬 DB와 UI 컴포넌트에 반영하여 바로잡은 릴리즈.
+
+#### Added
+- 다국어 상태 관리를 위한 `LanguageProvider` 및 `useLanguage` 훅 구현 ([LanguageContext.tsx](file:///C:/Workspace/Projects/OpenTutorials/lib/context/LanguageContext.tsx))
+- 한글 및 영어 다국어 리소스 정의 파일 추가 ([ko.ts](file:///C:/Workspace/Projects/OpenTutorials/lib/locales/ko.ts), [en.ts](file:///C:/Workspace/Projects/OpenTutorials/lib/locales/en.ts))
+- UI 설정 화면에 언어 선택(한국어 / 영어) 옵션 추가 ([ui/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/settings/ui/page.tsx))
+
+#### Changed
+- 사이드바 메뉴 텍스트 및 레이아웃 요소들에 다국어 번역 리소스 적용
+- 강좌 메타데이터 라이선스 기본 폴백 값을 `all-rights-reserved`에서 `CC-BY-NC-4.0`으로 변경 및 오프라인 대체 강좌 리스트 데이터 반영
+- 강좌 번들 매니페스트 프로토콜 스펙에 `language` 필드를 추가하여 다국어 강좌 필터링 기반 마련 (v1.2.1)
+- 로컬 DB(`db.json`) 내 등록 강좌들의 라이선스 데이터 수정 및 중복 필드 제거
+
+#### Fixed
+- `LanguageProvider` 상태 주입 시점에 발생하던 Next.js/React 18 Hydration Mismatch 에러를 `UserSidebar` 및 `UserHeader` 컴포넌트의 비동기 동적 SSR 비활성화(`ssr: false`)로 해결
+- 강좌 상세 정보 팝업 내 라이선스 파일(LICENSE) 존재 여부를 서버에서 동적 검증하고, 존재하지 않는 경우 크리에이티브 커먼즈(CC) 공식 사이트 리다이렉트 링크로 폴백 처리하여 404 에러 방지
+
+---
+
 ## [v0.3.5] - 2026-07-11
 
 ### 강좌 검색 화면 내 상세 정보 및 목차(TOC) 팝업 다이얼로그 구현 (v0.3.5)

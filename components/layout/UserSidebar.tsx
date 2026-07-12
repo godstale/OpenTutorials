@@ -1,10 +1,10 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard, Settings, Bot, ChevronRight, GraduationCap, BookOpen, Wrench
+  LayoutDashboard, Settings, Bot, ChevronRight, BookOpen, Wrench, Search
 } from 'lucide-react';
 
 import {
@@ -27,11 +27,13 @@ import { cn } from '@/lib/utils';
 import { getExternalAgents } from '@/lib/api/external-agents';
 import { UserExternalAgent } from '@/lib/types';
 import { ROUTES } from '@/lib/constants/routes';
+import { useLanguage } from '@/lib/context/LanguageContext';
 
 export function UserSidebar() {
   const pathname = usePathname();
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
+  const { t, language } = useLanguage();
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -126,11 +128,11 @@ export function UserSidebar() {
                 <SidebarMenuButton
                   asChild
                   isActive={pathname === ROUTES.DASHBOARD || (pathname ? pathname.startsWith(ROUTES.DASHBOARD + '/') : false)}
-                  tooltip="대시보드"
+                  tooltip={t('dashboard')}
                 >
                   <Link href={ROUTES.DASHBOARD}>
                     <LayoutDashboard className="size-4" />
-                    <span>대시보드</span>
+                    <span>{t('dashboard')}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -142,11 +144,11 @@ export function UserSidebar() {
                 <SidebarMenuButton
                   asChild
                   isActive={pathname === ROUTES.COURSES || (pathname ? (pathname.startsWith(ROUTES.COURSES + '/') && !pathname.startsWith(ROUTES.COURSES_MANAGE)) : false)}
-                  tooltip="강좌 검색"
+                  tooltip={t('searchCourses')}
                 >
                   <Link href={ROUTES.COURSES}>
-                    <GraduationCap className="size-4" />
-                    <span>강좌 검색</span>
+                    <Search className="size-4" />
+                    <span>{t('searchCourses')}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -156,11 +158,11 @@ export function UserSidebar() {
                 <SidebarMenuButton
                   asChild
                   isActive={pathname === ROUTES.MY_COURSES || (pathname ? pathname.startsWith(ROUTES.MY_COURSES + '/') : false)}
-                  tooltip="나의 강좌"
+                  tooltip={t('myCourses')}
                 >
                   <Link href={ROUTES.MY_COURSES}>
                     <BookOpen className="size-4" />
-                    <span>나의 강좌</span>
+                    <span>{t('myCourses')}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -170,11 +172,11 @@ export function UserSidebar() {
                 <SidebarMenuButton
                   asChild
                   isActive={pathname === ROUTES.COURSES_MANAGE || (pathname ? pathname.startsWith(ROUTES.COURSES_MANAGE + '/') : false)}
-                  tooltip="강좌 관리"
+                  tooltip={t('manageCourses')}
                 >
                   <Link href={ROUTES.COURSES_MANAGE}>
                     <Wrench className="size-4" />
-                    <span>강좌 관리</span>
+                    <span>{t('manageCourses')}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -186,11 +188,11 @@ export function UserSidebar() {
                 <SidebarMenuButton
                   asChild
                   isActive={pathname === ROUTES.MY_AGENTS || isExternalAgentActive}
-                  tooltip="에이전트 관리"
+                  tooltip={t('manageAgents')}
                 >
                   <Link href={ROUTES.MY_AGENTS}>
                     <Bot className="size-4" />
-                    <span>에이전트 관리</span>
+                    <span>{t('manageAgents')}</span>
                   </Link>
                 </SidebarMenuButton>
 
@@ -234,11 +236,11 @@ export function UserSidebar() {
                 <SidebarMenuButton
                   asChild
                   isActive={pathname === ROUTES.SETTINGS || (pathname ? pathname.startsWith(ROUTES.SETTINGS + '/') : false)}
-                  tooltip="설정"
+                  tooltip={t('settings')}
                 >
                   <Link href={ROUTES.SETTINGS}>
                     <Settings className="size-4" />
-                    <span>설정</span>
+                    <span>{t('settings')}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
@@ -7,8 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { User, Mail, Globe, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useLanguage } from '@/lib/context/LanguageContext';
 
 export default function SettingsProfilePage() {
+  const { t, language } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -42,13 +44,13 @@ export default function SettingsProfilePage() {
         }
       } catch (err: any) {
         console.error('Failed to load user profile:', err);
-        setError('프로필 정보를 불러오는 데 실패했습니다.');
+        setError(language === 'en' ? 'Failed to load profile information.' : '프로필 정보를 불러오는 데 실패했습니다.');
       } finally {
         setLoading(false);
       }
     }
     loadProfile();
-  }, []);
+  }, [ t]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,25 +59,25 @@ export default function SettingsProfilePage() {
 
     // 1. Validation
     if (!nickname.trim()) {
-      setError('닉네임은 필수 항목입니다.');
+      setError(language === 'en' ? 'Nickname is a required field.' : '닉네임은 필수 항목입니다.');
       return;
     }
 
     if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setError('올바른 이메일 형식이 아닙니다.');
+      setError(language === 'en' ? 'Invalid email format.' : '올바른 이메일 형식이 아닙니다.');
       return;
     }
 
     if (homepageUrl.trim()) {
       let url = homepageUrl.trim();
       if (!/^https?:\/\//i.test(url)) {
-        setError('홈페이지 URL은 http:// 또는 https://로 시작해야 합니다.');
+        setError(language === 'en' ? 'Homepage URL must start with http:// or https://.' : '홈페이지 URL은 http:// 또는 https://로 시작해야 합니다.');
         return;
       }
       try {
         new URL(url);
       } catch (_) {
-        setError('올바르지 않은 홈페이지 URL 형식입니다.');
+        setError(language === 'en' ? 'Invalid homepage URL format.' : '올바르지 않은 홈페이지 URL 형식입니다.');
         return;
       }
     }
@@ -94,7 +96,7 @@ export default function SettingsProfilePage() {
 
       if (error) throw error;
 
-      setSuccess('프로필 설정이 정상적으로 저장되었습니다.');
+      setSuccess(language === 'en' ? 'Profile settings saved successfully.' : '프로필 설정이 정상적으로 저장되었습니다.');
       
       // Dispatch custom event to let other components know the profile has been updated
       if (typeof window !== 'undefined') {
@@ -102,7 +104,7 @@ export default function SettingsProfilePage() {
       }
     } catch (err: any) {
       console.error('Failed to save user profile:', err);
-      setError(err.message || '프로필 저장 중 오류가 발생했습니다.');
+      setError(err.message || (language === 'en' ? 'An error occurred while saving the profile.' : '프로필 저장 중 오류가 발생했습니다.'));
     } finally {
       setSaving(false);
     }
@@ -114,7 +116,7 @@ export default function SettingsProfilePage() {
         <Card className="border-zinc-200/80 dark:border-zinc-800 shadow-md">
           <CardContent className="py-12 flex flex-col items-center justify-center gap-3">
             <Loader2 className="h-8 w-8 text-primary animate-spin" />
-            <p className="text-sm text-muted-foreground">프로필 정보를 불러오는 중...</p>
+            <p className="text-sm text-muted-foreground">{language === 'en' ? 'Loading profile information...' : '프로필 정보를 불러오는 중...'}</p>
           </CardContent>
         </Card>
       </div>
@@ -128,10 +130,10 @@ export default function SettingsProfilePage() {
           <CardHeader className="pb-4">
             <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
               <User className="size-5" />
-              <CardTitle className="text-xl">프로필 설정</CardTitle>
+              <CardTitle className="text-xl">{language === 'en' ? 'Profile Settings' : '프로필 설정'}</CardTitle>
             </div>
             <CardDescription>
-              강좌를 직접 등록하거나 활동할 때 사용되는 기본 제작자(작성자) 정보입니다.
+              {language === 'en' ? 'Default author (creator) information used when registering courses or engaging in activities.' : '강좌를 직접 등록하거나 활동할 때 사용되는 기본 제작자(작성자) 정보입니다.'}
             </CardDescription>
           </CardHeader>
           
@@ -154,7 +156,7 @@ export default function SettingsProfilePage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="nickname" className="text-sm font-semibold flex items-center gap-1.5">
-                  닉네임 <span className="text-rose-500 font-bold">*</span>
+                  {language === 'en' ? 'Nickname' : '닉네임'} <span className="text-rose-500 font-bold">*</span>
                 </Label>
               </div>
               <div className="relative">
@@ -163,18 +165,18 @@ export default function SettingsProfilePage() {
                   id="nickname"
                   value={nickname}
                   onChange={(e) => setNickname(e.target.value)}
-                  placeholder="예: 홍길동"
+                  placeholder={language === 'en' ? 'e.g. John Doe' : '예: 홍길동'}
                   className="pl-9"
                   required
                 />
               </div>
-              <p className="text-xs text-muted-foreground">강좌 저작권 표기 및 제작자 이름으로 노출됩니다.</p>
+              <p className="text-xs text-muted-foreground">{language === 'en' ? 'Displayed as the creator name and copyright holder.' : '강좌 저작권 표기 및 제작자 이름으로 노출됩니다.'}</p>
             </div>
 
             {/* Email Input */}
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-semibold">
-                이메일
+                {language === 'en' ? 'Email' : '이메일'}
               </Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
@@ -187,13 +189,13 @@ export default function SettingsProfilePage() {
                   className="pl-9"
                 />
               </div>
-              <p className="text-xs text-muted-foreground">사용자들과 소통할 수 있는 연락처 이메일 주소입니다.</p>
+              <p className="text-xs text-muted-foreground">{language === 'en' ? 'Contact email address for communicating with users.' : '사용자들과 소통할 수 있는 연락처 이메일 주소입니다.'}</p>
             </div>
 
             {/* Homepage URL Input */}
             <div className="space-y-2">
               <Label htmlFor="homepageUrl" className="text-sm font-semibold">
-                홈페이지 / 블로그 URL
+                {language === 'en' ? 'Homepage / Blog URL' : '홈페이지 / 블로그 URL'}
               </Label>
               <div className="relative">
                 <Globe className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
@@ -206,7 +208,7 @@ export default function SettingsProfilePage() {
                   className="pl-9"
                 />
               </div>
-              <p className="text-xs text-muted-foreground">제작자 프로필에 노출될 개인 웹사이트 주소입니다. (http:// 또는 https:// 포함)</p>
+              <p className="text-xs text-muted-foreground">{language === 'en' ? 'Personal website address to show on the creator profile (including http:// or https://).' : '제작자 프로필에 노출될 개인 웹사이트 주소입니다. (http:// 또는 https:// 포함)'}</p>
             </div>
           </CardContent>
 
@@ -219,10 +221,10 @@ export default function SettingsProfilePage() {
               {saving ? (
                 <>
                   <Loader2 className="size-4 animate-spin" />
-                  저장 중...
+                  {language === 'en' ? 'Saving...' : '저장 중...'}
                 </>
               ) : (
-                '저장하기'
+                language === 'en' ? 'Save' : '저장하기'
               )}
             </Button>
           </CardFooter>

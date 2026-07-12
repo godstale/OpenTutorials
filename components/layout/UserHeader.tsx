@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
@@ -10,12 +10,15 @@ import { usePathname } from 'next/navigation';
 import { useLearnLayout } from '@/lib/context/LearnLayoutContext';
 import { Button } from '@/components/ui/button';
 import { Columns3, Columns2, Layout } from 'lucide-react';
+import { useLanguage } from '@/lib/context/LanguageContext';
 
 export function UserHeader() {
   const [user, setUser] = useState<any>(null);
   const pathname = usePathname();
   const isLearnPage = pathname?.includes('/learn/');
   const { layout, setLayout } = useLearnLayout();
+  const { t, language } = useLanguage();
+  const isEnglish = language === 'en';
 
   useEffect(() => {
     const supabase = createClient();
@@ -47,7 +50,9 @@ export function UserHeader() {
               className="h-8 px-2.5 gap-1.5 text-xs font-medium transition-all duration-200"
             >
               <Columns3 className="h-4 w-4 text-muted-foreground" />
-              <span className="hidden sm:inline">3단 보기</span>
+              <span className="hidden sm:inline">
+                {isEnglish ? '3-Column' : '3단 보기'}
+              </span>
             </Button>
             <Button
               variant={layout === 'content-tutor' ? 'secondary' : 'ghost'}
@@ -56,7 +61,9 @@ export function UserHeader() {
               className="h-8 px-2.5 gap-1.5 text-xs font-medium transition-all duration-200"
             >
               <Columns2 className="h-4 w-4 text-muted-foreground rotate-180" />
-              <span className="hidden sm:inline">본문 + 튜터</span>
+              <span className="hidden sm:inline">
+                {isEnglish ? 'Content + Tutor' : '본문 + 튜터'}
+              </span>
             </Button>
             <Button
               variant={layout === 'toc-content' ? 'secondary' : 'ghost'}
@@ -65,7 +72,9 @@ export function UserHeader() {
               className="h-8 px-2.5 gap-1.5 text-xs font-medium transition-all duration-200"
             >
               <Columns2 className="h-4 w-4 text-muted-foreground" />
-              <span className="hidden sm:inline">목차 + 본문</span>
+              <span className="hidden sm:inline">
+                {isEnglish ? 'TOC + Content' : '목차 + 본문'}
+              </span>
             </Button>
             <Button
               variant={layout === 'content-only' ? 'secondary' : 'ghost'}
@@ -74,7 +83,9 @@ export function UserHeader() {
               className="h-8 px-2.5 gap-1.5 text-xs font-medium transition-all duration-200"
             >
               <Layout className="h-4 w-4 text-muted-foreground" />
-              <span className="hidden sm:inline">본문만</span>
+              <span className="hidden sm:inline">
+                {isEnglish ? 'Content Only' : '본문만'}
+              </span>
             </Button>
           </div>
         )}

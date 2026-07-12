@@ -1,7 +1,16 @@
 'use client';
 
-import { UserSidebar } from '@/components/layout/UserSidebar';
-import { UserHeader } from '@/components/layout/UserHeader';
+import dynamic from 'next/dynamic';
+
+const UserSidebar = dynamic(
+  () => import('@/components/layout/UserSidebar').then((mod) => mod.UserSidebar),
+  { ssr: false }
+);
+
+const UserHeader = dynamic(
+  () => import('@/components/layout/UserHeader').then((mod) => mod.UserHeader),
+  { ssr: false }
+);
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { Suspense } from 'react';
 import React from 'react';

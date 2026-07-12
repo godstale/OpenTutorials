@@ -790,5 +790,13 @@
     "output_token_size": 503,
     "user_message": "[시스템 점검] 현재 강좌 \"신경망과 LLM 개론\"의 학습 자료가 성공적으로 다운로드되고 분석되었는지 확인해 주세요. \n다운로드 주소: http://localhost:3000/api/courses/neutral-network-and-llm/resource\n사용자가 여러 강좌를 동시에 수강할 수 있으므로, 반드시 이 강좌를 위한 개별 폴더(예: workspaces/courses/neutral-network-and-llm 또는 이에 상응하는 고유 경로)를 생성하여 그 안에서 다운로드 및 분석 작업을 수행해 주셔야 합니다.\n만약 아직 강좌 파일을 다운로드하고 분석하는 작업이 완료되지 않았다면, 다른 학습 질문에 답하기 전에 이 작업을 가장 우선하여 완료하고 그 결과를 알려주세요.\n\n상태 확인 후, 답변의 마지막에 반드시 다음 형식의 히든 메시지를 포함해 주세요:\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": true} --> (다운로드 완료 시) 또는\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} --> (미완료 시)}",
     "assistant_message": "\n\n확인 결과, 아직 강좌 자료 다운로드가 완료되지 않았습니다.\n\n**상태 요약**\n- 강좌 전용 폴더: `/home/ubuntu/workspaces/courses/neutral-network-and-llm/` (이미 생성되어 있음)\n- 현재 폴더 내 파일: `status.md` (이전 다운로드 시도 기록) 만 있음\n- `resource.md` (강좌 본 파일): 아직 없음\n\n**다운로드 실패 원인 (지속)**\n강좌 자료를 제공하는 API 서버가 `http://localhost:3000` 에서 실행 중이지 않습니다 (connection refused).\n현재 열려 있는 서비스 포트는 8642(Hermes API), 9120(Dashboard), 9119(Nginx), 80, 22뿐이며, 3000번 포트는 수신 중이 아닙니다.\n\n**필요한 조치**\n로컬호스트 3000번 포트에서 PennyPress(강좌 API 서버)를 먼저 구동해 주셔야 다운로드가 가능합니다. 서버가 가동되면 말씀만 해 주세요 — 즉시 다운로드와 분석을 진행하겠습니다.\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} -->"
+  },
+  {
+    "timestamp": "2026-07-11T13:54:29.188Z",
+    "duration_ms": 13737,
+    "input_token_size": 61,
+    "output_token_size": 996,
+    "user_message": "강좌 본문에 \"FTDI 칩\" 이라는 단어가 나온다. FTDI 는 무엇의 줄임말인가? 어떤 역할을 하는가?",
+    "assistant_message": "\n\n연결 실패로 강좌 자료 서버에 접속할 수 없었습니다. 다만, 제가 가진 지식으로 답변드리겠습니다.\n\n**FTDI**는 **Future Technology Devices International**의 약자입니다. 영국에 본사를 둔 반도체 회사 이름이고요.\n\nFTDI 칩의 역할은 이렇습니다:\n\n아두이노 보드의 두뇌인 ATmega 칩(마이크로컨트롤러)은 **UART(Universal Asynchronous Receiver/Transmitter)**라는 방식으로 데이터를 주고받습니다. 그런데 PC의 USB 포트는 UART를 모르고, USB 프로토콜만 이해합니다. 즉, 두 장치가 서로 다른 언어를 쓰고 있는 거죠.\n\nFTDI 칩은 이 둘 사이의 **번역가** 역할을 합니다. 구체적으로:\n\n1. **USB 신호를 UART/Serial 신호로 변환** — PC가 보낸 USB 데이터를 아두이노가 이해할 수 있는 시리얼 데이터로 바꿔주고, 반대 방향도 마찬가지입니다.\n2. **전원 공급** — USB 케이블을 통해 아두이노에 5V 전원을 전달합니다.\n3. **통신 채널 제공** — 우리가 스케치에서 `Serial.print()` 함수를 쓰면 그 데이터가 FTDI 칩을 통해 PC의 시리얼 모니터에 표시됩니다.\n\n요약하자면, FTDI 칩 덕분에 우리는 USB 케이블 하나만 꽂으면 아두이노에 스케치를 업로드하고, 시리얼 모니터로 디버깅하고, 전원까지 공급받을 수 있는 겁니다. 아두이노가 USB 통신을 하는 데 있어서 없어서는 안 될 핵심 부품입니다.\n\n팁 하나: 아두이노 호환 보드(짝퉁)를 살 때는 FTDI 칩이 **CH340**나 **CP2102** 같은 다른 칩으로 대체된 경우가 많습니다. 이 경우 PC에 해당 칩용 드라이버를 별도로 설치해야 인식이 됩니다. 공식 아두이노 보드는 FTDI 칩 드라이버가 IDE에 포함되어 있어 별도 설치가 필요 없습니다.\n\n더 궁금한 점이 있으면 질문해주세요!\n\n<!-- HIDDEN_MESSAGE: {\"action\": \"download_status\", \"downloaded\": false} -->"
   }
 ]

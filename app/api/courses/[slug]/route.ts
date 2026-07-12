@@ -2,6 +2,8 @@ import { connection } from 'next/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
+import fs from 'fs';
+import path from 'path';
 
 export async function GET(
   request: NextRequest,
@@ -53,6 +55,12 @@ export async function GET(
       externalAgents = agentsData || [];
     }
 
+    let licenseFileExists = false;
+    if (pkg.license_file) {
+      const licensePath = path.join(process.cwd(), 'public', 'courses', slug, pkg.license_file);
+      licenseFileExists = fs.existsSync(licensePath);
+    }
+
     return NextResponse.json({
       ...pkg,
       sequential_play: pkg.sequential_play ?? false,
@@ -60,6 +68,7 @@ export async function GET(
       user_subscribed: userSubscribed,
       user_progress: userProgress,
       external_agents: externalAgents,
+      license_file_exists: licenseFileExists,
       // 하위 호환성을 위한 courses 빈 배열 폴백
       courses: []
     });

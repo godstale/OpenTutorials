@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useRef, useEffect } from 'react';
 import { 
@@ -12,6 +12,7 @@ import { Avatar } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import type { UserExternalAgent } from '@/lib/types';
 import { updateExternalAgent } from '@/lib/api/external-agents';
+import { useLanguage } from '@/lib/context/LanguageContext';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -380,6 +381,7 @@ function ChatMessageContent({ content }: { content: string }) {
 }
 
 export default function AgentChatTab({ agent }: AgentChatTabProps) {
+  const { t } = useLanguage();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -467,13 +469,13 @@ export default function AgentChatTab({ agent }: AgentChatTabProps) {
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(errorText || 'API 응답 오류가 발생했습니다.');
+        throw new Error(errorText || t('agentChatApiError'));
       }
 
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       if (!reader) {
-        throw new Error('응답 스트림을 열 수 없습니다.');
+        throw new Error(t('agentChatStreamError'));
       }
 
       let assistantContent = '';
@@ -546,7 +548,7 @@ export default function AgentChatTab({ agent }: AgentChatTabProps) {
         try {
           await updateExternalAgent(agent.id, { selected_model: detectedModel });
           window.dispatchEvent(new CustomEvent('agents-updated'));
-          setNotification(`에이전트의 활성 모델이 "${detectedModel}"(으)로 자동 업데이트되었습니다.`);
+          setNotification(t('agentChatModelUpdated').replace('{model}', detectedModel));
         } catch (e) {
           console.error('Failed to auto update agent model:', e);
         }
@@ -558,7 +560,7 @@ export default function AgentChatTab({ agent }: AgentChatTabProps) {
         console.log('Generation aborted by user');
       } else {
         console.error('Chat error:', err);
-        const errMsg = err instanceof Error ? err.message : '에이전트로부터 응답을 받는 도중 오류가 발생했습니다.';
+        const errMsg = err instanceof Error ? err.message : t('agentChatGenError');
         if (isMountedRef.current) {
           setError(errMsg);
         }
@@ -579,7 +581,7 @@ export default function AgentChatTab({ agent }: AgentChatTabProps) {
   };
 
   const handleClearChat = async () => {
-    if (window.confirm('대화 기록을 모두 초기화하시겠습니까?')) {
+    if (window.confirm(t('agentChatClearConfirm'))) {
       try {
         const response = await fetch(`/api/external-agents/${agent.id}/messages`, {
           method: 'DELETE',
@@ -589,11 +591,11 @@ export default function AgentChatTab({ agent }: AgentChatTabProps) {
           setError(null);
         } else {
           const errorData = await response.json();
-          setError(errorData.error || '대화 기록을 초기화하는 중 오류가 발생했습니다.');
+          setError(errorData.error || t('agentChatClearError'));
         }
       } catch (err) {
         console.error('Error clearing chat history:', err);
-        setError('대화 기록을 초기화하는 중 오류가 발생했습니다.');
+        setError(t('agentChatClearError'));
       }
     }
   };
@@ -606,9 +608,9 @@ export default function AgentChatTab({ agent }: AgentChatTabProps) {
   };
 
   const starterPrompts = [
-    { text: '현재 시스템 상태 검사', prompt: '현재 너의 에이전트 인스턴스 정보와 구동 환경 상태가 어떤지 요약해서 알려줘.' },
-    { text: '할 일 목록 정리', prompt: '마케팅 기획을 위한 분석 및 작업 플랜 목록을 간결한 테이블 형태로 작성해줘.' },
-    { text: '간단한 인사', prompt: '안녕하세요! 당신이 누구인지, 그리고 어떤 역할을 도와줄 수 있는지 간략히 소개해 주세요.' }
+    { text: t('agentChatStarter1'), prompt: t('agentChatStarter1Prompt') },
+    { text: t('agentChatStarter2'), prompt: t('agentChatStarter2Prompt') },
+    { text: t('agentChatStarter3'), prompt: t('agentChatStarter3Prompt') },
   ];
 
   return (
@@ -622,7 +624,7 @@ export default function AgentChatTab({ agent }: AgentChatTabProps) {
               ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' 
               : 'bg-zinc-500/10 text-zinc-500 dark:text-zinc-400 border-zinc-500/20'
           )}>
-            {agent.status === 'online' ? 'Connected' : 'Disconnected'}
+            {agent.status === 'online' ? t('agentChatConnected') : t('agentChatDisconnected')}
           </Badge>
         </div>
         
@@ -635,7 +637,7 @@ export default function AgentChatTab({ agent }: AgentChatTabProps) {
             className="h-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 gap-1.5 transition-all"
           >
             <Trash2 className="size-3.5" />
-            <span className="text-xs">대화 비우기</span>
+            <span className="text-xs">{t('agentChatClearBtn')}</span>
           </Button>
         )}
       </CardHeader>
@@ -668,14 +670,14 @@ export default function AgentChatTab({ agent }: AgentChatTabProps) {
             </div>
             
             <div className="space-y-2">
-              <h3 className="text-lg font-bold text-foreground">{agent.name}와 대화 시작</h3>
+              <h3 className="text-lg font-bold text-foreground">{t('agentChatStartTitle').replace('{name}', agent.name)}</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                로컬 또는 원격 인스턴스에 안전하게 연결되었습니다. 대화를 시작해 업무를 지시하거나 AI Agent의 상태를 확인해 보세요.
+                {t('agentChatStartDesc')}
               </p>
             </div>
 
             <div className="grid gap-3 w-full pt-4">
-              <span className="text-xs font-semibold text-zinc-400 text-left px-1 uppercase tracking-wider">추천 대화 시작하기</span>
+              <span className="text-xs font-semibold text-zinc-400 text-left px-1 uppercase tracking-wider">{t('agentChatStarterLabel')}</span>
               {starterPrompts.map((starter, i) => (
                 <button
                   key={i}
@@ -755,7 +757,7 @@ export default function AgentChatTab({ agent }: AgentChatTabProps) {
               <div className="rounded-xl border border-destructive/20 bg-destructive/5 dark:bg-destructive/10 p-4 text-center max-w-md mx-auto space-y-2 shadow-sm animate-fade-in">
                 <p className="text-xs text-destructive font-semibold flex items-center justify-center gap-1.5">
                   <AlertTriangle className="size-4" />
-                  응답 수신 오류
+                  {t('agentChatErrorTitle')}
                 </p>
                 <p className="text-xs text-muted-foreground leading-normal">{error}</p>
               </div>
@@ -777,7 +779,7 @@ export default function AgentChatTab({ agent }: AgentChatTabProps) {
             className="mx-auto rounded-full border-border/80 bg-white dark:bg-zinc-950 text-xs px-4 py-1.5 shadow-sm hover:bg-zinc-50 dark:hover:bg-zinc-900 hover:text-rose-600 hover:border-rose-200/50 flex items-center gap-1.5 active:scale-95 transition-all"
           >
             <StopCircle className="size-4 text-rose-500" />
-            답변 생성 중단
+            {t('agentChatStopBtn')}
           </Button>
         )}
 
@@ -787,7 +789,7 @@ export default function AgentChatTab({ agent }: AgentChatTabProps) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyPress}
-            placeholder={agent.status === 'online' ? "에이전트에게 전할 메시지를 입력하세요... (Enter로 전송)" : "에이전트가 오프라인 상태입니다."}
+            placeholder={agent.status === 'online' ? t('agentChatPlaceholderOnline') : t('agentChatPlaceholderOffline')}
             disabled={agent.status !== 'online' || isGenerating}
             className="flex-1 min-h-[48px] max-h-[160px] py-3.5 px-4 pr-12 rounded-xl bg-white dark:bg-zinc-900 border border-border/80 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary/50 resize-none shadow-inner text-sm transition-all"
           />

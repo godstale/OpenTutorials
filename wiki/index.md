@@ -9,6 +9,10 @@
 
 | 슬러그 | 제목 | 인제스트 날짜 |
 |--------|------|--------------|
+| [2026-07-12-cors-preflight-bugfix](sources/2026-07-12-cors-preflight-bugfix.md) | GitHub 강좌 목록 fetch 시 CORS Preflight(OPTIONS) 오류 해결 | 2026-07-12 |
+| [2026-07-12-neural-network-course-missing-fix](sources/2026-07-12-neural-network-course-missing-fix.md) | 강좌 검색 화면 및 상세 화면 내 "신경망과 LLM 개론" 강좌 미노출 해결 | 2026-07-12 |
+| [2026-07-12-course-list-cache-bugfix](sources/2026-07-12-course-list-cache-bugfix.md) | GitHub 강좌 목록(courses.json) 캐싱 방지 및 버저닝 오류 해결 | 2026-07-12 |
+| [2026-07-11-course-search-error-and-ui-cleanup](sources/2026-07-11-course-search-error-and-ui-cleanup.md) | 강좌 검색창 에러 처리 및 UI 개선 | 2026-07-11 |
 | [2026-07-05-video-card-content-not-rendering-fix](sources/2026-07-05-video-card-content-not-rendering-fix.md) | 비디오 카드 컨텐츠 영역에 원본 JSON 텍스트가 출력되던 문제 근본 해결 (과거 위키 기록이 미적용 작업을 완료로 오기재했던 정황 포함) | 2026-07-05 |
 | [2026-07-05-react-player-v3-api-migration-fix](sources/2026-07-05-react-player-v3-api-migration-fix.md) | react-player v3 API 마이그레이션 불일치로 인한 동영상 강좌 재생 불가 문제 해결 | 2026-07-05 |
 | [2026-07-05-release-preparation-archiving-documentation](sources/2026-07-05-release-preparation-archiving-documentation.md) | Open Tutorials 배포 준비 및 아카이빙 작업 상세 | 2026-07-05 |

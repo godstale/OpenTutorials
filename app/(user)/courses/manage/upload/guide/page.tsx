@@ -65,15 +65,21 @@ export default function MigrationGuidePage() {
   "title": "마케팅 에이전트 마스터",
   "slug": "marketing-integrated-course",
   "description": "통합 마케팅 강좌입니다.",
+  "author": {
+    "nickname": "Kailash",
+    "email": "godstale@hotmail.com",
+    "website": "https://hardcopyworld.com"
+  },
   "thumbnail": "./thumbnail.png",
   "published": true,
   "sequential_play": false,
   "force_checkpoint": false,
   "version": "1.0.0",
   "changelog": "최초 릴리즈",
-  "bundler_protocol_version": "1.0.0",
-  "target_age": "성인",
+  "bundler_protocol_version": "1.1.3",
+  "target_age": "18+",
   "category": "Marketing",
+  "license": "CC-BY-4.0",
   "courses": [
     { "slug": "marketing-basic-1" },
     { "slug": "marketing-strategy-2" }
@@ -105,7 +111,7 @@ export default function MigrationGuidePage() {
             </p>
             <ul className="list-disc pl-5 space-y-1.5 text-zinc-600 dark:text-zinc-400 text-xs leading-relaxed">
               <li>
-                <code className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-850 rounded">package-manifest.json</code>에 <code className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-850 rounded">bundler_protocol_version</code> (예: &quot;1.0.0&quot;), <code className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-850 rounded">target_age</code>, <code className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-850 rounded">category</code> 필드가 필수적으로 포함되어야 합니다.
+                <code className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-850 rounded">package-manifest.json</code>에 <code className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-850 rounded">bundler_protocol_version</code> (예: &quot;1.1.3&quot;), <code className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-850 rounded">target_age</code>, <code className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-850 rounded">category</code> 및 작성자 정보인 <code className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-850 rounded">author</code> (nickname 필수) 객체 필드가 필수적으로 포함되어야 합니다.
               </li>
               <li>
                 <code className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-850 rounded">config.json</code>의 <code>cards</code> 배열에 있는 모든 파일은 실제로 <code className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-850 rounded">cards/</code> 디렉토리 안에 <code className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-850 rounded">.md</code> 또는 <code className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-850 rounded">.mdx</code>로 존재해야 합니다.
@@ -115,6 +121,9 @@ export default function MigrationGuidePage() {
               </li>
               <li>
                 TOC 노드 제목이 파일명과 완전히 같거나, 설명이 <code className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-850 rounded">&quot;강좌 상세 카드를 확인하세요.&quot;</code>와 같은 기본 설명인 경우 검증이 실패합니다.
+              </li>
+              <li>
+                <code className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-850 rounded">license</code> 필드를 생략하면 기본값인 <code className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-850 rounded">all-rights-reserved</code>가 적용되며, <code className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-850 rounded">custom</code>으로 지정하는 경우에는 전문 파일명을 지칭하는 <code className="px-1 py-0.5 bg-zinc-100 dark:bg-zinc-850 rounded">license_file</code> (예: &quot;LICENSE.md&quot;) 필드가 필수이며 해당 파일이 ZIP 루트에 동봉되어 있어야 합니다.
               </li>
             </ul>
           </div>
