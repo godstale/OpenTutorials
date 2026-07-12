@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ import { useAgentSettings } from '@/hooks/use-agent-settings';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import dynamic from 'next/dynamic';
 import { useLearnLayout } from '@/lib/context/LearnLayoutContext';
+import { useLanguage } from '@/lib/context/LanguageContext';
 
 // react-player renders custom elements (e.g. <youtube-video>) that reference `document` at module load time, so it must be client-only.
 const ReactPlayer = dynamic(() => import('react-player'), { ssr: false });
@@ -514,7 +515,12 @@ function buildSystemPrompt({
     }
   }
 
-  const targetAge = coursePackage?.target_age || '전연령';
+  const rawTargetAge = coursePackage?.target_age || 'all';
+  const targetAge = rawTargetAge === 'all' 
+    ? 'All Ages (전연령)' 
+    : rawTargetAge.endsWith('+') 
+      ? `${rawTargetAge.slice(0, -1)} years and older (${rawTargetAge.slice(0, -1)}세 이상)` 
+      : `${rawTargetAge} years old (${rawTargetAge}세)`;
   const category = coursePackage?.category || 'General';
   const tags = coursePackage?.tags?.join(', ') || 'None';
   const totalCards = cards.length;
@@ -858,6 +864,7 @@ export default function LearnPageClient({
 }: LearnPageClientProps) {
   const router = useRouter();
   const { layout } = useLearnLayout();
+  const { t, language } = useLanguage();
   const { maxTokens, compressionThreshold } = useAgentSettings();
   const totalCards = cards.length;
   const [currentCardIndex, setCurrentCardIndex] = useState(initialCardIndex);
@@ -1019,7 +1026,7 @@ export default function LearnPageClient({
 
   const handleSelectCard = (idx: number) => {
     if (isCheckpointMode) {
-      const confirmSkip = window.confirm('체크포인트 QnA가 진행 중입니다. 건너뛰고 다른 카드로 이동하시겠습니까?');
+      const confirmSkip = window.confirm(language === 'en' ? 'Checkpoint QnA is in progress. Do you want to skip and move to another card?' : '체크포인트 QnA가 진행 중입니다. 건너뛰고 다른 카드로 이동하시겠습니까?');
       if (!confirmSkip) return;
       setIsCheckpointMode(false);
       setActiveCheckpoint(null);
@@ -1040,7 +1047,7 @@ export default function LearnPageClient({
     setMessages(prev => [...prev, {
       id: generateUniqueId(),
       role: 'agent',
-      content: '체크포인트를 건너뛰었습니다. 다음 단계로 진행하실 수 있습니다.'
+      content: language === 'en' ? 'Skipped checkpoint. You can proceed to the next step.' : '체크포인트를 건너뛰었습니다. 다음 단계로 진행하실 수 있습니다.'
     }]);
 
     const nextIdx = currentCardIndex + 1;
@@ -1076,7 +1083,7 @@ Please ask the student the question now. Only ask the question itself, do not re
           handleSkipCheckpoint();
           return;
         }
-        alert('현재 체크포인트 QnA가 진행 중입니다. 오른쪽 AI 튜터의 질문에 답변하여 통과해야 다음 단계로 갈 수 있습니다.');
+        alert(language === 'en' ? "Checkpoint QnA is currently in progress. You must answer the AI Tutor's question on the right to pass and proceed to the next step." : '현재 체크포인트 QnA가 진행 중입니다. 오른쪽 AI 튜터의 질문에 답변하여 통과해야 다음 단계로 갈 수 있습니다.');
         return;
       }
       
@@ -1256,9 +1263,23 @@ Please ask the student the question now. Only ask the question itself, do not re
     }
   };
   
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    { id: '1', role: 'agent', content: `안녕하세요! "${course?.title || '강좌'}" 학습을 도와줄 AI 튜터입니다. 궁금한 점이 있다면 언제든 물어보세요.`, timestamp: getFormattedTime() }
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+
+  useEffect(() => {
+    if (messages.length === 0 && course?.title) {
+      setMessages([
+        {
+          id: '1',
+          role: 'agent',
+          content: language === 'en' 
+            ? `Hello! I am your AI Tutor for the course "${course?.title || 'Course'}". Please feel free to ask any questions.` 
+            : `안녕하세요! "${course?.title || '강좌'}" 학습을 도와줄 AI 튜터입니다. 궁금한 점이 있다면 언제든 물어보세요.`,
+          timestamp: getFormattedTime()
+        }
+      ]);
+    }
+  }, [ course, messages.length, t]);
+
   const [input, setInput] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [promptUsage, setPromptUsage] = useState<number | null>(null);
@@ -1313,7 +1334,9 @@ Please ask the student the question now. Only ask the question itself, do not re
         {
           id: '1',
           role: 'agent',
-          content: `안녕하세요! "${course?.title || '강좌'}" 학습을 도와줄 AI 튜터입니다. 궁금한 점이 있다면 언제든 물어보세요.`,
+          content: language === 'en' 
+            ? `Hello! I am your AI Tutor for the course "${course?.title || 'Course'}". Please feel free to ask any questions.` 
+            : `안녕하세요! "${course?.title || '강좌'}" 학습을 도와줄 AI 튜터입니다. 궁금한 점이 있다면 언제든 물어보세요.`,
           timestamp: getFormattedTime()
         }
       ]);
@@ -1747,10 +1770,10 @@ Please ask the student the question now. Only ask the question itself, do not re
       }
     } catch (err: unknown) {
       console.error('Failed to chat with agent:', err);
-      const errorMessage = err instanceof Error ? err.message : '알 수 없는 오류';
+      const errorMessage = err instanceof Error ? err.message : (language === 'en' ? 'Unknown error' : '알 수 없는 오류');
       if (!isSystemCheck) {
         setMessages(prev => prev.map(m => 
-          m.id === assistantMsgId ? { ...m, content: `답변 생성 중 오류가 발생했습니다: ${errorMessage}` } : m
+          m.id === assistantMsgId ? { ...m, content: language === 'en' ? `An error occurred while generating answer: ${errorMessage}` : `답변 생성 중 오류가 발생했습니다: ${errorMessage}` } : m
         ));
       }
     }
@@ -1759,7 +1782,14 @@ Please ask the student the question now. Only ask the question itself, do not re
   const handleClearChat = async () => {
     if (isCompressing) return;
     setMessages([
-      { id: '1', role: 'agent', content: `안녕하세요! "${course?.title || '강좌'}" 학습을 도와줄 AI 튜터입니다. 궁금한 점이 있다면 언제든 물어보세요.`, timestamp: getFormattedTime() }
+      { 
+        id: '1', 
+        role: 'agent', 
+        content: language === 'en' 
+          ? `Hello! I am your AI Tutor for the course "${course?.title || 'Course'}". Please feel free to ask any questions.` 
+          : `안녕하세요! "${course?.title || '강좌'}" 학습을 도와줄 AI 튜터입니다. 궁금한 점이 있다면 언제든 물어보세요.`, 
+        timestamp: getFormattedTime() 
+      }
     ]);
     setPromptUsage(null);
     if (agentId) {
@@ -2007,15 +2037,21 @@ ${historyText}`;
         >
         <div className="p-4 border-b shrink-0 flex items-center justify-between">
           <h3 className="font-bold text-sm text-foreground flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-primary" /> 강좌 목차
+            <BookOpen className="w-4 h-4 text-primary" /> {t('courseCurriculum')}
           </h3>
         </div>
         
         {/* Progress Bar */}
         <div className="px-4 py-3 border-b bg-muted/20 shrink-0">
           <div className="flex justify-between items-center text-xs text-muted-foreground mb-1.5 font-medium">
-            <span>학습 진도</span>
-            <span>{maxUnlockedIndex + 1} / {totalCards} 해제 ({Math.round(((maxUnlockedIndex + 1) / totalCards) * 100)}%)</span>
+            <span>{t('learningStatus')}</span>
+            <span>
+              {language === 'en' ? (
+                `Unlocked ${maxUnlockedIndex + 1} / ${totalCards} (${Math.round(((maxUnlockedIndex + 1) / totalCards) * 100)}%)`
+              ) : (
+                `${maxUnlockedIndex + 1} / ${totalCards} 해제 (${Math.round(((maxUnlockedIndex + 1) / totalCards) * 100)}%)`
+              )}
+            </span>
           </div>
           <div className="w-full bg-zinc-200 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
             <div 
@@ -2094,7 +2130,7 @@ ${historyText}`;
           <div className="absolute inset-0 z-20 bg-background flex flex-col">
             <div className="p-4 border-b shrink-0 flex items-center justify-between">
               <h3 className="font-bold text-sm text-foreground flex items-center gap-2">
-                <Captions className="w-4 h-4 text-primary" /> 자막 탐색
+                <Captions className="w-4 h-4 text-primary" /> {language === 'en' ? 'Subtitle Navigation' : '자막 탐색'}
               </h3>
               <Button
                 variant="ghost"
@@ -2153,10 +2189,10 @@ ${historyText}`;
           <div className="flex items-center gap-4">
             <span className="text-sm bg-primary/10 text-primary px-2 py-1 rounded">Card {currentCardIndex + 1}</span>
             <h1 className="text-xl font-bold flex items-center gap-2">
-              {cards[currentCardIndex]?.title || `학습 콘텐츠 (카드 ${currentCardIndex + 1})`}
+              {cards[currentCardIndex]?.title || (language === 'en' ? `Learning Content (Card ${currentCardIndex + 1})` : `학습 콘텐츠 (카드 ${currentCardIndex + 1})`)}
               {isPreview && (
                 <Badge variant="destructive" className="bg-rose-500 hover:bg-rose-600 text-white font-semibold text-xs py-0.5 px-2 animate-pulse">
-                  미리보기 모드
+                  {language === 'en' ? 'Preview Mode' : '미리보기 모드'}
                 </Badge>
               )}
             </h1>
@@ -2168,7 +2204,7 @@ ${historyText}`;
                 size="sm"
                 onClick={() => setIsSubtitlePopupOpen(true)}
               >
-                <Captions className="w-4 h-4 mr-2" /> 자막 탐색
+                <Captions className="w-4 h-4 mr-2" /> {language === 'en' ? 'Subtitle Navigation' : '자막 탐색'}
               </Button>
             )}
           </div>
@@ -2199,12 +2235,12 @@ ${historyText}`;
                       </div>
                     </div>
                   ) : (
-                    <div className="whitespace-pre-wrap text-destructive">동영상 정보를 불러올 수 없습니다.</div>
+                    <div className="whitespace-pre-wrap text-destructive">{language === 'en' ? 'Failed to load video info.' : '동영상 정보를 불러올 수 없습니다.'}</div>
                   )
                 ) : activeCard?.mdxSource ? (
                   <MDXRemote {...activeCard.mdxSource} components={mdxComponents} />
                 ) : (
-                  <div className="whitespace-pre-wrap">{activeCard?.content || '콘텐츠가 없습니다.'}</div>
+                  <div className="whitespace-pre-wrap">{activeCard?.content || (language === 'en' ? 'No content.' : '콘텐츠가 없습니다.')}</div>
                 )}
               </div>
             </Card>
@@ -2217,7 +2253,7 @@ ${historyText}`;
             onClick={() => handleSelectCard(Math.max(0, currentCardIndex - 1))}
             disabled={currentCardIndex === 0}
           >
-            <ChevronLeft className="w-4 h-4 mr-2" /> 이전
+            <ChevronLeft className="w-4 h-4 mr-2" /> {language === 'en' ? 'Prev' : '이전'}
           </Button>
           <span className="text-sm text-muted-foreground">{currentCardIndex + 1} / {totalCards}</span>
           <Button 
@@ -2228,11 +2264,11 @@ ${historyText}`;
           >
             {hasCheckpoint ? (
               <>
-                체크포인트 <Lock className="w-4 h-4 ml-2" />
+                {language === 'en' ? 'Checkpoint' : '체크포인트'} <Lock className="w-4 h-4 ml-2" />
               </>
             ) : (
               <>
-                {currentCardIndex < totalCards - 1 ? '다음' : '완료'} <ChevronRight className="w-4 h-4 ml-2" />
+                {currentCardIndex < totalCards - 1 ? (language === 'en' ? 'Next' : '다음') : (language === 'en' ? 'Complete' : '완료')} <ChevronRight className="w-4 h-4 ml-2" />
               </>
             )}
           </Button>
@@ -2257,7 +2293,7 @@ ${historyText}`;
         >
         {isCheckpointMode && activeCheckpoint && (
           <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2.5 text-xs text-amber-800 dark:text-amber-400 flex items-center justify-between shrink-0">
-            <span className="font-medium flex items-center gap-1">⚠️ 강좌 체크포인트 QnA 진행 중</span>
+            <span className="font-medium flex items-center gap-1">⚠️ {language === 'en' ? 'Course Checkpoint QnA in progress' : '강좌 체크포인트 QnA 진행 중'}</span>
             {canSkipCheckpoint && (
               <Button
                 variant="ghost"
@@ -2265,7 +2301,7 @@ ${historyText}`;
                 className="h-7 text-[10px] text-amber-700 hover:text-amber-800 dark:text-amber-300 dark:hover:text-amber-200 p-1 hover:bg-amber-500/20"
                 onClick={handleSkipCheckpoint}
               >
-                QnA 건너뛰기
+                {language === 'en' ? 'Skip QnA' : 'QnA 건너뛰기'}
               </Button>
             )}
           </div>
@@ -2276,23 +2312,23 @@ ${historyText}`;
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold flex items-center gap-1.5">
-              AI 튜터 (외부 에이전트)
+              {language === 'en' ? 'AI Tutor (External)' : 'AI 튜터 (외부 에이전트)'}
               {isCheckpointMode && (
                 <span className="text-[10px] bg-amber-500/10 text-amber-600 border border-amber-500/20 px-1.5 py-0.5 rounded font-medium animate-pulse">
-                  체크포인트 QnA
+                  {language === 'en' ? 'Checkpoint QnA' : '체크포인트 QnA'}
                 </span>
               )}
             </h3>
             <div className="flex flex-col gap-1">
               {agentStatus === 'loading' ? (
                 <span className="flex items-center gap-1 text-xs text-muted-foreground animate-pulse">
-                  에이전트 확인 중...
+                  {language === 'en' ? 'Checking agent...' : '에이전트 확인 중...'}
                 </span>
               ) : agentStatus === 'online' ? (
                 <div className="flex flex-col gap-1.5">
                   <span className="flex items-center gap-1 text-xs text-green-500">
                     <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                    온라인 - 맞춤 학습 모드
+                    {language === 'en' ? 'Online - Custom Learning' : '온라인 - 맞춤 학습 모드'}
                   </span>
                   
                   {/* 강좌 자료 다운로드 상태 추가 (Ollama, LM Studio 등 LLM 에이전트가 아닌 경우에만 렌더링) */}
@@ -2312,7 +2348,7 @@ ${historyText}`;
                             <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
                           </span>
-                          자료 준비 완료
+                          {language === 'en' ? 'Resources Ready' : '자료 준비 완료'}
                         </span>
                       ) : courseDownloadStatus === 'not_downloaded' ? (
                         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-600 border border-amber-500/20 w-fit animate-pulse">
@@ -2320,12 +2356,12 @@ ${historyText}`;
                             <span className="absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75 animate-ping"></span>
                             <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
                           </span>
-                          자료 다운로드 오류/미완료
+                          {language === 'en' ? 'Resources Error/Incomplete' : '자료 다운로드 오류/미완료'}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-600 border border-amber-500/20 w-fit animate-pulse">
                           <Loader2 className="w-3 h-3 animate-spin text-amber-500" />
-                          자료 준비 상태 확인 중...
+                          {language === 'en' ? 'Checking resources status...' : '자료 준비 상태 확인 중...'}
                         </span>
                       )}
                     </>
@@ -2334,12 +2370,12 @@ ${historyText}`;
               ) : agentStatus === 'offline' ? (
                 <span className="flex items-center gap-1 text-xs text-yellow-500">
                   <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
-                  오프라인 - 연결 대기중
+                  {language === 'en' ? 'Offline - Waiting for connection' : '오프라인 - 연결 대기중'}
                 </span>
               ) : (
                 <span className="flex items-center gap-1 text-xs text-destructive">
                   <span className="w-2 h-2 rounded-full bg-destructive"></span>
-                  미연동 - 설정 필요
+                  {language === 'en' ? 'No connection - Setup required' : '미연동 - 설정 필요'}
                 </span>
               )}
             </div>
@@ -2348,7 +2384,7 @@ ${historyText}`;
             <Button
               variant="ghost"
               size="icon"
-              title="채팅 지우기 (대화 기록 초기화)"
+              title={language === 'en' ? 'Clear History' : '채팅 지우기 (대화 기록 초기화)'}
               onClick={handleClearChat}
               disabled={isCompressing}
               className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
@@ -2402,12 +2438,12 @@ ${historyText}`;
                             {copiedId === msg.id ? (
                               <>
                                 <Check className="w-3 h-3 text-green-500" />
-                                <span className="text-green-500 font-medium">복사됨</span>
+                                <span className="text-green-500 font-medium">{language === 'en' ? 'Copied' : '복사됨'}</span>
                               </>
                             ) : (
                               <>
                                 <Copy className="w-3 h-3" />
-                                <span>복사</span>
+                                <span>{language === 'en' ? 'Copy' : '복사'}</span>
                               </>
                             )}
                           </button>
@@ -2437,10 +2473,10 @@ ${historyText}`;
               }}
               placeholder={
                 isCompressing 
-                  ? "히스토리를 자동으로 압축하는 중입니다..." 
+                  ? (language === 'en' ? 'Automatically compressing conversation history...' : '히스토리를 자동으로 압축하는 중입니다...') 
                   : promptUsage !== null 
-                    ? `질문을 입력하세요. [프롬프트 사용량: ${promptUsage}%]` 
-                    : "질문을 입력하세요..."
+                    ? (language === 'en' ? `Ask a question. [Prompt Usage: ${promptUsage}%]` : `질문을 입력하세요. [프롬프트 사용량: ${promptUsage}%]`) 
+                    : (language === 'en' ? 'Ask a question...' : '질문을 입력하세요...')
               }
               disabled={isCompressing}
               className="resize-none pr-12 h-20 bg-muted/50 focus-visible:ring-primary disabled:opacity-50"
@@ -2457,7 +2493,7 @@ ${historyText}`;
             {agentStatus === 'none' ? (
               <p className="mt-2 text-center text-[10px] text-muted-foreground">
                 <span className="cursor-pointer text-primary hover:underline" onClick={() => router.push('/settings')}>
-                  에이전트가 연동되지 않았습니다. 설정으로 이동하기
+                  {language === 'en' ? 'No agent is connected. Go to settings' : '에이전트가 연동되지 않았습니다. 설정으로 이동하기'}
                 </span>
               </p>
             ) : (
@@ -2473,12 +2509,22 @@ ${historyText}`;
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-amber-600 dark:text-amber-500 font-bold">
               <Lock className="w-5 h-5 text-amber-600 dark:text-amber-500 animate-bounce" />
-              체크포인트 안내
+              {language === 'en' ? 'Checkpoint Info' : '체크포인트 안내'}
             </DialogTitle>
             <DialogDescription className="pt-2 text-sm text-foreground/80 leading-relaxed font-normal">
-              이 단계에는 다음 학습으로 진행하기 전 핵심 내용을 점검하는 <strong className="font-semibold text-amber-600 dark:text-amber-500">체크포인트</strong>가 설정되어 있습니다.
-              <br /><br />
-              우측 <strong className="font-semibold text-foreground">AI 튜터 창</strong>에서 질의응답(QnA)이 시작됩니다. AI 튜터의 질문에 올바르게 답변하여 <strong className="font-semibold text-amber-600 dark:text-amber-500">평가를 통과해야만</strong> 다음 강좌를 보실 수 있습니다.
+              {language === 'en' ? (
+                <>
+                  This stage has a <strong className="font-semibold text-amber-600 dark:text-amber-500">checkpoint</strong> to review key content before proceeding to the next lesson.
+                  <br /><br />
+                  A Q&A session will start in the <strong className="font-semibold text-foreground">AI Tutor panel</strong> on the right. You must answer the AI Tutor's questions correctly and <strong className="font-semibold text-amber-600 dark:text-amber-500">pass the evaluation</strong> to unlock the next card.
+                </>
+              ) : (
+                <>
+                  이 단계에는 다음 학습으로 진행하기 전 핵심 내용을 점검하는 <strong className="font-semibold text-amber-600 dark:text-amber-500">체크포인트</strong>가 설정되어 있습니다.
+                  <br /><br />
+                  우측 <strong className="font-semibold text-foreground">AI 튜터 창</strong>에서 질의응답(QnA)이 시작됩니다. AI 튜터의 질문에 올바르게 답변하여 <strong className="font-semibold text-amber-600 dark:text-amber-500">평가를 통과해야만</strong> 다음 강좌를 보실 수 있습니다.
+                </>
+              )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-4 flex gap-2 justify-between items-center w-full">
@@ -2491,7 +2537,7 @@ ${historyText}`;
                 }}
                 className="text-amber-700 hover:text-amber-800 dark:text-amber-300 hover:bg-amber-500/10 font-semibold text-xs"
               >
-                체크포인트 건너뛰기
+                {language === 'en' ? 'Skip Checkpoint' : '체크포인트 건너뛰기'}
               </Button>
             ) : (
               <div />
@@ -2501,7 +2547,7 @@ ${historyText}`;
                 variant="outline"
                 onClick={() => setShowCheckpointDialog(false)}
               >
-                닫기
+                {language === 'en' ? 'Close' : '닫기'}
               </Button>
               <Button
                 className="bg-amber-600 hover:bg-amber-700 text-white dark:bg-amber-600 dark:hover:bg-amber-700"
@@ -2520,7 +2566,7 @@ ${historyText}`;
                   }
                 }}
               >
-                QnA 시작하기
+                {language === 'en' ? 'Start Q&A' : 'QnA 시작하기'}
               </Button>
             </div>
           </DialogFooter>
@@ -2533,15 +2579,27 @@ ${historyText}`;
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold">
               <CheckCircle2 className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-              강좌 완료!
+              {language === 'en' ? 'Course Completed!' : '강좌 완료!'}
             </DialogTitle>
             <DialogDescription className="pt-2 text-sm text-foreground/80 leading-relaxed font-normal">
-              축하합니다! 현재 강좌를 성공적으로 완료하셨습니다.
-              <br /><br />
-              이어서 다음 패키지 강좌를 진행하시겠습니까?
+              {language === 'en' ? (
+                <>
+                  Congratulations! You have successfully completed the current course.
+                  <br /><br />
+                  Would you like to proceed to the next package course?
+                </>
+              ) : (
+                <>
+                  축하합니다! 현재 강좌를 성공적으로 완료하셨습니다.
+                  <br /><br />
+                  이어서 다음 패키지 강좌를 진행하시겠습니까?
+                </>
+              )}
               {nextCourseInPackage && (
                 <div className="mt-3 p-3 bg-indigo-50 dark:bg-indigo-950/30 rounded-lg border border-indigo-100 dark:border-indigo-900 text-indigo-950 dark:text-indigo-200">
-                  <span className="text-xs font-semibold block text-indigo-600 dark:text-indigo-400">다음 강좌</span>
+                  <span className="text-xs font-semibold block text-indigo-600 dark:text-indigo-400">
+                    {language === 'en' ? 'Next Course' : '다음 강좌'}
+                  </span>
                   <span className="font-semibold text-sm">{nextCourseInPackage.title}</span>
                 </div>
               )}
@@ -2556,7 +2614,7 @@ ${historyText}`;
               }}
               className="flex-1"
             >
-              로드맵 상세 보기
+              {language === 'en' ? 'View Roadmap Details' : '로드맵 상세 보기'}
             </Button>
             <Button
               className="bg-indigo-600 hover:bg-indigo-700 text-white flex-1"
@@ -2569,7 +2627,7 @@ ${historyText}`;
                 }
               }}
             >
-              다음 강좌 학습하기
+              {language === 'en' ? 'Learn Next Course' : '다음 강좌 학습하기'}
             </Button>
           </DialogFooter>
         </DialogContent>

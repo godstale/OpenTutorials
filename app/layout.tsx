@@ -4,6 +4,7 @@ import localFont from 'next/font/local';
 import { ThemeProvider } from 'next-themes';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ToastProvider } from '@/components/ui/toast';
+import { LanguageProvider } from '@/lib/context/LanguageContext';
 import { cn } from '@/lib/utils';
 import './globals.css';
  
@@ -54,11 +55,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-w-[1024px] font-sans antialiased">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <TooltipProvider>
-            <ToastProvider>
-              {children}
-            </ToastProvider>
-          </TooltipProvider>
+          <LanguageProvider>
+            <TooltipProvider>
+              <ToastProvider>
+                {children}
+              </ToastProvider>
+            </TooltipProvider>
+          </LanguageProvider>
         </ThemeProvider>
       </body>
     </html>

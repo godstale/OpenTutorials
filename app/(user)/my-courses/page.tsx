@@ -5,10 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BookOpen, Award, Compass, FolderOpen, Bot } from 'lucide-react';
+import { BookOpen, Award, Compass, FolderOpen, Bot, User } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { createClient } from '@/lib/supabase/client';
+import { useLanguage } from '@/lib/context/LanguageContext';
 
 interface ProgressItem {
   id: string;
@@ -35,6 +36,7 @@ interface PackageSubscriptionItem {
     description: string;
     thumbnail: string | null;
     agent_id?: string | null;
+    author_nickname?: string | null;
   };
 }
 
@@ -44,6 +46,7 @@ export default function MyCoursesPage() {
   const [packageSubscriptions, setPackageSubscriptions] = useState<PackageSubscriptionItem[]>([]);
   const [agents, setAgents] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t, language } = useLanguage();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -97,12 +100,12 @@ export default function MyCoursesPage() {
     <div className="flex flex-col gap-8 w-full max-w-6xl mx-auto pt-1 pb-8">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">나의 강좌</h2>
-          <p className="text-muted-foreground mt-2">수강 중인 강좌의 진도와 완료 상태를 확인하세요.</p>
+          <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">{t('myCourses')}</h2>
+          <p className="text-muted-foreground mt-2">{t('myCoursesDesc')}</p>
         </div>
         <Button onClick={() => router.push('/courses')} className="text-white shadow-sm">
           <BookOpen className="w-4 h-4 mr-2" />
-          새 강좌 찾기
+          {t('findNewCourses')}
         </Button>
       </div>
 
@@ -116,10 +119,10 @@ export default function MyCoursesPage() {
         <Tabs defaultValue="active" className="w-full">
           <TabsList className="grid w-full max-w-md grid-cols-2 mb-8">
             <TabsTrigger value="active">
-              수강중인 강좌 ({activePackages.length})
+              {t('coursesEnrolled')} ({activePackages.length})
             </TabsTrigger>
             <TabsTrigger value="completed">
-              완료한 강좌 ({completedPackages.length})
+              {t('coursesCompleted')} ({completedPackages.length})
             </TabsTrigger>
           </TabsList>
 
@@ -144,18 +147,32 @@ export default function MyCoursesPage() {
                           <h4 className="font-semibold text-zinc-900 dark:text-zinc-50 line-clamp-1">{pkg.title}</h4>
                         </div>
                         <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{pkg.description}</p>
-                        {assignedAgent && (
-                          <div className="flex items-center gap-1.5 mt-2.5 text-xs font-medium text-green-700 dark:text-green-300">
-                            <Bot className="w-3.5 h-3.5 shrink-0" />
-                            <span className="truncate">{assignedAgent.name}</span>
-                          </div>
-                        )}
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2.5">
+                          {pkg.author_nickname && (
+                            <div className="flex items-center gap-1 text-[11px] text-zinc-500">
+                              <User className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                              <span className="truncate">{pkg.author_nickname}</span>
+                            </div>
+                          )}
+                          {assignedAgent && (
+                            <div className="flex items-center gap-1 text-[11px] font-medium text-green-700 dark:text-green-300">
+                              <Bot className="w-3.5 h-3.5 shrink-0" />
+                              <span className="truncate">{assignedAgent.name}</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       <div className="space-y-2 mt-2">
                         <div className="flex justify-between text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                          <span>로드맵 달성도</span>
-                          <span>총 {sub.total_courses}개 중 {sub.completed_courses}개 완료 ({percent}%)</span>
+                          <span>{t('roadmapAchievement')}</span>
+                          <span>
+                            {language === 'en' ? (
+                              `Completed ${sub.completed_courses} of ${sub.total_courses} (${percent}%)`
+                            ) : (
+                              `총 ${sub.total_courses}개 중 ${sub.completed_courses}개 완료 (${percent}%)`
+                            )}
+                          </span>
                         </div>
                         <Progress value={percent} className="h-2 bg-zinc-100 dark:bg-zinc-800" />
                       </div>
@@ -169,7 +186,7 @@ export default function MyCoursesPage() {
                           router.push(targetUrl);
                         }}
                       >
-                        학습 시작하기
+                        {t('startLearning')}
                       </Button>
                     </Card>
                   );
@@ -180,10 +197,10 @@ export default function MyCoursesPage() {
             {activePackages.length === 0 && (
               <div className="py-12 text-center text-muted-foreground bg-muted/20 rounded-lg border border-dashed flex flex-col items-center justify-center gap-4">
                 <FolderOpen className="w-12 h-12 text-muted-foreground/50" />
-                <div>수강 중인 강좌 또는 패키지가 없습니다.</div>
+                <div>{t('noEnrolledCourses')}</div>
                 <Button onClick={() => router.push('/courses')} variant="outline" size="sm">
                   <Compass className="w-4 h-4 mr-2" />
-                  새로운 강좌 찾아보기
+                  {t('browseNewCourses')}
                 </Button>
               </div>
             )}
@@ -210,24 +227,38 @@ export default function MyCoursesPage() {
                           <h4 className="font-semibold text-zinc-900 dark:text-zinc-50 line-clamp-1">{pkg.title}</h4>
                           <div className="flex gap-2">
                             <Badge className="bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-950 shrink-0">
-                              수강 완료
+                              {t('completed')}
                             </Badge>
                             <Award className="w-5 h-5 text-yellow-500 shrink-0" />
                           </div>
                         </div>
                         <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{pkg.description}</p>
-                        {assignedAgent && (
-                          <div className="flex items-center gap-1.5 mt-2.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                            <Bot className="w-3.5 h-3.5 shrink-0" />
-                            <span className="truncate">{assignedAgent.name}</span>
-                          </div>
-                        )}
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2.5">
+                          {pkg.author_nickname && (
+                            <div className="flex items-center gap-1 text-[11px] text-zinc-500">
+                              <User className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                              <span className="truncate">{pkg.author_nickname}</span>
+                            </div>
+                          )}
+                          {assignedAgent && (
+                            <div className="flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                              <Bot className="w-3.5 h-3.5 shrink-0" />
+                              <span className="truncate">{assignedAgent.name}</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       <div className="space-y-2 mt-2">
                         <div className="flex justify-between text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                          <span>로드맵 달성도</span>
-                          <span>총 {sub.total_courses}개 중 {sub.completed_courses}개 완료 (100%)</span>
+                          <span>{t('roadmapAchievement')}</span>
+                          <span>
+                            {language === 'en' ? (
+                              `Completed ${sub.completed_courses} of ${sub.total_courses} (100%)`
+                            ) : (
+                              `총 ${sub.total_courses}개 중 ${sub.completed_courses}개 완료 (100%)`
+                            )}
+                          </span>
                         </div>
                         <Progress value={percent} className="h-2" />
                       </div>
@@ -241,7 +272,7 @@ export default function MyCoursesPage() {
                           router.push(`/courses/${pkg.slug}`);
                         }}
                       >
-                        패키지 상세 보기
+                        {t('viewPackageDetails')}
                       </Button>
                     </Card>
                   );
@@ -252,7 +283,7 @@ export default function MyCoursesPage() {
             {completedPackages.length === 0 && (
               <div className="py-12 text-center text-muted-foreground bg-muted/20 rounded-lg border border-dashed flex flex-col items-center justify-center gap-4">
                 <Award className="w-12 h-12 text-muted-foreground/50" />
-                <div>완료한 강좌 또는 패키지가 없습니다.</div>
+                <div>{t('noCompletedCourses')}</div>
               </div>
             )}
           </TabsContent>
@@ -261,3 +292,4 @@ export default function MyCoursesPage() {
     </div>
   );
 }
+

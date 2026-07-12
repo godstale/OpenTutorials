@@ -10,7 +10,6 @@ const DEFAULT_THRESHOLD = 80;
 export function useAgentSettings() {
   const [maxTokens, setMaxTokensState] = useState<string>(DEFAULT_MAX_TOKENS);
   const [compressionThreshold, setCompressionThresholdState] = useState<number>(DEFAULT_THRESHOLD);
-  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     const savedTokens = localStorage.getItem(TOKENS_STORAGE_KEY);
@@ -24,7 +23,6 @@ export function useAgentSettings() {
         setCompressionThresholdState(parsed);
       }
     }
-    setIsMounted(true);
   }, []);
 
   const setMaxTokens = (value: string) => {
@@ -38,10 +36,10 @@ export function useAgentSettings() {
   };
 
   return {
-    maxTokens: isMounted ? maxTokens : DEFAULT_MAX_TOKENS,
+    maxTokens,
     setMaxTokens,
-    compressionThreshold: isMounted ? compressionThreshold : DEFAULT_THRESHOLD,
+    compressionThreshold,
     setCompressionThreshold,
-    isMounted,
+    
   };
 }

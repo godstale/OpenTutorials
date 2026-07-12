@@ -46,6 +46,54 @@ Ran lint. See lint-report.md for details.
 
 Ran lint. See lint-report.md for details.
 
+## [2026-07-01] lint | Wiki health check
+
+Ran lint. See lint-report.md for details.
+
+## [2026-06-21] lint | Wiki health check
+
+Ran lint. See lint-report.md for details.
+
+## [2026-06-21] lint | Wiki health check
+
+Ran lint. See lint-report.md for details.
+
+## [2026-06-20] lint | Wiki health check
+
+Ran lint. See lint-report.md for details.
+
+## [2026-06-20] lint | Wiki health check
+
+Ran lint. See lint-report.md for details.
+
+## [2026-06-20] lint | Wiki health check
+
+Ran lint. See lint-report.md for details.
+
+## [2026-07-01] lint | Wiki health check
+
+Ran lint. See lint-report.md for details.
+
+## [2026-06-21] lint | Wiki health check
+
+Ran lint. See lint-report.md for details.
+
+## [2026-06-21] lint | Wiki health check
+
+Ran lint. See lint-report.md for details.
+
+## [2026-06-20] lint | Wiki health check
+
+Ran lint. See lint-report.md for details.
+
+## [2026-06-20] lint | Wiki health check
+
+Ran lint. See lint-report.md for details.
+
+## [2026-06-20] lint | Wiki health check
+
+Ran lint. See lint-report.md for details.
+
 ## [2026-06-20] lint | Wiki health check
 
 Ran lint. See lint-report.md for details.
@@ -53,6 +101,134 @@ Ran lint. See lint-report.md for details.
 # Wiki Log
 
 <!-- Append-only. 최신 항목을 위에 추가. -->
+
+## 2026-07-12 (14th Session)
+
+- **[FEAT/UI] 강좌 검색 화면 내 강좌 상세 팝업 다이얼로그 라이선스 정보 간략 노출**
+  - **수정/갱신 파일**:
+    - [lib/locales/ko.ts](file:///C:/Workspace/Projects/OpenTutorials/lib/locales/ko.ts) - 라이선스 다국어 키 `courseLicense: '라이선스'` 추가
+    - [lib/locales/en.ts](file:///C:/Workspace/Projects/OpenTutorials/lib/locales/en.ts) - 라이선스 다국어 키 `courseLicense: 'License'` 추가
+    - [app/(user)/courses/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/page.tsx) - `CoursePackage` 인터페이스에 `license`, `license_file` 추가. `LICENSE_MAP` 선언 및 강좌 검색 상세 팝업(Detail Dialog) 하단에 번역된 라이선스 정보 및 라이선스 전문 파일명 간략 노출 구현.
+  - **작업 내용**:
+    - 강좌 검색 결과에서 강좌 카드를 클릭해 상세 다이얼로그를 열었을 때, 강좌의 라이선스 정보(예: CC BY 4.0 등)와 동봉된 라이선스 문서(예: `LICENSE.md`)를 하단에 간략히 표출하도록 사용성을 개선하고 다국어 연동을 완료했습니다.
+  - **Concepts**: [[LicenseDisplayInSearchPopup]], [[I18nLicenseText]], [[SearchDialogUIImprovement]]
+
+## 2026-07-12 (13th Session)
+
+- **[FEAT/UI] 번들러 프로토콜 v1.1.3(라이선스 메타데이터) 대응 및 강좌 상세 화면 내 라이선스 카드/레이아웃 개편**
+  - **수정/갱신 파일**:
+    - [app/(user)/courses/[slug]/client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/[slug]/client.tsx) — 강좌 상세 페이지 내 저자/순차학습/체크포인트 상태를 한 행으로 묶고, 태그를 별도 행으로 분리하여 가독성을 개선했습니다. 버전 및 변경이력 카드를 맨 아래로 내리고 그 아래에 라이선스 종류 및 조건, 라이선스 문서 연결 링크가 담긴 라이선스 정보 카드를 신설했습니다.
+    - [app/api/admin/packages/upload/route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/admin/packages/upload/route.ts) — 업로드 시 `license`, `license_file` 메타데이터 파싱 및 유효성(CC 및 Custom 라이선스 파일 동봉 유무) 검사 로직을 추가하고 DB에 정상 적재되도록 연동했습니다. 프로토콜 기본 버전을 `1.1.3`으로 상향했습니다.
+    - [app/api/admin/packages/import-local/route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/admin/packages/import-local/route.ts) — 로컬 임포트 시 라이선스 및 전문 파일의 유무와 정합성을 사전 검사 및 upsert 하도록 보강했으며, 기본 프로토콜을 `1.1.3`으로 업데이트했습니다.
+    - [app/(user)/courses/manage/upload/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/manage/upload/page.tsx) — ZIP 업로드 시 클라이언트 사이드에서 라이선스 스펙 유효성을 1차 검증하도록 필터링을 보강했습니다.
+    - [app/(user)/courses/manage/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/manage/page.tsx), [app/(user)/courses/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/page.tsx) — 오프라인 폴백 및 디폴트 강좌의 프로토콜 버전을 `1.1.3`으로 조정했습니다.
+    - [app/(user)/courses/manage/upload/guide/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/manage/upload/guide/page.tsx) — 가이드 내 예시 매니페스트 및 유효성 검증 규칙 란에 라이선스 조건(`license`, `license_file`) 관련 규칙 설명을 최신화했습니다.
+    - **Submodule (`protocol/`)**:
+      - `git submodule update`를 통해 `1.1.3` 프로토콜 스펙 사양이 기록된 상위 커밋(`6aea0dc`)을 프로젝트 내 서브모듈 커밋으로 업데이트 완료했습니다.
+  - **작업 내용**:
+    - 새롭게 리팩토링된 코스 번들러 프로토콜 v1.1.3 명세에 따라, 강좌 등록/수정 시 콘텐츠 저작권을 명시하기 위한 `license`와 `license_file` 메타데이터 필드가 유효성 검증을 거쳐 DB에 저장되도록 파이프라인을 구축했습니다.
+    - 또한 학습자가 강좌 상세 정보 화면에서 저작권 범위 및 관련 라이선스 문서(예: `LICENSE.md`)를 즉시 확인할 수 있도록 라이선스 안내 카드를 상세 페이지 하단에 배치하고, 메인 메타데이터 레이아웃을 다수 태그 상황에 맞도록 최적화 뷰로 개편했습니다.
+  - **Concepts**: [[LicenseMetadataSupport]], [[BundlerProtocolV1.1.3]], [[CourseDetailLayoutRedesign]], [[LicenseVerification]]
+
+## 2026-07-12 (12th Session)
+
+- **[BUGFIX] 다국어(i18n) 설정 적용에 따른 Hydration Mismatch 오류 해결**
+  - **수정/갱신 파일**:
+    - [lib/context/LanguageContext.tsx](file:///C:/Workspace/Projects/OpenTutorials/lib/context/LanguageContext.tsx) — `isMounted` 상태 변수 및 관련 인터페이스 필드를 제거하고, 다국어 번역 함수 `t`가 클라이언트 및 서버(SSR) 측에서 항상 일치하는 기본 한국어(`ko`) 값으로 렌더링되도록 단순화했습니다.
+    - [components/layout/UserSidebar.tsx](file:///C:/Workspace/Projects/OpenTutorials/components/layout/UserSidebar.tsx) — `isMounted`에 따른 삼항 연산자 조건문을 제거하고 `t` 함수를 직접 호출하도록 리팩토링했습니다.
+    - [app/(user)/courses/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/page.tsx) — 불필요한 `isMounted` 분기문을 제거하여 `t(...)` 형태로 변경하였습니다.
+    - [app/(user)/courses/manage/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/manage/page.tsx) — 불필요한 `isMounted` 분기문을 제거하여 `t(...)` 형태로 변경하였습니다.
+    - [app/(user)/my-courses/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/my-courses/page.tsx) — 불필요한 `isMounted` 분기문을 제거하여 `t(...)` 형태로 변경하였습니다.
+    - [app/(user)/settings/ui/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/settings/ui/page.tsx) — 정의되지 않은 `isMounted` 관련 렌더링 중단 로직을 제거했습니다.
+    - [hooks/use-agent-settings.ts](file:///C:/Workspace/Projects/OpenTutorials/hooks/use-agent-settings.ts) — Local Storage 값 로드 시 존재하던 불완전한 `isMounted` 코드를 정비하고 토큰/압축 한계 값을 직접 반환하도록 수정했습니다.
+  - **작업 내용**:
+    - 다국어 기능을 도입하는 과정에서 클라이언트 단 마운트 체크 여부(`isMounted`)로 인해 서버 SSR 렌더링 시 텍스트와 클라이언트 초기 Hydration 시의 텍스트가 달라져 발생하던 Hydration Mismatch 오류를 근본적으로 해결했습니다. `LanguageContext`는 기본적으로 한국어 리소스를 렌더링하므로 서버와 클라이언트가 항상 일치하게 구성되었습니다.
+  - **Concepts**: [[HydrationMismatchFix]], [[I18nLanguageStateRefactoring]], [[SSRSafeTranslation]]
+
+## 2026-07-12 (11th Session)
+
+- **[FEAT/UI] 강좌 관리 화면 내 버전정보 표시 및 실시간 업데이트 버튼 추가 & target_age 규격 표준화**
+  - **수정 파일**:
+    - [app/(user)/courses/manage/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/manage/page.tsx)
+    - [app/(user)/courses/manage/upload/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/manage/upload/page.tsx)
+    - [app/api/admin/packages/upload/route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/admin/packages/upload/route.ts)
+    - [app/(user)/courses/manage/upload/guide/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/manage/upload/guide/page.tsx)
+    - [app/(user)/courses/[slug]/client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/[slug]/client.tsx)
+    - [app/(user)/courses/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/page.tsx)
+    - [app/(user)/learn/[slug]/client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx)
+    - [db.json](file:///C:/Workspace/Projects/OpenTutorials/db.json)
+    - **Submodule (`protocol/`)**:
+      - `protocol/protocol.md`
+      - `protocol/ai-agent-instructions.md`
+      - `protocol/creator-interview-guide.md`
+      - `protocol/protocol-changelog.md`
+  - **작업 내용**:
+    - **버전 정보 표시**: 강좌 관리 목록 내의 각 강좌 카드에 현재 로컬 데이터베이스에 등록된 버전 정보(`v[버전]`) 배지를 렌더링하도록 개선했습니다.
+    - **실시간 업데이트 검사 및 업데이트 버튼 연동**: 강좌 상세 페이지 및 검색 페이지에서 사용된 깃허브 `courses.json` 정보 및 로컬 버전 비교 로직(`isVersionNewer`)을 도입하여, 강좌 관리 리스트에서도 실시간으로 업데이트 여부를 감지하도록 했습니다.
+    - **버튼 레이아웃 2열(2줄) 개편**: 우측 액션 버튼 영역을 2줄 레이아웃으로 변경했습니다. 첫째 줄에는 `미리보기`와 `삭제` 버튼이 균등 비율로 나란히 들어가며, 둘째 줄에는 `업데이트`(업데이트가 있는 경우) 및 `공개 전환`(비공개인 경우) 버튼이 표출되도록 배치했습니다.
+    - **업데이트 진행상황 표시 및 Freezing 오버레이**: 업데이트 시 기존 삭제 오버레이와 통일감 있는 "강좌 업데이트 중" Freezing 오버레이 및 단계별 상태 메세지를 렌더링하여 사용자 경험을 대폭 향상했습니다.
+    - **target_age 프로토콜 규격 표준화 (서브모듈 반영)**: 기계/프로그램 처리가 용이하도록 `target_age` 형식을 `all` (전연령), `x+` (x세 이상, 예: `10+`), `min-max` (연령대 범위, 예: `8-13`) 형식으로 규격화했습니다. 서브모듈의 `protocol.md`, `creator-interview-guide.md`, `ai-agent-instructions.md` 문서를 수정하고 `protocol-changelog.md`에 v1.2.0 변경 사양을 기록하여 서브모듈에 커밋 반영했습니다.
+    - **애플리케이션 내 target_age 검증 및 디스플레이 적용**: 업로드 시 정규표현식(`/^(all|\d+|\d+-\d+|\d+\+)$/`)을 통해 규격을 사전 및 서버 사이드에서 검증하도록 수정했습니다. 또한 fallback 강좌 정보의 `전연령` 값을 `all`로 수정하고, 수강 상세/대시보드 화면 및 AI 튜터 시스템 프롬프트 가이드에 자연스럽게 노출되도록 포맷팅 처리를 연동했습니다.
+  - **Concepts**: [[CourseManageVersionDisplay]], [[CourseManageLiveUpdate]], [[CourseManageTwoRowActions]], [[TargetAgeStandardization]], [[SubmoduleCommitUpdate]]
+
+## 2026-07-12 (10th Session)
+
+- **[FEAT] 강좌 깃허브 검색 버전 비교를 통한 실시간 업데이트 및 상세 페이지 내 업데이트 버튼 추가**
+  - **수정 파일**:
+    - [app/(user)/courses/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/page.tsx)
+    - [app/(user)/courses/[slug]/client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/[slug]/client.tsx)
+  - **작업 내용**:
+    - **강좌 검색 버전 비교 및 업데이트 가능 상태 표시**: 강좌 검색 페이지에서 GitHub으로부터 받아온 온라인 강좌 리스트의 버전(`version`)과 로컬 데이터베이스의 강좌 버전을 비교하는 `isVersionNewer` 버저닝 헬퍼 함수를 추가했습니다. 수강 중인 강좌 중 업데이트가 존재할 경우 카드와 상세 모달 다이얼로그에 "업데이트 가능" 배지를 표시하도록 고도화했습니다.
+    - **강좌 상세화면 내 업데이트 기능 및 버튼 탑재**: 강좌 상세 페이지에서 동일하게 깃허브 `courses.json` 정보와 로컬 버전을 조회하여 업데이트 가능성을 검사합니다. 최신 버전이 감지되면 "학습 진도율 리셋" 버튼 우측에 "v[최신버전] 업데이트" 버튼을 노출하도록 했습니다.
+    - **통합 업데이트 핸들러 구현**: 업데이트 버튼 클릭 시, 기존 강좌 다운로드/임포트/업로드 파이프라인을 재사용하는 `handleUpdateCourse` 함수를 구현하여, 덮어쓰기 방식으로 로컬 데이터베이스 및 파일 시스템의 데이터를 업데이트하도록 조치했습니다.
+  - **Concepts**: [[CourseVersionComparison]], [[LiveUpdateChecker]], [[DetailUpdateAction]]
+
+## 2026-07-12 (9th Session)
+
+- **[FEATURE] 에이전트 상세 Chat/Settings 탭 다국어(i18n) 처리 및 에이전트 화면 다국어 처리 완료**
+  - **수정/갱신 파일**:
+    - [components/features/AgentChatTab.tsx](file:///C:/Workspace/Projects/OpenTutorials/components/features/AgentChatTab.tsx) — `useLanguage` 훅 도입 및 하드코딩된 한국어 안내문, 상태 배지, placeholder 다국어화
+    - [components/features/AgentSettingsTab.tsx](file:///C:/Workspace/Projects/OpenTutorials/components/features/AgentSettingsTab.tsx) — `useLanguage` 훅 도입 및 폼 필드 라벨, 환경 정보, 연결 테스트 결과 다국어화
+    - [app/(user)/dashboard/client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/dashboard/client.tsx) — 대시보드 에이전트 요약 카드 내 한국어 텍스트 다국어 교체
+    - [app/(user)/my-agents/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/my-agents/page.tsx) — 에이전트 관리 목록 UI 다국어 지원 적용
+    - [app/(user)/my-agents/[id]/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/my-agents/[id]/page.tsx) — 에이전트 상세 포털 화면 전체 다국어 번역 키 적용
+  - **작업 내용**:
+    - AI 에이전트와의 실시간 채팅 탭 및 에이전트 상세 설정 화면을 다국어(i18n) 대응 가능하도록 개선하였으며, 대시보드와 관리 화면 등 에이전트와 관련한 모든 프론트엔드 UI의 번역 누락 사항을 완료했습니다.
+  - **Concepts**: [[AgentChatTabI18n]], [[AgentSettingsTabI18n]], [[AgentManagementUIComplete]]
+
+## 2026-07-12 (8th Session)
+
+- **[FEATURE] 다국어 설정 적용 범위 확대 (설정 하위 메뉴, 강좌 학습 화면, 레이아웃 네비게이션, 강좌 번들 업로드)**
+  - **수정/갱신 파일**:
+    - [app/(user)/settings/profile/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/settings/profile/page.tsx) — 프로필 설정 페이지 다국어 지원 적용
+    - [app/(user)/settings/agent/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/settings/agent/page.tsx) — 기본 에이전트 설정 페이지 다국어 지원 적용
+    - [app/(user)/settings/course/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/settings/course/page.tsx) — 강좌 학습 설정 페이지 다국어 지원 적용
+    - [app/(user)/learn/[slug]/client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx) — 강좌 학습 화면 다국어 지원 적용
+    - [app/(user)/courses/manage/upload/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/manage/upload/page.tsx) — 강좌 번들 파일 업로드 화면 다국어 지원 적용
+    - [components/layout/UserHeader.tsx](file:///C:/Workspace/Projects/OpenTutorials/components/layout/UserHeader.tsx) — 학습 화면 레이아웃 전환 네비게이션 버튼 다국어화
+  - **작업 내용**:
+    - 사용자가 UI 설정에서 언어 설정을 영어로 선택 시, 사이드바와 설정 UI 외에 실질적인 강좌 수강(학습) 화면 전체와 하위 설정 탭(프로필, 에이전트, 강좌), 강좌 업로드, 헤더의 레이아웃 단추들까지 모두 영어로 전환되도록 완벽히 동기화하였습니다.
+  - **Concepts**: [[SettingsSubmenusI18n]], [[LearningClientI18n]], [[UserHeaderLayoutI18n]], [[IntegratedCourseUploadI18n]]
+
+## 2026-07-12 (7th Session)
+
+- **[FEATURE] 다국어(ko/en) 처리 기능 추가 및 프로토콜 language 필드 추가 (v1.2.1)**
+  - **수정/갱신 파일**:
+    - [lib/locales/ko.ts](file:///C:/Workspace/Projects/OpenTutorials/lib/locales/ko.ts) — 한국어 다국어 리소스 정의
+    - [lib/locales/en.ts](file:///C:/Workspace/Projects/OpenTutorials/lib/locales/en.ts) — 영어 다국어 리소스 정의
+    - [lib/context/LanguageContext.tsx](file:///C:/Workspace/Projects/OpenTutorials/lib/context/LanguageContext.tsx) — 다국어 상태 관리용 Provider 및 useLanguage 훅 추가
+    - [app/layout.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/layout.tsx) — root layout에 LanguageProvider 래핑
+    - [app/(user)/settings/layout.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/settings/layout.tsx) — 설정 페이지 레이아웃 다국어화 적용 및 전체 리셋 시 language preference 초기화 로직 추가
+    - [app/(user)/settings/ui/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/settings/ui/page.tsx) — UI 설정에 언어 선택 옵션(한국어/영어) 추가 및 다국어 지원
+    - [components/layout/UserSidebar.tsx](file:///C:/Workspace/Projects/OpenTutorials/components/layout/UserSidebar.tsx) — 사이드바 메뉴 텍스트 다국어화
+    - [protocol/protocol.md](file:///C:/Workspace/Projects/OpenTutorials/protocol/protocol.md) — package-manifest.json 스펙에 language (Optional, ko/en) 필드 규정 (v1.2.1)
+    - [protocol/protocol-changelog.md](file:///C:/Workspace/Projects/OpenTutorials/protocol/protocol-changelog.md) — v1.2.1 릴리즈 로그 기록
+  - **작업 내용**:
+    - 설정 > UI 탭 내에 언어 선택(한국어 / 영어) 기능을 추가하여 기본 한국어 상태에서 변경 시 인터페이스가 해당 언어로 표시되도록 개선했습니다.
+    - 강좌 검색 시 언어 필터링이 가능하도록 번들러 프로토콜(`package-manifest.json`)에 `language` 속성을 정의하고 서브모듈에 즉시 반영 및 푸시를 완료했습니다.
+  - **Concepts**: [[Internationalization]], [[I18nLanguageProvider]], [[BundlerProtocolV1.2.1]], [[SubmoduleSync]]
+
+## 2026-07-11 (19th Session)
 
 ## 2026-07-11 (19th Session)
 
@@ -2164,3 +2340,30 @@ Ran lint. See lint-report.md for details.
     - **미리보기 라우팅 정상화**: `courses` 유실로 인해 미리보기가 작동하지 않던 버그를 해결하고자, `/learn/${course.slug}?card=1&preview=true` 경로로 즉시 라우팅되도록 프리뷰 버튼 클릭 이벤트를 업데이트했습니다.
     - **강좌 상세 페이지 내 테마 색상 통일**: 강좌 상세 및 커리큘럼 화면에서 기존 혼재되어 사용되던 `emerald` 계열 테마 색상 및 일부 `green-500` 코드를 `green-700`으로 일관되게 변경하여 디자인 일관성을 높였으며, 완료 뱃지의 스타일을 차분한 `bg-zinc-400`으로 변경했습니다.
   - **Concepts**: [[CourseCardStatsFix]], [[PackageLevelAgentMapping]], [[PreviewRoutingNormalization]], [[DetailColorThemeUnification]]
+
+## 2026-07-12 (10th Session)
+
+- **[BUGFIX] 다국어(번역) 처리 관련 Next.js/React 18 Hydration Mismatch 오류 수정**
+  - **수정 파일**:
+    - [app/(user)/layout.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/layout.tsx)
+  - **작업 내용**:
+    - **Hydration Mismatch 근본 원인 픽스**: `LanguageProvider`의 다국어(localStorage 연동) 상태 업데이트 시점에 의해, `<Suspense>`로 래핑되어 지연 로딩/하이드레이션(Selective Hydration)되는 `UserSidebar` 및 `UserHeader` 컴포넌트에서 클라이언트 렌더링 결과(English)와 서버 pre-render 결과(Korean)가 불일치하여 발생하던 hydration mismatch 에러를 완전히 해결했습니다.
+    - **비동기 컴포넌트 dynamic SSR 제어**: `app/(user)/layout.tsx`에서 `UserSidebar`와 `UserHeader` 컴포넌트를 `next/dynamic`을 통해 `ssr: false` 옵션으로 비동기 동적 임포트하도록 변경했습니다. 이를 통해 서버 pre-rendering 시점에 해당 컴포넌트들의 렌더링을 완전히 배제하고, 클라이언트 하이드레이션 완료 후에만 마운트되어 다국어 처리가 안전하게 적용되도록 조치했습니다.
+  - **Concepts**: [[NextDynamicSSRDisable]], [[HydrationMismatchFix]], [[SelectiveHydrationSafety]]
+
+## 2026-07-12 (11th Session)
+
+- **[BUGFIX/DATA] 강좌 라이선스 오표기 수정 (All Rights Reserved -> CC-BY-NC-4.0 폴백 및 데이터 반영)**
+  - **수정 파일**:
+    - [db.json](file:///C:/Workspace/Projects/OpenTutorials/db.json)
+    - [app/(user)/courses/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/page.tsx)
+    - [app/(user)/courses/[slug]/client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/[slug]/client.tsx)
+    - [app/api/courses/[slug]/route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/courses/[slug]/route.ts)
+    - [app/api/admin/packages/upload/route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/admin/packages/upload/route.ts)
+    - [app/api/admin/packages/import-local/route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/admin/packages/import-local/route.ts)
+  - **작업 내용**:
+    - **라이선스 기본 폴백 변경**: 강좌 메타데이터에 라이선스가 지정되지 않았을 때의 기본 폴백 값을 기존 `all-rights-reserved`에서 실제 강좌들의 라이선스 조건인 `CC-BY-NC-4.0`으로 변경했습니다. 이는 강좌 목록 페이지(`page.tsx`), 강좌 상세 클라이언트(`client.tsx`), 강좌 업로드(`upload/route.ts`) 및 로컬 임포트(`import-local/route.ts`) API에 공통 적용되었습니다.
+    - **하드코딩된 강좌 데이터 갱신**: 강좌 목록과 상세 페이지의 오프라인 fallback 데이터 구조(`OFFLINE_FALLBACK_COURSES`, `defaultCourses`) 내에 `license: "CC-BY-NC-4.0"` 과 `license_file: "LICENSE"` 메타데이터를 직접 주입했습니다.
+    - **로컬 DB 갱신 및 중복 필드 픽스**: `db.json` 내의 로컬 강좌 패키지 데이터(`iot-communication` 및 `neutral-network-and-llm`)에 `"license": "CC-BY-NC-4.0"`과 `"license_file": "LICENSE"`를 추가했습니다. 특히, 기존 파일 맨 끝에 중복 정의되어 덮어쓰기를 유발하던 `"license": "all-rights-reserved"`와 `"license_file": null` 필드를 완전히 제거 및 교체하여, 로컬 데이터베이스 조회 시 라이선스가 정상 리턴되도록 버그를 최종 해결했습니다.
+    - **동적 로컬 라이선스 파일 검증 및 공식 설명서 리다이렉트**: 강좌 번들 내에 실제 라이선스 파일이 서빙되고 있는지 서버 단([route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/courses/[slug]/route.ts))에서 `fs.existsSync`를 이용해 판단하고, 그 결과를 `license_file_exists` 플래그로 응답하도록 조치했습니다. 클라이언트([client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/[slug]/client.tsx))에서는 이 플래그에 따라 파일이 존재하면 로컬 첨부파일로 바로 링크하고, 존재하지 않을 때만 크리에이티브 커먼즈(CC) 공식 약관 및 설명서 페이지로 리다이렉트하여 404 에러를 방지하면서도 첨부파일 우선 노출 요구사항을 모두 충족했습니다.
+  - **Concepts**: [[CourseLicenseCorrection]], [[LicenseFallbackChange]], [[LocalDbLicenseUpdate]], [[DuplicateJsonFieldFix]], [[LicenseDocument404Fix]], [[CcLicenseRedirect]], [[DynamicLicenseFileCheck]]
