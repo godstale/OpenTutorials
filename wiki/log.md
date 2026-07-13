@@ -1,3 +1,29 @@
+## [2026-07-13] refactor | AdminCoursesPage 다국어(i18n) 처리 완료
+
+### 작업 내용
+`AdminCoursesPage` (`app/(user)/courses/manage/page.tsx`) 내 하드코딩된 한국어/영어 인라인 문자열 전체를 `useLanguage()` 훅의 `t()` 함수 기반 다국어 처리로 전환.
+
+### 변경된 파일
+- `app/(user)/courses/manage/page.tsx` — 모든 `language === 'en' ? '...' : '...'` 인라인 패턴 제거, `t('key')` 및 `t('key').replace('{placeholder}', value)` 패턴으로 통일
+- `lib/locales/ko.ts` — 신규 번역 키 63개 추가 (Course Management 섹션 확장)
+- `lib/locales/en.ts` — 동일한 신규 번역 키 63개 영어 번역 추가
+
+### 추가된 주요 키 목록
+- UI: `lblCourseBundleList`, `lblCourseBundleListDesc`, `lblNoCourses`, `lblPreview`, `lblDelete`, `lblClose`, `lblCancel`, `lblPublish`
+- 강좌 카드: `lblSubCourseCount`, `lblAssignedAgent`, `lblAgentDefault`, `lblNoAgent`, `lblNoSubCourses`, `lblSourcePrefix`, `lblSourceFile`, `lblSequential`, `lblCheckpointForce`
+- 업데이트 플로우: `lblConfirmUpdate`, `lblCheckingLocalPackage`, `lblDownloadingZip`, `lblDownloadZipFailed`, `lblUpdatingLocalDb`, `lblLocalDbUpdateFailed`, `lblUpdateDone`, `lblUpdateSuccess`, `lblUpdateFailed`, `lblUpdatingCourse`
+- 삭제 플로우: `lblConfirmDelete`, `lblDeletingCourse`, `lblDeleteComplete`, `lblDeleteFailed`, `lblSubscribersExistConfirm`
+- 매니페스트 편집: `lblEditManifest`, `lblEditManifestDesc`, `lblManifestDropClick`, `lblManifestUpdateGuide`, `lblManifestJsonData`, `lblSwitchToJson`, `lblManifestJsonPlaceholder`, `lblZipRegistered`, `lblUpdateComplete`
+- 오류/서버: `lblJsonError`, `lblInvalidJson`, `lblUnsupportedFile`, `lblManifestUpdateFailed`, `lblUpdateError`, `lblSlugDifferentConfirm`, `lblServerError`, `lblStatusChangeFailed`
+- Orphan 관련: `lblCheckingOrphans`, `lblAllCoursesConnected`, `lblOrphanCount`, `lblOrphanDeleteConfirm`, `lblOrphanCleanSuccess`, `lblOrphanCleanFailed`, `lblSelectAll`, `lblDeselectAll`, `lblUploadDate`, `lblCleaning`, `lblCleanSelected`
+
+### 처리 방식
+- 단순 정적 문자열: `t('key')`
+- 동적 변수 포함 문자열: `t('key').replace('{placeholder}', value)` 체이닝 패턴
+- 다국어 변수 처리를 위해 `{count}`, `{title}`, `{version}`, `{error}`, `{filename}` 등의 플레이스홀더 규칙 도입
+
+---
+
 ## [2026-07-01] lint | Wiki health check
 
 Ran lint. See lint-report.md for details.

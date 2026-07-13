@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Search, BookOpen, User, Mail, Globe, 
   CheckCircle2, Loader2, ArrowRight,
-  BookOpenCheck, Info, ExternalLink, Github
+  BookOpenCheck, Info, ExternalLink, Github, ArrowUpDown
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { CourseIcon } from '@/components/ui/course-icon';
@@ -86,6 +86,7 @@ export default function CoursesPage() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortOrder, setSortOrder] = useState<'newest' | 'az' | 'za'>('newest');
   const [selectedCourse, setSelectedCourse] = useState<any | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
@@ -364,17 +365,26 @@ export default function CoursesPage() {
     return subscriptions.some(sub => sub.package_id === courseId);
   };
 
-  const filteredOnlineCourses = onlineCourses.filter((course) => {
-    const query = searchQuery.toLowerCase().trim();
-    const authorName = typeof course.author === 'string'
-      ? course.author
-      : course.author?.nickname || '';
-    return (
-      course.title.toLowerCase().includes(query) ||
-      (course.description && course.description.toLowerCase().includes(query)) ||
-      authorName.toLowerCase().includes(query)
-    );
-  });
+  const filteredOnlineCourses = onlineCourses
+    .filter((course) => {
+      const query = searchQuery.toLowerCase().trim();
+      const authorName = typeof course.author === 'string'
+        ? course.author
+        : course.author?.nickname || '';
+      return (
+        course.title.toLowerCase().includes(query) ||
+        (course.description && course.description.toLowerCase().includes(query)) ||
+        authorName.toLowerCase().includes(query)
+      );
+    })
+    .sort((a, b) => {
+      if (sortOrder === 'az') return a.title.localeCompare(b.title);
+      if (sortOrder === 'za') return b.title.localeCompare(a.title);
+      // newest: created_at desc (fall back to title if missing)
+      const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return dateB - dateA;
+    });
 
   return (
     <div className="space-y-8 w-full max-w-6xl mx-auto pt-1 pb-8 relative">
@@ -412,16 +422,36 @@ export default function CoursesPage() {
         </div>
       </div>
 
-      {/* Search bar */}
+      {/* Search bar + Sort */}
       <div className="flex flex-col gap-4">
-        <div className="relative w-full max-w-md">
-          <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
-          <Input
-            placeholder={t('searchPlaceholder')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800"
-          />
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="relative flex-1 min-w-[200px] max-w-md">
+            <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
+            <Input
+              placeholder={t('searchPlaceholder')}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800"
+            />
+          </div>
+          <div className="flex items-center gap-1 shrink-0 ml-6">
+            <ArrowUpDown className="size-3.5 text-muted-foreground mr-0.5" />
+            {(['newest', 'az', 'za'] as const).map((order) => (
+              <Button
+                key={order}
+                variant={sortOrder === order ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSortOrder(order)}
+                className={`text-xs h-9 px-3 ${
+                  sortOrder === order
+                    ? 'bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-200'
+                    : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900'
+                }`}
+              >
+                {order === 'newest' ? t('sortNewest') : order === 'az' ? t('sortAZ') : t('sortZA')}
+              </Button>
+            ))}
+          </div>
         </div>
       </div>
 

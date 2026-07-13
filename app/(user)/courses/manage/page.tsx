@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   PlusCircle, BookOpen, Trash2, Eye, 
-  FolderHeart, Calendar, Loader2, FileJson, UploadCloud, AlertCircle, User
+  FolderHeart, Calendar, Loader2, FileJson, UploadCloud, AlertCircle, User, Search, ArrowUpDown
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   DropdownMenu,
@@ -132,6 +133,29 @@ export default function AdminCoursesPage() {
   const [courses, setCourses] = useState<PackageItem[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Search & sort state
+  const [manageSearchQuery, setManageSearchQuery] = useState('');
+  const [manageSortOrder, setManageSortOrder] = useState<'newest' | 'az' | 'za'>('newest');
+
+  const filteredManagedCourses = courses
+    .filter((course) => {
+      const q = manageSearchQuery.toLowerCase().trim();
+      if (!q) return true;
+      return (
+        course.title?.toLowerCase().includes(q) ||
+        course.description?.toLowerCase().includes(q) ||
+        course.slug?.toLowerCase().includes(q)
+      );
+    })
+    .sort((a, b) => {
+      if (manageSortOrder === 'az') return (a.title || '').localeCompare(b.title || '');
+      if (manageSortOrder === 'za') return (b.title || '').localeCompare(a.title || '');
+      const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return dateB - dateA;
+    });
+
+
   // Deleting process state
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteMessage, setDeleteMessage] = useState('');
@@ -200,7 +224,7 @@ export default function AdminCoursesPage() {
           setPackageZipFile(null);
           setProcessError('');
         } catch (err: any) {
-          setProcessError('올바르지 않은 JSON 파일 형식입니다: ' + err.message);
+          setProcessError(t('lblInvalidJson').replace('{error}', err.message));
         }
       };
       reader.readAsText(file);
@@ -208,7 +232,7 @@ export default function AdminCoursesPage() {
       setPackageZipFile(file);
       setProcessError('');
     } else {
-      setProcessError('지원이 안 되는 파일 유형입니다. .json 또는 .zip 파일을 업로드해주세요.');
+      setProcessError(t('lblUnsupportedFile'));
     }
   };
 
@@ -244,11 +268,11 @@ export default function AdminCoursesPage() {
         try {
           parsed = JSON.parse(manifestText);
         } catch (err: any) {
-          throw new Error('JSON 문법 오류가 있습니다: ' + err.message);
+          throw new Error(t('lblJsonError').replace('{error}', err.message));
         }
 
         if (parsed.slug !== editingCourse?.slug) {
-          if (!window.confirm(language === 'en' ? 'The manifest slug is different. If the slug is different, the existing course will not be updated and a new course will be registered instead. Do you want to continue?' : '매니페스트의 slug가 다릅니다. slug가 다를 경우 기존 강좌가 수정되지 않고 새로운 강좌가 등록됩니다. 계속하시겠습니까?')) {
+          if (!window.confirm(t('lblSlugDifferentConfirm'))) {
             setIsProcessing(false);
             return;
           }
@@ -263,14 +287,14 @@ export default function AdminCoursesPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || '강좌 매니페스트 업데이트에 실패했습니다.');
+        throw new Error(data.error || t('lblManifestUpdateFailed'));
       }
 
       setEditingCourse(null);
       fetchCourses();
     } catch (err: any) {
       console.error(err);
-      setProcessError(err.message || '업데이트 도중 알 수 없는 오류가 발생했습니다.');
+      setProcessError(err.message || t('lblUpdateError'));
     } finally {
       setIsProcessing(false);
     }
@@ -297,7 +321,7 @@ export default function AdminCoursesPage() {
   // Clean Selected Orphans
   const cleanOrphans = async (ids: string[]) => {
     if (ids.length === 0) return;
-    if (!window.confirm(language === 'en' ? `Are you sure you want to permanently delete the selected ${ids.length} registration error courses and their storage files?` : `선택한 ${ids.length}개의 등록 오류 강좌 및 해당 스토리지 파일을 영구 삭제하시겠습니까?`)) return;
+    if (!window.confirm(t('lblOrphanDeleteConfirm').replace('{count}', String(ids.length)))) return;
 
     setCleaningOrphans(true);
     try {
@@ -308,15 +332,15 @@ export default function AdminCoursesPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        alert(language === 'en' ? `Successfully cleaned up ${data.cleanedCount} registration error course resources.` : `성공적으로 ${data.cleanedCount}개의 등록 오류 강좌 리소스를 정리했습니다.`);
+        alert(t('lblOrphanCleanSuccess').replace('{count}', String(data.cleanedCount)));
         fetchOrphans();
         fetchCourses();
       } else {
-        alert(language === 'en' ? `Cleanup failed: ${data.error || 'Unknown error'}` : `정리 실패: ${data.error || '알 수 없는 오류'}`);
+        alert(t('lblOrphanCleanFailed').replace('{error}', data.error || 'Unknown error'));
       }
     } catch (err) {
       console.error('Failed to clean orphans:', err);
-      alert(language === 'en' ? 'An error occurred while communicating with the server.' : '서버와 통신 중 오류가 발생했습니다.');
+      alert(t('lblServerError'));
     } finally {
       setCleaningOrphans(false);
     }
@@ -384,13 +408,13 @@ export default function AdminCoursesPage() {
 
   const handleUpdateCourse = async (course: PackageItem, onlineInfo: any) => {
     const confirmUpdate = window.confirm(
-      `"${course.title}" 강좌를 최신 버전(v${onlineInfo.version})으로 업데이트하시겠습니까?\n기존 학습 진도율은 보존되지만, 강좌 콘텐츠가 변경될 수 있습니다.`
+      t('lblConfirmUpdate').replace('{title}', course.title).replace('{version}', onlineInfo.version)
     );
     if (!confirmUpdate) return;
 
     setIsUpdating(true);
     setUpdatingCourseTitle(course.title);
-    setUpdateStatus('로컬 패키지 확인 중...');
+    setUpdateStatus(t('lblCheckingLocalPackage'));
     try {
       let isImportedLocally = false;
 
@@ -423,17 +447,17 @@ export default function AdminCoursesPage() {
 
       // 2. 로컬에 폴더가 없어서 임포트에 실패한 경우 원격 ZIP 다운로드 진행
       if (!isImportedLocally) {
-        setUpdateStatus('강좌 ZIP 파일 다운로드 중...');
+        setUpdateStatus(t('lblDownloadingZip'));
         let downloadUrl = onlineInfo.downloadUrl;
         if (downloadUrl && !downloadUrl.startsWith('http://') && !downloadUrl.startsWith('https://')) {
           downloadUrl = `https://raw.githubusercontent.com/godstale/OpenTutorials-Browser/main/${downloadUrl}`;
         }
         const downloadRes = await fetch(downloadUrl);
-        if (!downloadRes.ok) throw new Error('강좌 ZIP 파일을 다운로드하지 못했습니다.');
+        if (!downloadRes.ok) throw new Error(t('lblDownloadZipFailed'));
         const zipBlob = await downloadRes.blob();
         
         // 3. FormData에 담기
-        setUpdateStatus('로컬 데이터베이스 업데이트 중...');
+        setUpdateStatus(t('lblUpdatingLocalDb'));
         const file = new File([zipBlob], `${onlineInfo.slug}.zip`, { type: 'application/zip' });
         const formData = new FormData();
         formData.append('file', file);
@@ -446,7 +470,7 @@ export default function AdminCoursesPage() {
         });
         
         if (!uploadRes.ok) {
-          let errMsg = '로컬 DB 업데이트에 실패했습니다.';
+          let errMsg = t('lblLocalDbUpdateFailed');
           try {
             const errData = await uploadRes.json();
             errMsg = errData.error || errMsg;
@@ -455,12 +479,12 @@ export default function AdminCoursesPage() {
         }
       }
 
-      setUpdateStatus('완료!');
-      alert('업데이트가 성공적으로 완료되었습니다.');
+      setUpdateStatus(t('lblUpdateDone'));
+      alert(t('lblUpdateSuccess'));
       await fetchCourses();
     } catch (err: any) {
       console.error(err);
-      alert(`업데이트 실패: ${err.message || '알 수 없는 오류가 발생했습니다.'}`);
+      alert(t('lblUpdateFailed').replace('{error}', err.message || t('lblUpdateError')));
     } finally {
       setIsUpdating(false);
       setUpdatingCourseTitle('');
@@ -472,7 +496,7 @@ export default function AdminCoursesPage() {
 
   const getAssignedAgentsForPackage = (pkg: PackageItem) => {
     const totalCourses = pkg.cards?.length || 0;
-    if (totalCourses === 0) return language === 'en' ? 'No sub-courses' : '하위 강좌 없음';
+    if (totalCourses === 0) return t('lblNoSubCourses');
     
     if (pkg.agent_id) {
       const found = agents.find(a => a.id === pkg.agent_id);
@@ -482,7 +506,7 @@ export default function AdminCoursesPage() {
     }
     
     const defaultAgent = agents.find(a => a.is_ai_tutor);
-    return defaultAgent ? `${defaultAgent.name} (${language === 'en' ? 'Default' : '기본값'})` : (language === 'en' ? 'No Agent' : '에이전트 없음');
+    return defaultAgent ? `${defaultAgent.name} (${t('lblAgentDefault')})` : t('lblNoAgent');
   };
 
   const renderCourseCard = (course: PackageItem) => {
@@ -513,8 +537,9 @@ export default function AdminCoursesPage() {
                 v{course.version || '1.0.0'}
               </Badge>
               {(() => {
-                const sourceText = course.source || (course.changelog === '로컬 복원 등록' ? 'GITHUB' : '파일');
-                const isGithub = sourceText === 'GITHUB';
+                const rawSource = course.source || (course.changelog === '로컬 복원 등록' ? 'GITHUB' : 'FILE');
+                const isGithub = rawSource === 'GITHUB';
+                const sourceLabel = t('lblSourcePrefix') + (isGithub ? t('lblSourceGithub') : t('lblSourceFile'));
                 return (
                   <Badge 
                     variant="outline" 
@@ -523,18 +548,18 @@ export default function AdminCoursesPage() {
                       : "text-zinc-600 border-zinc-200 bg-zinc-50/50 dark:text-zinc-400 dark:border-zinc-800 dark:bg-zinc-900/20"
                     }
                   >
-                    {language === 'en' ? 'Source: ' : '출처: '}{sourceText === '파일' && language === 'en' ? 'File' : sourceText}
+                    {sourceLabel}
                   </Badge>
                 );
               })()}
               {course.sequential_play && (
                 <Badge variant="outline" className="text-amber-600 border-amber-600 dark:text-amber-400">
-                  {language === 'en' ? 'Sequential' : '순차재생'}
+                  {t('lblSequential')}
                 </Badge>
               )}
               {course.force_checkpoint && (
                 <Badge variant="outline" className="text-rose-600 border-rose-600 dark:text-rose-400">
-                  {language === 'en' ? 'Checkpoint' : '체크포인트 강제'}
+                  {t('lblCheckpointForce')}
                 </Badge>
               )}
             </div>
@@ -549,7 +574,7 @@ export default function AdminCoursesPage() {
               )}
               <div className="flex items-center gap-1">
                 <BookOpen className="w-3.5 h-3.5" />
-                <span>{language === 'en' ? `Sub-courses ${course.cards?.length || 0}` : `하위 강좌 ${course.cards?.length || 0}개`}</span>
+                <span>{t('lblSubCourseCount').replace('{count}', String(course.cards?.length || 0))}</span>
               </div>
               <div className="flex items-center gap-1">
                 <Calendar className="w-3.5 h-3.5" />
@@ -557,7 +582,7 @@ export default function AdminCoursesPage() {
               </div>
               {/* 할당된 에이전트 표시 */}
               <div className="flex items-center gap-1">
-                <span className="font-semibold text-zinc-600 dark:text-zinc-400">{language === 'en' ? 'Assigned Agent:' : '할당된 에이전트:'}</span>
+                <span className="font-semibold text-zinc-600 dark:text-zinc-400">{t('lblAssignedAgent')}</span>
                 <span className={`px-1.5 py-0.5 rounded text-[11px] font-medium ${
                   hasErrorAgent 
                     ? 'bg-red-50 text-red-600 dark:bg-red-950/20 dark:text-red-400 border border-red-200/50' 
@@ -579,13 +604,13 @@ export default function AdminCoursesPage() {
                 if (course.cards && course.cards.length > 0) {
                   router.push(`/learn/${course.slug}?card=1&preview=true`);
                 } else {
-                  alert(language === 'en' ? 'No sub-chapters included in this course.' : '이 강좌에 포함된 하위 챕터가 없습니다.');
+                  alert(t('lblNoSubChapters'));
                 }
               }}
               className="gap-1.5 border-zinc-300 flex-1 text-xs"
             >
               <Eye className="w-3.5 h-3.5" />
-              {language === 'en' ? 'Preview' : '미리보기'}
+              {t('lblPreview')}
             </Button>
 
             <Button
@@ -595,7 +620,7 @@ export default function AdminCoursesPage() {
               className="gap-1.5 flex-1 text-xs"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              {language === 'en' ? 'Delete' : '삭제'}
+              {t('lblDelete')}
             </Button>
           </div>
 
@@ -619,7 +644,7 @@ export default function AdminCoursesPage() {
                   onClick={() => togglePublishedCourse(course)}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold flex-1 text-xs"
                 >
-                  {language === 'en' ? 'Publish' : '공개 전환'}
+                  {t('lblPublish')}
                 </Button>
               )}
             </div>
@@ -641,19 +666,19 @@ export default function AdminCoursesPage() {
         setCourses(courses.map(c => c.id === course.id ? { ...c, published: nextPublished } : c));
       } else {
         const data = await res.json();
-        alert(language === 'en' ? `Failed to change status: ${data.error || 'Unknown error'}` : `상태 변경에 실패했습니다: ${data.error || '알 수 없는 오류'}`);
+        alert(t('lblStatusChangeFailed').replace('{error}', data.error || 'Unknown error'));
       }
     } catch (err) {
       console.error('Failed to toggle published state:', err);
-      alert(language === 'en' ? 'An error occurred while communicating with the server.' : '서버와 통신 중 오류가 발생했습니다.');
+      alert(t('lblServerError'));
     }
   };
 
   const deleteCourse = async (course: PackageItem, force = false) => {
-    if (!force && !window.confirm(language === 'en' ? `Are you sure you want to delete the course "${course.title}"?` : `"${course.title}" 강좌를 삭제하시겠습니까?`)) return;
+    if (!force && !window.confirm(t('lblConfirmDelete').replace('{title}', course.title))) return;
     
     setIsDeleting(true);
-    setDeleteMessage(language === 'en' ? `Deleting course "${course.title}"...` : `"${course.title}" 강좌 삭제 중...`);
+    setDeleteMessage(t('lblDeletingCourse').replace('{title}', course.title));
     
     try {
       const res = await fetch(`/api/admin/packages/${course.id}${force ? '?force=true' : ''}`, {
@@ -661,31 +686,31 @@ export default function AdminCoursesPage() {
       });
       if (res.ok) {
         setCourses(prev => prev.filter(c => c.id !== course.id));
-        alert(language === 'en' ? 'Deletion completed.' : '삭제가 완료되었습니다.');
+        alert(t('lblDeleteComplete'));
       } else if (res.status === 409) {
         const data = await res.json();
         if (data.error === 'subscribers_exist') {
           // Temporarily disable overlay to show confirm dialog
           setIsDeleting(false);
           const proceed = window.confirm(
-            language === 'en' 
-              ? `There are users (${data.subscriberCount}) currently taking the course "${course.title}". If you delete this course, their progress information will be completely lost. Do you still want to delete it?`
-              : `"${course.title}" 강좌를 수강 중인 사용자(${data.subscriberCount}명)가 존재합니다. 강좌를 삭제하면 이 사용자들의 강좌 진행 정보가 완전히 삭제됩니다. 그래도 삭제하시겠습니까?`
+            t('lblSubscribersExistConfirm')
+              .replace('{title}', course.title)
+              .replace('{count}', String(data.subscriberCount))
           );
           if (proceed) {
             await deleteCourse(course, true);
             return;
           }
         } else {
-          alert(language === 'en' ? `Failed to delete: ${data.error || 'Unknown error'}` : `삭제에 실패했습니다: ${data.error || '알 수 없는 오류'}`);
+          alert(t('lblDeleteFailed').replace('{error}', data.error || 'Unknown error'));
         }
       } else {
         const data = await res.json();
-        alert(language === 'en' ? `Failed to delete: ${data.error || 'Unknown error'}` : `삭제에 실패했습니다: ${data.error || '알 수 없는 오류'}`);
+        alert(t('lblDeleteFailed').replace('{error}', data.error || 'Unknown error'));
       }
     } catch (err) {
       console.error('Failed to delete course:', err);
-      alert(language === 'en' ? 'An error occurred while communicating with the server.' : '서버와 통신 중 오류가 발생했습니다.');
+      alert(t('lblServerError'));
     } finally {
       setIsDeleting(false);
     }
@@ -717,7 +742,7 @@ export default function AdminCoursesPage() {
               <Loader2 className="w-12 h-12 text-amber-500 animate-spin" />
               <div className="space-y-2 w-full">
                 <h3 className="text-xl font-bold tracking-tight">{t('lblUpdating')}</h3>
-                <p className="text-sm text-slate-400">"{updatingCourseTitle}" {language === 'en' ? 'updating...' : '업데이트 중...'}</p>
+                <p className="text-sm text-slate-400">"{updatingCourseTitle}" {t('lblUpdatingCourse')}</p>
                 <p className="text-xs text-amber-400 font-semibold">{updateStatus}</p>
                 <p className="text-xs text-slate-500">{t('lblDoNotClose')}</p>
               </div>
@@ -752,42 +777,67 @@ export default function AdminCoursesPage() {
         </div>
       </div>
 
+      {/* Search bar + Sort */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="relative flex-1 min-w-[200px] max-w-md">
+          <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
+          <Input
+            placeholder={t('searchPlaceholder')}
+            value={manageSearchQuery}
+            onChange={(e) => setManageSearchQuery(e.target.value)}
+            className="pl-9 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800"
+          />
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          <ArrowUpDown className="size-3.5 text-muted-foreground mr-0.5 ml-6" />
+          {(['newest', 'az', 'za'] as const).map((order) => (
+            <Button
+              key={order}
+              variant={manageSortOrder === order ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setManageSortOrder(order)}
+              className={`text-xs h-9 px-3 ${
+                manageSortOrder === order
+                  ? 'bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-200'
+                  : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900'
+              }`}
+            >
+              {order === 'newest' ? t('sortRegistered') : order === 'az' ? t('sortAZ') : t('sortZA')}
+            </Button>
+          ))}
+        </div>
+      </div>
+
       {/* 등록된 강좌 목록 섹션 */}
-      <Card className="border border-zinc-200 dark:border-zinc-800">
-        <CardHeader>
-          <CardTitle className="text-xl font-bold">{language === 'en' ? `Course Bundle Files (${courses.length})` : `강좌 번들 파일 목록 (${courses.length})`}</CardTitle>
-          <CardDescription>{language === 'en' ? 'List of courses registered using course bundle (ZIP) files.' : '강좌 번들(ZIP) 파일을 이용해 등록된 강좌 목록입니다.'}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {loading ? (
-              Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-5 rounded-xl flex flex-col md:flex-row gap-6 items-center animate-pulse">
-                  <Skeleton className="w-24 h-16 rounded-md bg-zinc-200 dark:bg-zinc-800 shrink-0" />
-                  <div className="flex-1 w-full space-y-2">
-                    <div className="flex items-center gap-3">
-                      <Skeleton className="h-5 w-48 bg-zinc-200 dark:bg-zinc-800" />
-                      <Skeleton className="h-5 w-12 bg-zinc-200 dark:bg-zinc-800" />
-                    </div>
-                    <Skeleton className="h-4 w-3/4 bg-zinc-200 dark:bg-zinc-800" />
+      <div>
+        <div className="space-y-4">
+          {loading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-5 rounded-xl flex flex-col md:flex-row gap-6 items-center animate-pulse">
+                <Skeleton className="w-24 h-16 rounded-md bg-zinc-200 dark:bg-zinc-800 shrink-0" />
+                <div className="flex-1 w-full space-y-2">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-5 w-48 bg-zinc-200 dark:bg-zinc-800" />
+                    <Skeleton className="h-5 w-12 bg-zinc-200 dark:bg-zinc-800" />
                   </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <Skeleton className="h-9 w-16 bg-zinc-200 dark:bg-zinc-800" />
-                    <Skeleton className="h-9 w-20 bg-zinc-200 dark:bg-zinc-800" />
-                  </div>
+                  <Skeleton className="h-4 w-3/4 bg-zinc-200 dark:bg-zinc-800" />
                 </div>
-              ))
-            ) : courses.length === 0 ? (
-              <div className="py-12 text-center text-muted-foreground">
-                <FolderHeart className="w-12 h-12 mx-auto text-zinc-300 dark:text-zinc-700 mb-3" />
-                {language === 'en' ? 'No courses registered.' : '등록된 강좌가 없습니다.'}
+                <div className="flex items-center gap-3 shrink-0">
+                  <Skeleton className="h-9 w-16 bg-zinc-200 dark:bg-zinc-800" />
+                  <Skeleton className="h-9 w-20 bg-zinc-200 dark:bg-zinc-800" />
+                </div>
               </div>
-            ) : (
-              courses.map(renderCourseCard)
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            ))
+          ) : filteredManagedCourses.length === 0 ? (
+            <div className="py-12 text-center text-muted-foreground">
+              <FolderHeart className="w-12 h-12 mx-auto text-zinc-300 dark:text-zinc-700 mb-3" />
+              {t('lblNoCourses')}
+            </div>
+          ) : (
+            filteredManagedCourses.map(renderCourseCard)
+          )}
+        </div>
+      </div>
 
       {/* Edit Manifest Modal */}
       <Dialog open={!!editingCourse} onOpenChange={(open) => { if (!open) setEditingCourse(null); }}>
@@ -795,10 +845,10 @@ export default function AdminCoursesPage() {
           <DialogHeader>
             <DialogTitle className="text-xl font-bold flex items-center gap-2">
               <FileJson className="w-5 h-5 text-indigo-600" />
-              {language === 'en' ? 'Edit Course Manifest' : '강좌 매니페스트 수정'}
+              {t('lblEditManifest')}
             </DialogTitle>
             <DialogDescription>
-              {language === 'en' ? 'Upload a new manifest file (.json, .zip) or directly edit the JSON data below to update the course.' : '새로운 매니페스트 파일(.json, .zip)을 업로드하거나 하단의 JSON 데이터를 직접 수정하여 강좌를 업데이트합니다.'}
+              {t('lblEditManifestDesc')}
             </DialogDescription>
           </DialogHeader>
 
@@ -817,7 +867,7 @@ export default function AdminCoursesPage() {
               >
                 <UploadCloud className="w-6 h-6 text-muted-foreground mb-1" />
                 <span className="text-xs font-semibold block text-zinc-700 dark:text-zinc-300">
-                  {language === 'en' ? 'Drop manifest (.zip or .json) / Click' : '매니페스트 (.zip 또는 .json) 드롭/클릭'}
+                  {t('lblManifestDropClick')}
                 </span>
                 <span className="text-[10px] text-muted-foreground mt-0.5 block truncate max-w-[240px]">
                   {packageZipFile ? packageZipFile.name : 'package-manifest.json / package-bundle.zip'}
@@ -832,7 +882,7 @@ export default function AdminCoursesPage() {
               </div>
 
               <div className="p-4 rounded-lg bg-zinc-50 dark:bg-zinc-900 border text-[11px] text-muted-foreground flex flex-col justify-center leading-relaxed">
-                <p className="font-semibold text-zinc-800 dark:text-zinc-200 mb-1">💡 {language === 'en' ? 'Manifest Update Guide' : '매니페스트 업데이트 가이드'}</p>
+                <p className="font-semibold text-zinc-800 dark:text-zinc-200 mb-1">💡 {t('lblManifestUpdateGuide')}</p>
                 <p>
                   {language === 'en' ? (
                     <>
@@ -853,7 +903,7 @@ export default function AdminCoursesPage() {
 
             <div className="space-y-1.5 flex-1 flex flex-col min-h-[220px]">
               <div className="flex justify-between items-center">
-                <Label className="text-xs text-muted-foreground font-semibold">{language === 'en' ? 'Manifest JSON Data' : '매니페스트 JSON 데이터'}</Label>
+                <Label className="text-xs text-muted-foreground font-semibold">{t('lblManifestJsonData')}</Label>
                 {packageZipFile && (
                   <Button 
                     variant="link" 
@@ -861,15 +911,15 @@ export default function AdminCoursesPage() {
                     onClick={() => setPackageZipFile(null)} 
                     className="h-6 p-0 text-xs text-indigo-600"
                   >
-                    {language === 'en' ? 'Switch to direct JSON text editing' : '직접 JSON 텍스트 수정으로 전환'}
+                    {t('lblSwitchToJson')}
                   </Button>
                 )}
               </div>
               <Textarea
-                value={packageZipFile ? (language === 'en' ? `ZIP bundle registered: ${packageZipFile.name}\n(Will use package-manifest.json and thumbnail inside ZIP)` : `ZIP 번들 파일이 등록되었습니다: ${packageZipFile.name}\n(ZIP 내부의 package-manifest.json과 썸네일 이미지를 사용합니다.)`) : manifestText}
+                value={packageZipFile ? t('lblZipRegistered').replace('{filename}', packageZipFile.name) : manifestText}
                 onChange={(e) => setManifestText(e.target.value)}
                 disabled={!!packageZipFile}
-                placeholder={language === 'en' ? 'Manifest JSON...' : '매니페스트 JSON...'}
+                placeholder={t('lblManifestJsonPlaceholder')}
                 className="flex-1 font-mono text-xs border-zinc-200 dark:border-zinc-800 resize-none"
               />
             </div>
@@ -889,7 +939,7 @@ export default function AdminCoursesPage() {
               disabled={isProcessing}
               size="sm"
             >
-              {language === 'en' ? 'Cancel' : '취소'}
+              {t('lblCancel')}
             </Button>
             <Button 
               onClick={handleUpdateManifestSubmit} 
@@ -900,10 +950,10 @@ export default function AdminCoursesPage() {
               {isProcessing ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  {language === 'en' ? 'Updating...' : '업데이트 중...'}
+                  {t('lblUpdatingCourse')}
                 </>
               ) : (
-                language === 'en' ? 'Update Course Complete' : '강좌 업데이트 완료'
+                t('lblUpdateComplete')
               )}
             </Button>
           </DialogFooter>
@@ -927,7 +977,7 @@ export default function AdminCoursesPage() {
             {loadingOrphans ? (
               <div className="flex flex-col items-center justify-center py-16 gap-3 text-muted-foreground">
                 <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
-                <span>{language === 'en' ? 'Checking for registration errors...' : '등록 오류 강좌 검사 중...'}</span>
+                <span>{t('lblCheckingOrphans')}</span>
               </div>
             ) : orphans.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
@@ -935,25 +985,25 @@ export default function AdminCoursesPage() {
                   <BookOpen className="w-6 h-6" />
                 </div>
                 <h4 className="font-semibold text-zinc-950 dark:text-zinc-50 mb-1">{t('lblNoOrphans')}</h4>
-                <p className="text-xs text-muted-foreground">{language === 'en' ? 'All courses are normally connected to packages.' : '모든 강좌가 패키지에 정상적으로 연결되어 있습니다.'}</p>
+                <p className="text-xs text-muted-foreground">{t('lblAllCoursesConnected')}</p>
               </div>
             ) : (
               <div className="space-y-3">
                 <div className="flex justify-between items-center text-xs text-muted-foreground font-semibold px-1">
-                  <span>{language === 'en' ? `Detected Registration Errors (${orphans.length})` : `검출된 등록 오류 강좌 (${orphans.length}개)`}</span>
+                  <span>{t('lblOrphanCount').replace('{count}', String(orphans.length))}</span>
                   <div className="flex gap-2">
                     <button 
                       onClick={() => setSelectedOrphanIds(orphans.map(o => o.id))}
                       className="text-indigo-600 hover:underline"
                     >
-                      {language === 'en' ? 'Select All' : '전체 선택'}
+                      {t('lblSelectAll')}
                     </button>
                     <span>|</span>
                     <button 
                       onClick={() => setSelectedOrphanIds([])}
                       className="text-zinc-500 hover:underline"
                     >
-                      {language === 'en' ? 'Deselect All' : '선택 해제'}
+                      {t('lblDeselectAll')}
                     </button>
                   </div>
                 </div>
@@ -987,7 +1037,7 @@ export default function AdminCoursesPage() {
                               </Badge>
                             </div>
                             <span className="text-[10px] text-muted-foreground">
-                              {language === 'en' ? 'Upload Date: ' : '업로드일자: '}{new Date(item.created_at).toLocaleString()}
+                              {t('lblUploadDate')}{new Date(item.created_at).toLocaleString()}
                             </span>
                           </div>
                         </div>
@@ -1015,7 +1065,7 @@ export default function AdminCoursesPage() {
               disabled={cleaningOrphans}
               size="sm"
             >
-              {language === 'en' ? 'Close' : '닫기'}
+              {t('lblClose')}
             </Button>
             {orphans.length > 0 && (
               <Button 
@@ -1027,10 +1077,10 @@ export default function AdminCoursesPage() {
                 {cleaningOrphans ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {language === 'en' ? 'Cleaning...' : '정리 중...'}
+                    {t('lblCleaning')}
                   </>
                 ) : (
-                  language === 'en' ? `Clean Selected (${selectedOrphanIds.length})` : `선택한 강좌 정리 (${selectedOrphanIds.length}개)`
+                  t('lblCleanSelected').replace('{count}', String(selectedOrphanIds.length))
                 )}
               </Button>
             )}
