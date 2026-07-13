@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState, use, Suspense, useRef } from 'react';
 import Link from 'next/link';
@@ -407,7 +407,12 @@ function AgentPortalContent({ params }: { params: Promise<{ id: string }> }) {
         fetch('/api/external-agents/test', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ endpoint: fetchedAgent.endpoint, api_key: fetchedAgent.api_key }),
+          body: JSON.stringify({ 
+            endpoint: fetchedAgent.endpoint, 
+            api_key: fetchedAgent.api_key,
+            agent_program: fetchedAgent.agent_program,
+            agent_type: fetchedAgent.agent_type
+          }),
         })
         .then(res => res.json())
         .then(async (data) => {
@@ -457,7 +462,12 @@ function AgentPortalContent({ params }: { params: Promise<{ id: string }> }) {
       const res = await fetch('/api/external-agents/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ endpoint: agent.endpoint, api_key: agent.api_key }),
+        body: JSON.stringify({ 
+          endpoint: agent.endpoint, 
+          api_key: agent.api_key,
+          agent_program: agent.agent_program,
+          agent_type: agent.agent_type
+        }),
       });
       const data = await res.json();
       const newStatus = data.success ? 'online' : 'offline';

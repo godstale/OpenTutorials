@@ -37,7 +37,10 @@ export default function AddAgentModal({ isOpen, onClose, onSuccess }: AddAgentMo
   const [apiKey, setApiKey] = useState('');
   const [agentType, setAgentType] = useState<'harness' | 'llm'>('harness');
   const [envType, setEnvType] = useState<'local' | 'cloud'>('local');
-  const [agentProgram, setAgentProgram] = useState<'hermes' | 'openclaw' | 'ollama' | 'lmstudio' | 'other'>('hermes');
+  const [agentProgram, setAgentProgram] = useState<
+    | 'hermes' | 'openclaw' | 'ollama' | 'lmstudio' | 'other'
+    | 'openai' | 'claude' | 'gemini' | 'deepseek' | 'qwen' | 'kimi'
+  >('hermes');
   
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
@@ -49,9 +52,25 @@ export default function AddAgentModal({ isOpen, onClose, onSuccess }: AddAgentMo
 
   const updateEndpoint = (
     env: 'local' | 'cloud',
-    program: 'hermes' | 'openclaw' | 'ollama' | 'lmstudio' | 'other',
+    program: 'hermes' | 'openclaw' | 'ollama' | 'lmstudio' | 'other' | 'openai' | 'claude' | 'gemini' | 'deepseek' | 'qwen' | 'kimi',
     type: 'harness' | 'llm'
   ) => {
+    if (env === 'cloud' && type === 'llm') {
+      const providers: Record<string, string> = {
+        openai: 'https://api.openai.com/v1',
+        claude: 'https://api.anthropic.com/v1',
+        gemini: 'https://generativelanguage.googleapis.com/v1beta',
+        deepseek: 'https://api.deepseek.com/v1',
+        qwen: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+        kimi: 'https://api.moonshot.cn/v1',
+      };
+      if (providers[program]) {
+        setEndpoint(providers[program]);
+        setTestResult(null);
+        return;
+      }
+    }
+
     const host = env === 'local' ? 'localhost' : 'YOUR-CLOUD-IP';
     let url = '';
     if (type === 'harness') {
@@ -77,7 +96,7 @@ export default function AddAgentModal({ isOpen, onClose, onSuccess }: AddAgentMo
 
   const handleAgentTypeChange = (type: 'harness' | 'llm') => {
     setAgentType(type);
-    const defaultProgram = type === 'harness' ? 'hermes' : 'ollama';
+    const defaultProgram = type === 'harness' ? 'hermes' : (envType === 'local' ? 'ollama' : 'openai');
     setAgentProgram(defaultProgram);
     updateEndpoint(envType, defaultProgram, type);
   };
@@ -92,7 +111,7 @@ export default function AddAgentModal({ isOpen, onClose, onSuccess }: AddAgentMo
       const res = await fetch('/api/external-agents/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ endpoint, api_key: apiKey }),
+        body: JSON.stringify({ endpoint, api_key: apiKey, agent_program: agentProgram, agent_type: agentType }),
       });
       const data = await res.json();
       if (data.success) {
@@ -244,7 +263,9 @@ export default function AddAgentModal({ isOpen, onClose, onSuccess }: AddAgentMo
                 type="button"
                 onClick={() => {
                   setEnvType('local');
-                  updateEndpoint('local', agentProgram, agentType);
+                  const defaultProgram = agentType === 'harness' ? 'hermes' : 'ollama';
+                  setAgentProgram(defaultProgram);
+                  updateEndpoint('local', defaultProgram, agentType);
                 }}
                 className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all ${
                   envType === 'local'
@@ -258,7 +279,9 @@ export default function AddAgentModal({ isOpen, onClose, onSuccess }: AddAgentMo
                 type="button"
                 onClick={() => {
                   setEnvType('cloud');
-                  updateEndpoint('cloud', agentProgram, agentType);
+                  const defaultProgram = agentType === 'harness' ? 'hermes' : 'openai';
+                  setAgentProgram(defaultProgram);
+                  updateEndpoint('cloud', defaultProgram, agentType);
                 }}
                 className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all ${
                   envType === 'cloud'
@@ -319,7 +342,7 @@ export default function AddAgentModal({ isOpen, onClose, onSuccess }: AddAgentMo
                     <span className="text-xs">기타</span>
                   </button>
                 </>
-              ) : (
+              ) : envType === 'local' ? (
                 <>
                   <button
                     type="button"
@@ -364,16 +387,50 @@ export default function AddAgentModal({ isOpen, onClose, onSuccess }: AddAgentMo
                     <span className="text-xs">기타</span>
                   </button>
                 </>
+              ) : (
+                <div className="col-span-3 grid grid-cols-3 gap-2">
+                  {[
+                    { key: 'openai', label: 'OpenAI' },
+                    { key: 'claude', label: 'Claude' },
+                    { key: 'gemini', label: 'Gemini' },
+                    { key: 'deepseek', label: 'DeepSeek' },
+                    { key: 'qwen', label: 'Qwen' },
+                    { key: 'kimi', label: 'Kimi' },
+                  ].map((prov) => (
+                    <button
+                      key={prov.key}
+                      type="button"
+                      onClick={() => {
+                        setAgentProgram(prov.key as any);
+                        updateEndpoint(envType, prov.key as any, 'llm');
+                      }}
+                      className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all ${
+                        agentProgram === prov.key
+                          ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/20 dark:border-indigo-400 font-bold'
+                          : 'border-border bg-transparent hover:bg-zinc-50 dark:hover:bg-zinc-900'
+                      }`}
+                    >
+                      <span className="text-xs">{prov.label}</span>
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="endpoint">API Endpoint URL *</Label>
-            <Input id="endpoint" required placeholder="예: http://127.0.0.1:8642/v1" value={endpoint} onChange={(e) => { 
-              setEndpoint(e.target.value); 
-              setTestResult(null); 
-            }} />
+            <Input 
+              id="endpoint" 
+              required 
+              placeholder="예: http://127.0.0.1:8642/v1" 
+              value={endpoint} 
+              disabled={envType === 'cloud' && agentType === 'llm'}
+              onChange={(e) => { 
+                setEndpoint(e.target.value); 
+                setTestResult(null); 
+              }} 
+            />
           </div>
 
           <div className="space-y-2">

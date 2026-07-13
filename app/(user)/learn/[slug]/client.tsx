@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -527,6 +527,9 @@ function buildSystemPrompt({
 
   let systemPrompt = '';
   if (agentType === 'llm') {
+    const tocItems = course.toc || [];
+    const tocTreeText = generateFallbackTocText(tocItems, 0);
+
     systemPrompt = `You are a helpful AI tutor for the course "${course.title}".
 Use the following information to answer the student's question and guide them through their learning.
 
@@ -536,6 +539,9 @@ Description: ${course.description || 'No description available.'}
 Category: ${category}
 Target Audience: ${targetAge}
 Tags: ${tags}
+
+[Course Table of Contents]
+${tocTreeText}
 
 [Learning Progress & Context]
 Progress: Card ${currentCardIndex + 1} of ${totalCards} (${Math.round(((currentCardIndex + 1) / totalCards) * 100)}% completed)
@@ -973,6 +979,7 @@ export default function LearnPageClient({
   const [isSubtitlePopupOpen, setIsSubtitlePopupOpen] = useState(false);
   const playerRef = useRef<HTMLVideoElement | null>(null);
   const lastPlayedCardIndex = useRef<number | null>(null);
+  const lastSentCardIndex = useRef<number | null>(null);
   const playerConfig = useMemo(() => ({
     youtube: {
       rel: 0 as const,
@@ -1330,6 +1337,7 @@ Please ask the student the question now. Only ask the question itself, do not re
     if (!agentId) return;
 
     const autoClearChat = async () => {
+      lastSentCardIndex.current = null;
       setMessages([
         {
           id: '1',
@@ -1614,8 +1622,8 @@ Please ask the student the question now. Only ask the question itself, do not re
 
       const isFallback = !finalResourceUrl.includes('.supabase.co');
       const isFirstQuestion = newMessages.filter(m => m.role === 'user').length === 1;
-
-
+      const isCardChanged = lastSentCardIndex.current !== currentCardIndex;
+      const shouldIncludeCardContext = isFirstQuestion || (courseDownloadStatus !== 'downloaded' && isCardChanged);
 
       const systemPrompt = buildSystemPrompt({
         course,
@@ -1650,9 +1658,12 @@ Please ask the student the question now. Only ask the question itself, do not re
           content: m.content
         }));
 
-        // Prepend current card context to the user's question only for harness agent
+        // Prepend current card context to the user's question only for harness agent (first question or before download completes + card changes)
         if (agentType === 'harness' && apiMessages.length > 0 && apiMessages[apiMessages.length - 1].role === 'user' && !isCheckpointTrigger) {
-          apiMessages[apiMessages.length - 1].content = `${currentCardContext}${text}`;
+          if (shouldIncludeCardContext) {
+            apiMessages[apiMessages.length - 1].content = `${currentCardContext}${text}`;
+          }
+          lastSentCardIndex.current = currentCardIndex;
         }
 
         if (isCheckpointTrigger) {
@@ -1826,6 +1837,9 @@ Please ask the student the question now. Only ask the question itself, do not re
 
     const isFallback = !finalResourceUrl.includes('.supabase.co');
     const isFirstQuestion = messages.filter(m => m.role === 'user').length === 0;
+    const isCardChanged = lastSentCardIndex.current !== currentCardIndex;
+    const shouldIncludeCardContext = isFirstQuestion || (courseDownloadStatus !== 'downloaded' && isCardChanged);
+
       const systemPrompt = buildSystemPrompt({
         course,
         coursePackage,
@@ -1853,7 +1867,9 @@ Please ask the student the question now. Only ask the question itself, do not re
     }));
 
     if (agentType === 'harness' && apiMessagesForEst.length > 0 && apiMessagesForEst[apiMessagesForEst.length - 1].role === 'user') {
-      apiMessagesForEst[apiMessagesForEst.length - 1].content = `${currentCardContext}${userPrompt}`;
+      if (shouldIncludeCardContext) {
+        apiMessagesForEst[apiMessagesForEst.length - 1].content = `${currentCardContext}${userPrompt}`;
+      }
     }
 
     apiMessagesForEst.unshift({
