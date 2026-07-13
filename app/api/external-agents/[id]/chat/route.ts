@@ -104,20 +104,59 @@ export async function POST(
     }
 
     const { v1Url } = normalizeAgentEndpoint(agent.endpoint);
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    if (agent.api_key) {
-      headers['Authorization'] = `Bearer ${agent.api_key}`;
-    }
-
     const targetModel = agent.selected_model || (agent.agent_type === 'harness' ? 'hermes-agent' : '');
     if (!targetModel) {
       console.warn(`[API CHAT LOG] [${id}] Model not selected`);
       return new Response('모델이 선택되지 않았습니다. 에이전트 상세 설정에서 모델을 설정해 주세요.', { status: 400 });
     }
 
-    const targetUrl = `${v1Url}/chat/completions`;
+    let targetUrl = `${v1Url}/chat/completions`;
+    let headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    let bodyObj: any = {
+      model: targetModel,
+      messages: requestMessages,
+      stream: true,
+    };
+
+    if (agent.agent_program === 'claude') {
+      targetUrl = `${agent.endpoint}/messages`;
+      headers = {
+        'Content-Type': 'application/json',
+        'x-api-key': agent.api_key || '',
+        'anthropic-version': '2023-06-01',
+      };
+      
+      const systemMessage = requestMessages.find((m: any) => m.role === 'system')?.content;
+      const otherMessages = requestMessages.filter((m: any) => m.role !== 'system');
+      
+      bodyObj = {
+        model: targetModel,
+        messages: otherMessages.map((m: any) => ({
+          role: m.role === 'assistant' ? 'assistant' : 'user',
+          content: m.content,
+        })),
+        max_tokens: 4000,
+        stream: true,
+      };
+      if (systemMessage) {
+        bodyObj.system = systemMessage;
+      }
+    } else if (agent.agent_program === 'gemini') {
+      // Use Google Gemini's OpenAI compatible endpoints
+      targetUrl = `${agent.endpoint}/openai/v1/chat/completions`;
+      headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${agent.api_key || ''}`,
+      };
+    } else {
+      // Standard OpenAI or OpenAI compatible APIs
+      if (agent.api_key) {
+        headers['Authorization'] = `Bearer ${agent.api_key}`;
+      }
+    }
+
     console.log(`[API CHAT LOG] [${id}] Connecting to LLM server: ${targetUrl}`);
     console.log(`[API CHAT LOG] [${id}] Request payload: model="${targetModel}", messagesCount=${requestMessages.length}`);
 
@@ -125,11 +164,7 @@ export async function POST(
     const response = await fetch(targetUrl, {
       method: 'POST',
       headers,
-      body: JSON.stringify({
-        model: targetModel,
-        messages: requestMessages,
-        stream: true,
-      }),
+      body: JSON.stringify(bodyObj),
       signal: req.signal,
     });
 
@@ -151,6 +186,8 @@ export async function POST(
     // Wrap downstream stream to capture assistant reply content
     const reader = rawStream.getReader();
     const decoder = new TextDecoder();
+    const encoder = new TextEncoder();
+    const isClaude = agent.agent_program === 'claude';
     let assistantText = '';
     let buffer = '';
     let isFirstChunk = true;
@@ -172,7 +209,6 @@ export async function POST(
               const totalDuration = Date.now() - startTime;
               console.log(`[API CHAT LOG] [${id}] Stream reading complete. Total elapsed time: ${totalDuration}ms, Total chunks: ${chunkCount}, Total generated chars: ${assistantText.length}`);
               
-              // If there's leftover buffer content, process it
               if (buffer.trim()) {
                 processLine(buffer.trim());
               }
@@ -238,16 +274,45 @@ export async function POST(
             }
 
             chunkCount++;
-            // Forward chunks straight to browser client so user sees response instantly
-            controller.enqueue(value);
 
-            // Accumulate chunk string
-            buffer += decoder.decode(value, { stream: true });
+            // Decode chunk value and process line-by-line for conversion if necessary
+            const decodedChunk = decoder.decode(value, { stream: true });
+            buffer += decodedChunk;
             const lines = buffer.split('\n');
             buffer = lines.pop() || ''; // Keep partial line in buffer
 
             for (const line of lines) {
-              processLine(line);
+              const cleanLine = line.trim();
+              if (!cleanLine) continue;
+
+              if (isClaude) {
+                // Translate Anthropic message SSE to OpenAI chat completion chunk SSE
+                if (cleanLine.startsWith('data:')) {
+                  const dataStr = cleanLine.slice(cleanLine.indexOf(':') + 1).trim();
+                  if (dataStr === '[DONE]') continue;
+                  try {
+                    const parsed = JSON.parse(dataStr);
+                    if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
+                      const text = parsed.delta.text;
+                      assistantText += text;
+
+                      // Construct OpenAI structure delta
+                      const openAiChunk = {
+                        choices: [{
+                          delta: { content: text }
+                        }]
+                      };
+                      controller.enqueue(encoder.encode(`data: ${JSON.stringify(openAiChunk)}\n\n`));
+                    } else if (parsed.type === 'message_stop') {
+                      controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+                    }
+                  } catch {}
+                }
+              } else {
+                // OpenAI compatible stream (Gemini OpenAI mode, DeepSeek, Qwen, Kimi, Ollama, LM Studio)
+                processLine(cleanLine);
+                controller.enqueue(encoder.encode(line + '\n'));
+              }
             }
           }
         } catch (err) {

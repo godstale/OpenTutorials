@@ -177,7 +177,12 @@ function MyAgentsContent() {
       const res = await fetch('/api/external-agents/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ endpoint: agent.endpoint, api_key: agent.api_key }),
+        body: JSON.stringify({ 
+          endpoint: agent.endpoint, 
+          api_key: agent.api_key,
+          agent_program: agent.agent_program,
+          agent_type: agent.agent_type 
+        }),
       });
       const data = await res.json();
       const newStatus = data.success ? 'online' : 'offline';

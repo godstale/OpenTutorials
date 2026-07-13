@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { 
@@ -41,7 +41,13 @@ const programNames = {
   openclaw: 'Open claw',
   ollama: 'Ollama',
   lmstudio: 'LM Studio',
-  other: '기타'
+  other: '기타',
+  openai: 'OpenAI',
+  claude: 'Claude',
+  gemini: 'Gemini',
+  deepseek: 'DeepSeek',
+  qwen: 'Qwen',
+  kimi: 'Kimi'
 };
 
 export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
@@ -64,7 +70,10 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
   const [manualModelInput, setManualModelInput] = useState<string>(agent.selected_model || '');
   const [envType, setEnvType] = useState<'local' | 'cloud'>(agent.env_type || 'local');
 
-  const [agentProgram, setAgentProgram] = useState<'hermes' | 'openclaw' | 'ollama' | 'lmstudio' | 'other'>(agent.agent_program || 'hermes');
+  const [agentProgram, setAgentProgram] = useState<
+    | 'hermes' | 'openclaw' | 'ollama' | 'lmstudio' | 'other'
+    | 'openai' | 'claude' | 'gemini' | 'deepseek' | 'qwen' | 'kimi'
+  >(agent.agent_program || 'hermes');
 
 
   const [isSaving, setIsSaving] = useState(false);
@@ -74,6 +83,50 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [detectedModels, setDetectedModels] = useState<string[]>([]);
+
+  const updateEndpoint = (
+    env: 'local' | 'cloud',
+    program: 'hermes' | 'openclaw' | 'ollama' | 'lmstudio' | 'other' | 'openai' | 'claude' | 'gemini' | 'deepseek' | 'qwen' | 'kimi',
+    type: 'harness' | 'llm'
+  ) => {
+    if (env === 'cloud' && type === 'llm') {
+      const providers: Record<string, string> = {
+        openai: 'https://api.openai.com/v1',
+        claude: 'https://api.anthropic.com/v1',
+        gemini: 'https://generativelanguage.googleapis.com/v1beta',
+        deepseek: 'https://api.deepseek.com/v1',
+        qwen: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+        kimi: 'https://api.moonshot.cn/v1',
+      };
+      if (providers[program]) {
+        setEndpoint(providers[program]);
+        setTestResult(null);
+        return;
+      }
+    }
+
+    const host = env === 'local' ? 'localhost' : 'YOUR-CLOUD-IP';
+    let url = '';
+    if (type === 'harness') {
+      if (program === 'openclaw') {
+        url = `http://${host}:8000/v1`;
+      } else if (program === 'other') {
+        url = `http://${host}:/v1`;
+      } else {
+        url = `http://${host}:8642/v1`;
+      }
+    } else {
+      if (program === 'lmstudio') {
+        url = `http://${host}:1234/v1`;
+      } else if (program === 'other') {
+        url = `http://${host}:/v1`;
+      } else {
+        url = `http://${host}:11434/v1`;
+      }
+    }
+    setEndpoint(url);
+    setTestResult(null);
+  };
 
   const handleTestConnection = async () => {
     if (!endpoint) return;
@@ -85,7 +138,12 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
       const res = await fetch('/api/external-agents/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ endpoint, api_key: activeApiKey }),
+        body: JSON.stringify({ 
+          endpoint, 
+          api_key: activeApiKey,
+          agent_program: agentProgram,
+          agent_type: agentType 
+        }),
       });
       const data = await res.json();
       if (data.success) {
@@ -151,7 +209,12 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
       const res = await fetch('/api/external-agents/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ endpoint: agent.endpoint, api_key: agent.api_key }),
+        body: JSON.stringify({ 
+          endpoint: agent.endpoint, 
+          api_key: agent.api_key,
+          agent_program: agent.agent_program,
+          agent_type: agent.agent_type 
+        }),
       });
       const data = await res.json();
       if (isMountedRef.current) {
@@ -326,6 +389,7 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
                     id="agent-endpoint" 
                     required 
                     value={endpoint} 
+                    disabled={envType === 'cloud' && agentType === 'llm'}
                     onChange={(e) => setEndpoint(e.target.value)} 
                     placeholder="예: http://127.0.0.1:8642/v1"
                     className="bg-white dark:bg-zinc-900 font-mono"
@@ -362,7 +426,12 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
-                      onClick={() => setAgentType('harness')}
+                      onClick={() => {
+                        setAgentType('harness');
+                        const defaultProgram = 'hermes';
+                        setAgentProgram(defaultProgram);
+                        updateEndpoint(envType, defaultProgram, 'harness');
+                      }}
                       className={`flex flex-col items-start p-3 rounded-lg border text-left transition-all ${
                         agentType === 'harness'
                           ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/20 dark:border-indigo-400'
@@ -374,7 +443,12 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setAgentType('llm')}
+                      onClick={() => {
+                        setAgentType('llm');
+                        const defaultProgram = envType === 'local' ? 'ollama' : 'openai';
+                        setAgentProgram(defaultProgram);
+                        updateEndpoint(envType, defaultProgram, 'llm');
+                      }}
                       className={`flex flex-col items-start p-3 rounded-lg border text-left transition-all ${
                         agentType === 'llm'
                           ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/20 dark:border-indigo-400'
@@ -397,7 +471,12 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
-                      onClick={() => setEnvType('local')}
+                      onClick={() => {
+                        setEnvType('local');
+                        const defaultProgram = agentType === 'harness' ? 'hermes' : 'ollama';
+                        setAgentProgram(defaultProgram);
+                        updateEndpoint('local', defaultProgram, agentType);
+                      }}
                       className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all ${
                         envType === 'local'
                           ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/20 dark:border-indigo-400 font-bold'
@@ -408,7 +487,12 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setEnvType('cloud')}
+                      onClick={() => {
+                        setEnvType('cloud');
+                        const defaultProgram = agentType === 'harness' ? 'hermes' : 'openai';
+                        setAgentProgram(defaultProgram);
+                        updateEndpoint('cloud', defaultProgram, agentType);
+                      }}
                       className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all ${
                         envType === 'cloud'
                           ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/20 dark:border-indigo-400 font-bold'
@@ -427,7 +511,10 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
                       <>
                         <button
                           type="button"
-                          onClick={() => setAgentProgram('hermes')}
+                          onClick={() => {
+                            setAgentProgram('hermes');
+                            updateEndpoint(envType, 'hermes', 'harness');
+                          }}
                           className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all ${
                             agentProgram === 'hermes'
                               ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/20 dark:border-indigo-400 font-bold'
@@ -438,7 +525,10 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
                         </button>
                         <button
                           type="button"
-                          onClick={() => setAgentProgram('openclaw')}
+                          onClick={() => {
+                            setAgentProgram('openclaw');
+                            updateEndpoint(envType, 'openclaw', 'harness');
+                          }}
                           className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all ${
                             agentProgram === 'openclaw'
                               ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/20 dark:border-indigo-400 font-bold'
@@ -449,7 +539,10 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
                         </button>
                         <button
                           type="button"
-                          onClick={() => setAgentProgram('other')}
+                          onClick={() => {
+                            setAgentProgram('other');
+                            updateEndpoint(envType, 'other', 'harness');
+                          }}
                           className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all ${
                             agentProgram === 'other'
                               ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/20 dark:border-indigo-400 font-bold'
@@ -459,11 +552,14 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
                           <span className="text-xs">{t('agentSettingsProgramOther')}</span>
                         </button>
                       </>
-                    ) : (
+                    ) : envType === 'local' ? (
                       <>
                         <button
                           type="button"
-                          onClick={() => setAgentProgram('ollama')}
+                          onClick={() => {
+                            setAgentProgram('ollama');
+                            updateEndpoint(envType, 'ollama', 'llm');
+                          }}
                           className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all ${
                             agentProgram === 'ollama'
                               ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/20 dark:border-indigo-400 font-bold'
@@ -474,7 +570,10 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
                         </button>
                         <button
                           type="button"
-                          onClick={() => setAgentProgram('lmstudio')}
+                          onClick={() => {
+                            setAgentProgram('lmstudio');
+                            updateEndpoint(envType, 'lmstudio', 'llm');
+                          }}
                           className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all ${
                             agentProgram === 'lmstudio'
                               ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/20 dark:border-indigo-400 font-bold'
@@ -485,7 +584,10 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
                         </button>
                         <button
                           type="button"
-                          onClick={() => setAgentProgram('other')}
+                          onClick={() => {
+                            setAgentProgram('other');
+                            updateEndpoint(envType, 'other', 'llm');
+                          }}
                           className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all ${
                             agentProgram === 'other'
                               ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/20 dark:border-indigo-400 font-bold'
@@ -495,6 +597,33 @@ export default function AgentSettingsTab({ agent }: AgentSettingsTabProps) {
                           <span className="text-xs">{t('agentSettingsProgramOther')}</span>
                         </button>
                       </>
+                    ) : (
+                      <div className="col-span-3 grid grid-cols-3 gap-2">
+                        {[
+                          { key: 'openai', label: 'OpenAI' },
+                          { key: 'claude', label: 'Claude' },
+                          { key: 'gemini', label: 'Gemini' },
+                          { key: 'deepseek', label: 'DeepSeek' },
+                          { key: 'qwen', label: 'Qwen' },
+                          { key: 'kimi', label: 'Kimi' },
+                        ].map((prov) => (
+                          <button
+                            key={prov.key}
+                            type="button"
+                            onClick={() => {
+                              setAgentProgram(prov.key as any);
+                              updateEndpoint(envType, prov.key as any, 'llm');
+                            }}
+                            className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all ${
+                              agentProgram === prov.key
+                                ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/20 dark:border-indigo-400 font-bold'
+                                : 'border-border bg-transparent hover:bg-zinc-50 dark:hover:bg-zinc-900'
+                            }`}
+                          >
+                            <span className="text-xs">{prov.label}</span>
+                          </button>
+                        ))}
+                      </div>
                     )}
                   </div>
                 </div>

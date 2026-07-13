@@ -1,3 +1,63 @@
+## [2026-07-13] fix | LLM 에이전트 QnA 전체 목차 컨텍스트 추가 및 하네스 에이전트 카드 내용 전송 로직 개선
+
+### 작업 내용
+- AI 튜터 QnA 시 LLM 에이전트(로컬/클라우드)가 전체 강좌 구조와 은닉층 구성을 파악하지 못해 1~3개의 임의 은닉층을 가정하고 대답하던 문제를 해결.
+- 시스템 프롬프트 생성 로직에 전체 목차(TOC) 주입 프로세스를 통합하고, 실제 강좌 카드 텍스트에 은닉층의 구체적인 개수(4개)를 명시화함.
+- 하네스 에이전트(Hermes)의 경우 강좌 파일 다운로드 완료 여부 및 카드 변경 상태에 따라 현재 카드 텍스트를 선별적으로 전송하도록 프롬프트 전송 로직을 개선하여 토큰 낭비 방지 및 Fallback 안전성 확보.
+
+### 주요 변경 및 구현 상세
+1. **LLM 에이전트용 시스템 프롬프트 개선 (`app/(user)/learn/[slug]/client.tsx`)**:
+   - `buildSystemPrompt` 함수 내 `agentType === 'llm'` 분기에 `generateFallbackTocText`를 통한 전체 강좌 목차(`[Course Table of Contents]`) 데이터를 주입하도록 개선.
+   - 이를 통해 LLM 튜터가 현재 카드의 로컬 내용뿐만 아니라 강좌 전체의 뼈대와 흐름을 함께 인식할 수 있도록 컨텍스트 확장.
+2. **신경망 작동 메커니즘 카드 명시성 보강 (`public/courses/neutral-network-and-llm/cards/02-neural-network-text.mdx`)**:
+   - 카드 본문 텍스트 내 애매하게 표기되어 있던 "다음 은닉층(Hidden Layer)"을 "총 4개의 은닉층(Hidden Layer)"으로 명시적으로 수정하여, 튜터가 텍스트 컨텍스트로부터 실제 예시 모델의 층수를 확증할 수 있도록 지원.
+3. **강좌 리소스 동기화 (`public/courses/neutral-network-and-llm/resource.md`)**:
+   - 카드 파일의 텍스트가 업데이트됨에 따라, 강좌 통합 리소스 파일인 `resource.md` 내에 기재된 Card 2 내용도 동일하게 수정하여 동기화 완료.
+4. **하네스 에이전트 카드 텍스트 조건부 전송 로직 구현 (`app/(user)/learn/[slug]/client.tsx`)**:
+   - `lastSentCardIndex` ref를 추가하여 마지막으로 AI 질문 시 전송한 카드의 인덱스를 추적.
+   - 첫 질문이거나, 강좌 다운로드가 완료되지 않은 상태(`courseDownloadStatus !== 'downloaded'`)에서 카드가 바뀐 경우에만 유저 메시지에 현재 카드 내용(`currentCardContext`)을 결합하여 전송하도록 보완.
+   - 이를 통해 다운로드 이전이나 실패 시 학습 카드의 정보가 정상 전달되면서도, 다운로드 완료 후에는 불필요한 카드 정보 중복 전송(토큰 낭비)을 방지.
+
+### 변경된 파일
+- `app/(user)/learn/[slug]/client.tsx`
+- `public/courses/neutral-network-and-llm/cards/02-neural-network-text.mdx`
+- `public/courses/neutral-network-and-llm/resource.md`
+
+---
+
+## [2026-07-13] feat | 외부 에이전트 클라우드 LLM API(OpenAI, Claude, Gemini, DeepSeek, Qwen, Kimi) 연동 기능 구현
+
+### 작업 내용
+외부 에이전트 등록 팝업 및 상세 설정 탭에서 클라우드 실행 환경을 선택할 때, 임의의 엔드포인트를 적는 기존 구조를 개선하여 주요 클라우드 LLM 제공업체(OpenAI, Claude, Gemini, DeepSeek, Qwen, Kimi)를 선택하고 API를 즉시 활용할 수 있도록 구현.
+
+### 주요 변경 및 구현 상세
+1. **타입 모델 확장 (`lib/types/index.ts`)**:
+   - `UserExternalAgent`의 `agent_program` 유니온 타입에 `openai`, `claude`, `gemini`, `deepseek`, `qwen`, `kimi` 추가.
+2. **에이전트 등록 및 수정 UI 개선 (`AddAgentModal.tsx`, `AgentSettingsTab.tsx`)**:
+   - 실행 환경이 `Cloud` 이고 타입이 `LLM 에이전트` 일 때, 프로그램 대신 LLM 공급업체 드롭다운 선택 UI가 활성화되도록 변경.
+   - 공급업체 선택 시 API Endpoint URL을 각 사의 고정 규격(`https://api.openai.com/v1` 등)으로 자동 지정하고 직접 수정을 방어(Read-only/Disabled).
+   - 연결성 테스트(`POST /api/external-agents/test`) 호출 및 에이전트 상태 핑 체크(sync) 시 `agent_program` 및 `agent_type` 파라미터를 넘겨주어 백엔드에서 공급자별 개별 테스트 수행 가능하도록 변경.
+3. **연결성 검증 백엔드 구현 (`app/api/external-agents/test/route.ts`)**:
+   - **Claude**: `/v1/messages`에 매우 가벼운 ping(1토큰)을 보내어 API Key 권한 유효성을 검증하며, 고정 모델 리스트를 리턴하도록 처리.
+   - **Gemini**: `/openai/v1/models` 경로(OpenAI 호환 모드) 및 `/models?key=...` (REST) 경로를 이중으로 타겟팅하여 검증 및 활성 모델 목록 탐색.
+   - **그 외 (OpenAI, DeepSeek, Qwen, Kimi, 로컬 LLM)**: 표준 OpenAI `/v1/models` 호출 방식을 공통 적용.
+4. **채팅 요청/스트림 변환 어댑터 탑재 (`app/api/external-agents/[id]/chat/route.ts`)**:
+   - 백엔드에 **어댑터(Adapter) 레이어**를 두어 클라이언트 측 코드 수정 없이 타사 LLM API 호출 지원.
+   - **Claude (Anthropic)**: 들어오는 OpenAI 메시지 및 system 설정을 Anthropic 스키마로 변환하여 `/messages` API를 호출하고, Anthropic SSE 스트림(`content_block_delta`)을 실시간으로 파싱하여 OpenAI SSE 형식(`data: {"choices": [{"delta": {"content": "..."}}]}`)으로 백엔드에서 번역 송출.
+   - **Gemini**: 구글의 공식 OpenAI 호환 모드 경로(`https://generativelanguage.googleapis.com/v1beta/openai/v1/chat/completions`)로 통신하도록 엔드포인트 맵핑.
+   - **그 외**: 기존 OpenAI 호환 호출 방식 유지.
+
+### 변경된 파일
+- `lib/types/index.ts`
+- `components/features/AddAgentModal.tsx`
+- `components/features/AgentSettingsTab.tsx`
+- `app/(user)/my-agents/page.tsx`
+- `app/(user)/my-agents/[id]/page.tsx`
+- `app/api/external-agents/test/route.ts`
+- `app/api/external-agents/[id]/chat/route.ts`
+
+---
+
 ## [2026-07-13] refactor | AdminCoursesPage 다국어(i18n) 처리 완료
 
 ### 작업 내용

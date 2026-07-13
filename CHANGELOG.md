@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.3.8] - 2026-07-13
+
+### AI 튜터 QnA 컨텍스트 확장 및 하네스 에이전트 전송 최적화 (v0.3.8)
+
+AI 튜터와의 QnA 시 전체 맥락 파악이 부족했던 문제를 해결하기 위해 시스템 프롬프트에 강좌 전체 목차(TOC) 정보를 주입하고, 하네스 에이전트의 불필요한 카드 내용 중복 전송을 개선한 릴리즈.
+
+#### Added
+- LLM 에이전트(로컬/클라우드) 시스템 프롬프트에 강좌 전체 목차(TOC) 정보 주입 로직을 추가하여 AI 튜터가 전체적인 단원 뼈대와 흐름을 함께 파악하도록 기능 향상 ([client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx)).
+
+#### Changed
+- 하네스 에이전트(Hermes)의 QnA 토큰 효율성 극대화를 위해 첫 질문이나 다운로드 성공 전 카드가 바뀌었을 때만 카드 본문을 전송하도록 조건부 전송 로직 적용 및 토큰 시뮬레이션 계산 로직 동기화.
+- 강좌 `02-neural-network-text.mdx` 및 통합 리소스 `resource.md`에 손글씨 인식에 사용되는 "총 4개의 은닉층" 정보를 명시적으로 기입하여 AI 튜터가 오류 없이 구조 사양을 파악하게 개선.
+
+---
+
 ## [v0.3.7] - 2026-07-13
 
 ### 다국어(i18n) 전면 확장 및 강좌 목록 레이아웃 개선 (v0.3.7)

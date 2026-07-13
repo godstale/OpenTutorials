@@ -10,15 +10,113 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { endpoint, api_key } = await req.json();
+    const { endpoint, api_key, agent_program, agent_type } = await req.json();
 
     if (!endpoint) {
       return NextResponse.json({ error: 'Endpoint is required' }, { status: 400 });
     }
 
+    // 1. Anthropic Claude Custom Check
+    if (agent_program === 'claude') {
+      const headers: Record<string, string> = {
+        'x-api-key': api_key || '',
+        'anthropic-version': '2023-06-01',
+        'Content-Type': 'application/json',
+      };
+      
+      const testRes = await fetch(`${endpoint}/messages`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          model: 'claude-3-5-sonnet-20241022',
+          max_tokens: 1,
+          messages: [{ role: 'user', content: 'Ping' }],
+        }),
+        signal: AbortSignal.timeout(5000),
+      }).catch(() => null);
+
+      if (testRes) {
+        if (testRes.status === 401 || testRes.status === 403) {
+          return NextResponse.json({ success: false, error: 'API Key 인증 실패. Claude API 권한이 없습니다.' });
+        }
+        if (testRes.ok) {
+          return NextResponse.json({
+            success: true,
+            models: [
+              { id: 'claude-3-5-sonnet-20241022', object: 'model' },
+              { id: 'claude-3-5-haiku-20241022', object: 'model' }
+            ],
+            current_model: 'claude-3-5-sonnet-20241022'
+          });
+        }
+      }
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Claude API 연결 실패 (엔드포인트 및 API Key 확인 필요)' 
+      }, { status: 200 });
+    }
+
+    // 2. Google Gemini Custom Check
+    if (agent_program === 'gemini') {
+      // 2-a. OpenAI 호환 모드 확인 시도 (/openai/v1/models)
+      const openaiHeaders: Record<string, string> = {
+        'Authorization': `Bearer ${api_key}`,
+        'Content-Type': 'application/json',
+      };
+      const geminiOpenaiRes = await fetch(`${endpoint}/openai/v1/models`, {
+        method: 'GET',
+        headers: openaiHeaders,
+        signal: AbortSignal.timeout(5000),
+      }).catch(() => null);
+
+      if (geminiOpenaiRes && geminiOpenaiRes.ok) {
+        try {
+          const data = await geminiOpenaiRes.json();
+          const modelsList = data.data || [];
+          return NextResponse.json({
+            success: true,
+            models: modelsList,
+            current_model: modelsList[0]?.id || 'gemini-1.5-flash'
+          });
+        } catch {}
+      }
+
+      // 2-b. 일반 REST API 확인 시도 (/models)
+      const restRes = await fetch(`${endpoint}/models?key=${api_key}`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(5000),
+      }).catch(() => null);
+
+      if (restRes) {
+        if (restRes.status === 400 || restRes.status === 403) {
+          return NextResponse.json({ success: false, error: 'Gemini API Key 인증 실패.' });
+        }
+        if (restRes.ok) {
+          try {
+            const data = await restRes.json();
+            const modelsList = (data.models || []).map((m: any) => ({
+              id: m.name.replace('models/', ''),
+              object: 'model',
+            }));
+            return NextResponse.json({
+              success: true,
+              models: modelsList,
+              current_model: modelsList[0]?.id || 'gemini-1.5-flash'
+            });
+          } catch {}
+        }
+      }
+
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Gemini API 연결 실패 (API Key 확인 필요)' 
+      }, { status: 200 });
+    }
+
+    // 3. OpenAI & OpenAI 호환 API (DeepSeek, Qwen, Kimi, 로컬 LLM 등) 공통 처리
     const { baseUrl, v1Url } = normalizeAgentEndpoint(endpoint);
 
-    // 1. Health check call (relaxed)
+    // Health check call (relaxed)
     const healthRes = await fetch(`${baseUrl}/health`, {
       method: 'GET',
       signal: AbortSignal.timeout(3000),
@@ -28,7 +126,6 @@ export async function POST(req: NextRequest) {
       console.log(`[test-connection] Optional health check failed or not supported at ${baseUrl}/health, proceeding to model check...`);
     }
 
-    // 2. Authentication check / models fetch
     const headers: Record<string, string> = {};
     if (api_key) {
       headers['Authorization'] = `Bearer ${api_key}`;
