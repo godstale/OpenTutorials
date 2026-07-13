@@ -9,6 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.3.7] - 2026-07-13
+
+### 다국어(i18n) 전면 확장 및 강좌 목록 레이아웃 개선 (v0.3.7)
+
+강좌 관리·검색·수강 화면 전반의 하드코딩된 인라인 문자열을 `useLanguage()` 훅 기반 다국어 처리로 전환하고, 강좌 번들 목록의 UI 배치를 개선한 릴리즈.
+
+#### Added
+- `AdminCoursesPage`(`app/(user)/courses/manage/page.tsx`) 내 하드코딩된 한국어/영어 인라인 문자열 전체를 `t()` 함수로 전환
+- 다국어 리소스(`ko.ts` / `en.ts`)에 신규 번역 키 63개 이상 추가 (Course Management 섹션 대폭 확장)
+  - 강좌 카드 라벨: `lblCourseBundleList`, `lblSubCourseCount`, `lblAssignedAgent`, `lblSequential`, `lblCheckpointForce` 등
+  - 업데이트·삭제 플로우: `lblConfirmUpdate`, `lblDownloadingZip`, `lblDeletingCourse`, `lblDeleteFailed` 등
+  - 매니페스트 편집: `lblEditManifest`, `lblManifestDropClick`, `lblZipRegistered`, `lblUpdateComplete` 등
+  - Orphan 정리: `lblCheckingOrphans`, `lblOrphanCount`, `lblOrphanCleanSuccess`, `lblCleanSelected` 등
+- 강좌 검색 화면(`app/(user)/courses/page.tsx`) 및 수강 화면(`app/(user)/my-courses/page.tsx`) 추가 다국어 적용
+
+#### Changed
+- 강좌 번들 목록 UI 배치 변경 — 카드 그리드 레이아웃 및 상세 보기 패널 위치 조정으로 가독성 향상
+- 다국어 동적 변수 처리 패턴 통일: `t('key').replace('{placeholder}', value)` 체이닝 방식 적용
+- `db.json` 로컬 데이터 갱신 (강좌 메타데이터 동기화)
+
+---
+
 ## [v0.3.6] - 2026-07-12
 
 ### 다국어(ko/en) 지원 및 라이선스 정보 수정 (v0.3.6)

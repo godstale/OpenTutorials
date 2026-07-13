@@ -3,9 +3,10 @@
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BookOpen, Award, Compass, FolderOpen, Bot, User } from 'lucide-react';
+import { BookOpen, Award, Compass, FolderOpen, Bot, User, Search, ArrowUpDown } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { createClient } from '@/lib/supabase/client';
@@ -47,6 +48,10 @@ export default function MyCoursesPage() {
   const [agents, setAgents] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const { t, language } = useLanguage();
+
+  // Search & sort
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortOrder, setSortOrder] = useState<'newest' | 'az' | 'za'>('newest');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -96,6 +101,32 @@ export default function MyCoursesPage() {
     sub => sub.total_courses > 0 && sub.completed_courses === sub.total_courses
   );
 
+  const applyFilter = (list: PackageSubscriptionItem[]) =>
+    list
+      .filter((sub) => {
+        const q = searchQuery.toLowerCase().trim();
+        if (!q) return true;
+        const pkg = sub.package;
+        return (
+          pkg?.title?.toLowerCase().includes(q) ||
+          pkg?.description?.toLowerCase().includes(q) ||
+          pkg?.author_nickname?.toLowerCase().includes(q)
+        );
+      })
+      .sort((a, b) => {
+        const titleA = a.package?.title || '';
+        const titleB = b.package?.title || '';
+        if (sortOrder === 'az') return titleA.localeCompare(titleB);
+        if (sortOrder === 'za') return titleB.localeCompare(titleA);
+        // newest: created_at desc
+        const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return dateB - dateA;
+      });
+
+  const filteredActive = applyFilter(activePackages);
+  const filteredCompleted = applyFilter(completedPackages);
+
   return (
     <div className="flex flex-col gap-8 w-full max-w-6xl mx-auto pt-1 pb-8">
       <div className="flex items-center justify-between">
@@ -117,20 +148,51 @@ export default function MyCoursesPage() {
         </div>
       ) : (
         <Tabs defaultValue="active" className="w-full">
+          {/* Search bar + Sort */}
+          <div className="flex items-center gap-2 flex-wrap mb-4">
+            <div className="relative flex-1 min-w-[200px] max-w-md">
+              <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
+              <Input
+                placeholder={t('searchPlaceholder')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800"
+              />
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              <ArrowUpDown className="size-3.5 text-muted-foreground mr-0.5 ml-6" />
+              {(['newest', 'az', 'za'] as const).map((order) => (
+                <Button
+                  key={order}
+                  variant={sortOrder === order ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSortOrder(order)}
+                  className={`text-xs h-9 px-3 ${
+                    sortOrder === order
+                      ? 'bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-200'
+                      : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900'
+                  }`}
+                >
+                  {order === 'newest' ? t('sortRegistered') : order === 'az' ? t('sortAZ') : t('sortZA')}
+                </Button>
+              ))}
+            </div>
+          </div>
+
           <TabsList className="grid w-full max-w-md grid-cols-2 mb-8">
             <TabsTrigger value="active">
-              {t('coursesEnrolled')} ({activePackages.length})
+              {t('coursesEnrolled')} ({filteredActive.length})
             </TabsTrigger>
             <TabsTrigger value="completed">
-              {t('coursesCompleted')} ({completedPackages.length})
+              {t('coursesCompleted')} ({filteredCompleted.length})
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="active" className="mt-0 space-y-8">
-            {activePackages.length > 0 && (
+            {filteredActive.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {/* 패키지 카드 목록 */}
-                {activePackages.map((sub) => {
+                {filteredActive.map((sub) => {
                   const pkg = sub.package;
                   if (!pkg) return null;
                   const percent = sub.total_courses > 0 ? Math.round((sub.completed_courses / sub.total_courses) * 100) : 0;
@@ -194,7 +256,7 @@ export default function MyCoursesPage() {
               </div>
             )}
 
-            {activePackages.length === 0 && (
+            {filteredActive.length === 0 && (
               <div className="py-12 text-center text-muted-foreground bg-muted/20 rounded-lg border border-dashed flex flex-col items-center justify-center gap-4">
                 <FolderOpen className="w-12 h-12 text-muted-foreground/50" />
                 <div>{t('noEnrolledCourses')}</div>
@@ -207,10 +269,10 @@ export default function MyCoursesPage() {
           </TabsContent>
 
           <TabsContent value="completed" className="mt-0 space-y-8">
-            {completedPackages.length > 0 && (
+            {filteredCompleted.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {/* 완료 패키지 카드 목록 */}
-                {completedPackages.map((sub) => {
+                {filteredCompleted.map((sub) => {
                   const pkg = sub.package;
                   if (!pkg) return null;
                   const percent = 100;
@@ -280,7 +342,7 @@ export default function MyCoursesPage() {
               </div>
             )}
 
-            {completedPackages.length === 0 && (
+            {filteredCompleted.length === 0 && (
               <div className="py-12 text-center text-muted-foreground bg-muted/20 rounded-lg border border-dashed flex flex-col items-center justify-center gap-4">
                 <Award className="w-12 h-12 text-muted-foreground/50" />
                 <div>{t('noCompletedCourses')}</div>
