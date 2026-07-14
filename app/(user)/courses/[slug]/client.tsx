@@ -247,10 +247,10 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
   const [updating, setUpdating] = useState(false);
   const [updateStatus, setUpdateStatus] = useState('');
 
-  const toggleChapter = (index: number) => {
+  const toggleChapter = (index: number, currentExpanded: boolean) => {
     setExpandedChapters(prev => ({
       ...prev,
-      [index]: prev[index] === false ? true : false
+      [index]: !currentExpanded
     }));
   };
 
@@ -765,7 +765,7 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
 
                   <div 
                     className="pl-2 cursor-pointer flex items-center justify-between group/header select-none"
-                    onClick={() => toggleChapter(index)}
+                    onClick={() => toggleChapter(index, isExpanded)}
                   >
                     <div className="space-y-1">
                       <h3 className="font-bold text-lg text-zinc-900 dark:text-zinc-50 flex items-center gap-2">

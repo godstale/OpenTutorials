@@ -2453,3 +2453,13 @@ Ran lint. See lint-report.md for details.
     - **로컬 DB 갱신 및 중복 필드 픽스**: `db.json` 내의 로컬 강좌 패키지 데이터(`iot-communication` 및 `neutral-network-and-llm`)에 `"license": "CC-BY-NC-4.0"`과 `"license_file": "LICENSE"`를 추가했습니다. 특히, 기존 파일 맨 끝에 중복 정의되어 덮어쓰기를 유발하던 `"license": "all-rights-reserved"`와 `"license_file": null` 필드를 완전히 제거 및 교체하여, 로컬 데이터베이스 조회 시 라이선스가 정상 리턴되도록 버그를 최종 해결했습니다.
     - **동적 로컬 라이선스 파일 검증 및 공식 설명서 리다이렉트**: 강좌 번들 내에 실제 라이선스 파일이 서빙되고 있는지 서버 단([route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/courses/[slug]/route.ts))에서 `fs.existsSync`를 이용해 판단하고, 그 결과를 `license_file_exists` 플래그로 응답하도록 조치했습니다. 클라이언트([client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/[slug]/client.tsx))에서는 이 플래그에 따라 파일이 존재하면 로컬 첨부파일로 바로 링크하고, 존재하지 않을 때만 크리에이티브 커먼즈(CC) 공식 약관 및 설명서 페이지로 리다이렉트하여 404 에러를 방지하면서도 첨부파일 우선 노출 요구사항을 모두 충족했습니다.
   - **Concepts**: [[CourseLicenseCorrection]], [[LicenseFallbackChange]], [[LocalDbLicenseUpdate]], [[DuplicateJsonFieldFix]], [[LicenseDocument404Fix]], [[CcLicenseRedirect]], [[DynamicLicenseFileCheck]]
+
+## 2026-07-14 (12th Session)
+
+- **[BUGFIX/UI] 강좌 커리큘럼에서 완료된 챕터(또는 단일 카드 챕터) unfold가 작동하지 않는 버그 수정**
+  - **수정 파일**:
+    - [app/(user)/courses/[slug]/client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/[slug]/client.tsx)
+  - **작업 내용**:
+    - **초기 상태 토글 오류 수정**: `expandedChapters`의 초기 상태가 `undefined`일 때 토글 함수 `toggleChapter`가 무조건 `false`로 설정하던 문제를 해결했습니다. `toggleChapter`가 컴포넌트 렌더링 시점에 연산된 현재 `isExpanded` 값을 매개변수로 직접 받도록 리팩토링하고, 클릭 시 해당 상태의 반대 값(`!currentExpanded`)으로 전환하게 함으로써 완료되었거나 단일 카드로 구성된 챕터를 클릭해도 정상적으로 접기/펼치기(fold/unfold)가 상호작용하도록 버그를 해결했습니다.
+  - **Concepts**: [[CurriculumToggleFix]], [[UnfoldCompletedChapterFix]], [[ExpandedStateToggleCorrectness]]
+
