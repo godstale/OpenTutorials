@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.3.9] - 2026-07-14
+
+### 강좌 렌더링 보완 및 오프라인 폴백 제거 (v0.3.9)
+
+단일 카드를 갖는 챕터의 렌더링 오류를 수정하고, 하드코딩된 오프라인 폴백 강좌 및 데이터 동기화 주입 로직을 전면 제거하여 로컬 DB 및 동적 강좌 조회 데이터를 정비한 릴리즈.
+
+#### Added
+- 단일 카드를 갖는 챕터(자식 챕터가 없는 경우)의 커리큘럼 렌더링 보완 ([client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/learn/[slug]/client.tsx), [page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/page.tsx)).
+
+#### Changed
+- 하드코딩된 오프라인 폴백 강좌 목록 및 보정 주입 로직 전체 제거 ([manage/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/manage/page.tsx)).
+- 로컬 데이터베이스(`db.json`) 내 "신경망과 LLM 개론" 강좌 패키지 및 수강 데이터 일괄 제거.
+
+#### Fixed
+- 자식이 없는 챕터(예: 강좌 소개 등) 수강 화면 및 목록 팝업에서 커리큘럼 카드가 올바르게 노출되지 않던 렌더링 버그 수정.
+
+---
+
 ## [v0.3.8] - 2026-07-13
 
 ### AI 튜터 QnA 컨텍스트 확장 및 하네스 에이전트 전송 최적화 (v0.3.8)

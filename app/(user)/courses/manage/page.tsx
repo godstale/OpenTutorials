@@ -49,55 +49,7 @@ const isVersionNewer = (local: string, online: string) => {
   return false;
 };
 
-const OFFLINE_FALLBACK_COURSES = [
-  {
-    title: "아두이노 IoT 프로젝트 마스터 클래스",
-    slug: "iot-communication",
-    description: "USB·블루투스·WiFi·이더넷·RF 등 다양한 통신 기술을 활용해 실제 IoT 장치를 직접 만들어보는 아두이노 실전 프로젝트 강좌 패키지입니다.",
-    version: "1.0.1",
-    category: "Programming",
-    target_age: "all",
-    bundler_protocol_version: "1.1.3",
-    downloadUrl: "https://raw.githubusercontent.com/godstale/OpenTutorials-Browser/main/courses/iot-communication/iot-communication.zip",
-    thumbnail: "icon:cpu",
-    author: {
-      nickname: "Kailash",
-      email: "godstale@hotmail.com",
-      website: "https://hardcopyworld.com"
-    },
-    tags: [
-      "아두이노",
-      "IoT",
-      "블루투스",
-      "WiFi",
-      "이더넷",
-      "RF통신"
-    ]
-  },
-  {
-    title: "신경망과 LLM 개론",
-    slug: "neutral-network-and-llm",
-    description: "3Blue1Brown의 시각적인 설명 영상을 바탕으로, 인공 신경망의 기본 원리부터 트랜스포머 기반의 대규모 언어 모델(LLM) 핵심 메커니즘까지 마스터하는 입문 강좌입니다.",
-    version: "1.0.0",
-    category: "Programming",
-    target_age: "all",
-    bundler_protocol_version: "1.1.3",
-    downloadUrl: "https://raw.githubusercontent.com/godstale/OpenTutorials-Browser/main/courses/neutral-network-and-llm/neutral-network-and-llm.zip",
-    thumbnail: "icon:brain",
-    author: {
-      nickname: "3Blue1Brown",
-      email: null,
-      website: null
-    },
-    tags: [
-      "신경망",
-      "LLM",
-      "딥러닝",
-      "트랜스포머",
-      "인공지능"
-    ]
-  }
-];
+const OFFLINE_FALLBACK_COURSES: any[] = [];
 
 interface PackageItem {
   id: string;
@@ -384,19 +336,9 @@ export default function AdminCoursesPage() {
       if (res.ok) {
         const data = await res.json();
         list = Array.isArray(data) ? data : (data?.courses || []);
-      } else {
-        list = OFFLINE_FALLBACK_COURSES;
       }
     } catch (err) {
       console.warn('Failed to fetch online courses:', err);
-      list = OFFLINE_FALLBACK_COURSES;
-    }
-    
-    // Ensure default courses are in the list if not present
-    for (const def of OFFLINE_FALLBACK_COURSES) {
-      if (!list.some((c: any) => c.slug === def.slug)) {
-        list.push(def);
-      }
     }
     setOnlineCourses(list);
   };
