@@ -99,89 +99,7 @@ export default function CoursesPage() {
   const [downloadStatus, setDownloadStatus] = useState<string>('');
 
   const useOfflineFallback = () => {
-    setOnlineCourses([
-      {
-        title: "아두이노 IoT 프로젝트 마스터 클래스",
-        slug: "iot-communication",
-        description: "USB·블루투스·WiFi·이더넷·RF 등 다양한 통신 기술을 활용해 실제 IoT 장치를 직접 만들어보는 아두이노 실전 프로젝트 강좌 패키지입니다.",
-        version: "1.0.1",
-        category: "Programming",
-        target_age: "all",
-        bundler_protocol_version: "1.1.3",
-        downloadUrl: "https://raw.githubusercontent.com/godstale/OpenTutorials-Browser/main/courses/iot-communication/iot-communication.zip",
-        thumbnail: "icon:cpu",
-        license: "CC-BY-NC-4.0",
-        license_file: "LICENSE",
-        author: {
-          nickname: "Kailash",
-          email: "godstale@hotmail.com",
-          website: "https://hardcopyworld.com"
-        }
-      },
-      {
-        title: "신경망과 LLM 개론",
-        slug: "neutral-network-and-llm",
-        description: "3Blue1Brown의 시각적인 설명 영상을 바탕으로, 인공 신경망의 기본 원리부터 트랜스포머 기반의 대규모 언어 모델(LLM) 핵심 메커니즘까지 마스터하는 입문 강좌입니다.",
-        version: "1.0.0",
-        category: "Programming",
-        target_age: "all",
-        bundler_protocol_version: "1.1.3",
-        downloadUrl: "https://raw.githubusercontent.com/godstale/OpenTutorials-Browser/main/courses/neutral-network-and-llm/neutral-network-and-llm.zip",
-        thumbnail: "icon:brain",
-        license: "CC-BY-NC-4.0",
-        license_file: "LICENSE",
-        author: {
-          nickname: "3Blue1Brown",
-          email: null,
-          website: null
-        },
-        tags: [
-          "신경망",
-          "LLM",
-          "딥러닝",
-          "트랜스포머",
-          "인공지능"
-        ]
-      }
-    ]);
-  };
-
-  const ensureRequiredCourses = (list: any[]) => {
-    const defaultCourses = [
-      {
-        title: "신경망과 LLM 개론",
-        slug: "neutral-network-and-llm",
-        description: "3Blue1Brown의 시각적인 설명 영상을 바탕으로, 인공 신경망의 기본 원리부터 트랜스포머 기반의 대규모 언어 모델(LLM) 핵심 메커니즘까지 마스터하는 입문 강좌입니다.",
-        version: "1.0.0",
-        category: "Programming",
-        target_age: "all",
-        bundler_protocol_version: "1.1.3",
-        downloadUrl: "https://raw.githubusercontent.com/godstale/OpenTutorials-Browser/main/courses/neutral-network-and-llm/neutral-network-and-llm.zip",
-        thumbnail: "icon:brain",
-        license: "CC-BY-NC-4.0",
-        license_file: "LICENSE",
-        author: {
-          nickname: "3Blue1Brown",
-          email: null,
-          website: null
-        },
-        tags: [
-          "신경망",
-          "LLM",
-          "딥러닝",
-          "트랜스포머",
-          "인공지능"
-        ]
-      }
-    ];
-
-    const result = [...list];
-    for (const def of defaultCourses) {
-      if (!result.some(c => c.slug === def.slug)) {
-        result.push(def);
-      }
-    }
-    return result;
+    setOnlineCourses([]);
   };
 
   const fetchOnlineCourses = async () => {
@@ -208,7 +126,7 @@ export default function CoursesPage() {
       } else {
         coursesList = [];
       }
-      setOnlineCourses(ensureRequiredCourses(coursesList));
+      setOnlineCourses(coursesList);
     } catch (err: any) {
       console.warn('온라인 강좌 목록을 가져오는 중 오류가 발생했습니다 (오프라인 모드 전환):', err.message || err);
       useOfflineFallback();
@@ -782,7 +700,7 @@ export default function CoursesPage() {
                                     {chapter.description}
                                   </p>
                                 )}
-                                {chapter.children && chapter.children.length > 0 && (
+                                {chapter.children && chapter.children.length > 0 ? (
                                   <ul className="space-y-1.5 pl-1">
                                     {chapter.children.map((section: any, sIdx: number) => (
                                       <li key={sIdx} className="flex flex-col gap-0.5 border-l-2 border-zinc-200 dark:border-zinc-800 pl-3.5 py-0.5">
@@ -797,6 +715,21 @@ export default function CoursesPage() {
                                       </li>
                                     ))}
                                   </ul>
+                                ) : (
+                                  chapter.filename && (
+                                    <ul className="space-y-1.5 pl-1">
+                                      <li className="flex flex-col gap-0.5 border-l-2 border-zinc-200 dark:border-zinc-800 pl-3.5 py-0.5">
+                                        <span className="font-medium text-zinc-800 dark:text-zinc-200 text-[11px] line-clamp-1">
+                                          {chapter.title}
+                                        </span>
+                                        {chapter.description && (
+                                          <span className="text-[10px] text-zinc-500 dark:text-zinc-500 line-clamp-1">
+                                            {chapter.description}
+                                          </span>
+                                        )}
+                                      </li>
+                                    </ul>
+                                  )
                                 )}
                               </AccordionContent>
                             </AccordionItem>

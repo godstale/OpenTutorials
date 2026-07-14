@@ -169,59 +169,7 @@ const isVersionNewer = (local: string, online: string) => {
   return false;
 };
 
-const OFFLINE_FALLBACK_COURSES = [
-  {
-    title: "아두이노 IoT 프로젝트 마스터 클래스",
-    slug: "iot-communication",
-    description: "USB·블루투스·WiFi·이더넷·RF 등 다양한 통신 기술을 활용해 실제 IoT 장치를 직접 만들어보는 아두이노 실전 프로젝트 강좌 패키지입니다.",
-    version: "1.0.1",
-    category: "Programming",
-    target_age: "all",
-    bundler_protocol_version: "1.1.3",
-    downloadUrl: "https://raw.githubusercontent.com/godstale/OpenTutorials-Browser/main/courses/iot-communication/iot-communication.zip",
-    thumbnail: "icon:cpu",
-    license: "CC-BY-NC-4.0",
-    license_file: "LICENSE",
-    author: {
-      nickname: "Kailash",
-      email: "godstale@hotmail.com",
-      website: "https://hardcopyworld.com"
-    },
-    tags: [
-      "아두이노",
-      "IoT",
-      "블루투스",
-      "WiFi",
-      "이더넷",
-      "RF통신"
-    ]
-  },
-  {
-    title: "신경망과 LLM 개론",
-    slug: "neutral-network-and-llm",
-    description: "3Blue1Brown의 시각적인 설명 영상을 바탕으로, 인공 신경망의 기본 원리부터 트랜스포머 기반의 대규모 언어 모델(LLM) 핵심 메커니즘까지 마스터하는 입문 강좌입니다.",
-    version: "1.0.0",
-    category: "Programming",
-    target_age: "all",
-    bundler_protocol_version: "1.1.3",
-    downloadUrl: "https://raw.githubusercontent.com/godstale/OpenTutorials-Browser/main/courses/neutral-network-and-llm/neutral-network-and-llm.zip",
-    thumbnail: "icon:brain",
-    license: "CC-BY-NC-4.0",
-    license_file: "LICENSE",
-    author: {
-      nickname: "3Blue1Brown",
-      email: null,
-      website: null
-    },
-    tags: [
-      "신경망",
-      "LLM",
-      "딥러닝",
-      "트랜스포머",
-      "인공지능"
-    ]
-  }
-];
+const OFFLINE_FALLBACK_COURSES: any[] = [];
 
 const CC_LICENSE_URLS: Record<string, string> = {
   'CC-BY-4.0': 'https://creativecommons.org/licenses/by/4.0/',
@@ -247,10 +195,10 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
   const [updating, setUpdating] = useState(false);
   const [updateStatus, setUpdateStatus] = useState('');
 
-  const toggleChapter = (index: number) => {
+  const toggleChapter = (index: number, currentExpanded: boolean) => {
     setExpandedChapters(prev => ({
       ...prev,
-      [index]: prev[index] === false ? true : false
+      [index]: !currentExpanded
     }));
   };
 
@@ -287,20 +235,9 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
         if (res.ok) {
           const data = await res.json();
           coursesList = Array.isArray(data) ? data : (data?.courses || []);
-        } else {
-          console.warn('Failed to fetch online courses list, using offline fallback');
-          coursesList = OFFLINE_FALLBACK_COURSES;
         }
       } catch (err: any) {
         console.warn('Failed to check course update (offline or network error):', err.message || err);
-        coursesList = OFFLINE_FALLBACK_COURSES;
-      }
-
-      // Ensure default courses are in the list if not present
-      for (const def of OFFLINE_FALLBACK_COURSES) {
-        if (!coursesList.some((c: any) => c.slug === def.slug)) {
-          coursesList.push(def);
-        }
       }
 
       const onlineInfo = coursesList.find((c: any) => c.slug === slug);
@@ -746,10 +683,14 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
           <div className="relative border-l-2 border-zinc-200 dark:border-zinc-800 ml-4 pl-6 md:pl-8 space-y-8">
             {courseDetail.toc.map((chapter: any, index: number) => {
               // 챕터 내 모든 섹션이 완료되었는지 확인
-              const isChapterCompleted = chapter.children && chapter.children.length > 0 && chapter.children.every((section: any) => {
-                const cardIndex = courseDetail.cards?.indexOf(section.filename) ?? -1;
-                return cardIndex !== -1 && cardIndex < completedSubcourses;
-              });
+              const isChapterCompleted = chapter.children && chapter.children.length > 0 
+                ? chapter.children.every((section: any) => {
+                    const cardIndex = courseDetail.cards?.indexOf(section.filename) ?? -1;
+                    return cardIndex !== -1 && cardIndex < completedSubcourses;
+                  })
+                : (chapter.filename 
+                    ? (courseDetail.cards?.indexOf(chapter.filename) ?? -1) < completedSubcourses
+                    : false);
 
               // 이미 완료된 챕터는 기본적으로 접고(false), 완료되지 않은 챕터는 펼침(true)
               const isExpanded = expandedChapters[index] !== undefined 
@@ -765,7 +706,7 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
 
                   <div 
                     className="pl-2 cursor-pointer flex items-center justify-between group/header select-none"
-                    onClick={() => toggleChapter(index)}
+                    onClick={() => toggleChapter(index, isExpanded)}
                   >
                     <div className="space-y-1">
                       <h3 className="font-bold text-lg text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
@@ -780,80 +721,154 @@ export default function CourseDetailPageClient({ slug }: { slug: string }) {
                     </div>
                   </div>
 
-                  {isExpanded && chapter.children && chapter.children.length > 0 && (
+                  {isExpanded && (
                     <div className="space-y-3 pl-2 transition-all duration-200">
-                      {chapter.children.map((section: any, sIdx: number) => {
-                        const cardIndex = courseDetail.cards?.indexOf(section.filename) ?? -1;
-                        const isCompleted = cardIndex !== -1 && cardIndex < completedSubcourses;
-                        const isStarted = cardIndex !== -1 && cardIndex === completedSubcourses;
-                        const isLocked = courseDetail.sequential_play && cardIndex !== -1 && cardIndex > completedSubcourses;
+                      {chapter.children && chapter.children.length > 0 ? (
+                        chapter.children.map((section: any, sIdx: number) => {
+                          const cardIndex = courseDetail.cards?.indexOf(section.filename) ?? -1;
+                          const isCompleted = cardIndex !== -1 && cardIndex < completedSubcourses;
+                          const isStarted = cardIndex !== -1 && cardIndex === completedSubcourses;
+                          const isLocked = courseDetail.sequential_play && cardIndex !== -1 && cardIndex > completedSubcourses;
 
-                        return (
-                          <Card 
-                            key={sIdx} 
-                            className={`border hover:shadow-sm transition-all overflow-hidden bg-white dark:bg-zinc-900 ${
-                              isCompleted 
-                                ? 'border-green-100 bg-zinc-50 dark:border-green-950/20 dark:bg-zinc-900/50' 
-                                : isStarted && !isLocked
-                                  ? 'border-emerald-100 dark:border-emerald-950' 
-                                  : 'border-zinc-200 dark:border-zinc-800'
-                            } ${isLocked ? 'opacity-60 bg-zinc-50/30' : ''}`}
-                          >
-                            <CardContent className="px-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                              <div className="space-y-1 flex-1">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <h4 className="font-semibold text-sm text-zinc-900 dark:text-zinc-50">{section.title}</h4>
-                                  {isCompleted ? (
-                                    <Badge variant="default" className="bg-zinc-400 text-white text-[10px] px-1.5 py-0">
-                                      {language === 'en' ? 'Completed' : '완료'}
-                                    </Badge>
-                                  ) : isLocked ? (
-                                    <Badge variant="outline" className="text-zinc-400 border-zinc-200 text-[10px] px-1.5 py-0">
-                                      {language === 'en' ? 'Locked' : '잠금'}
-                                    </Badge>
-                                  ) : isStarted ? (
-                                    <Badge variant="secondary" className="bg-green-700 text-white text-[10px] px-1.5 py-0">
-                                      {t('statusLearning')}
-                                    </Badge>
+                          return (
+                            <Card 
+                              key={sIdx} 
+                              className={`border hover:shadow-sm transition-all overflow-hidden bg-white dark:bg-zinc-900 ${
+                                isCompleted 
+                                  ? 'border-green-100 bg-zinc-50 dark:border-green-950/20 dark:bg-zinc-900/50' 
+                                  : isStarted && !isLocked
+                                    ? 'border-emerald-100 dark:border-emerald-950' 
+                                    : 'border-zinc-200 dark:border-zinc-800'
+                              } ${isLocked ? 'opacity-60 bg-zinc-50/30' : ''}`}
+                            >
+                              <CardContent className="px-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                <div className="space-y-1 flex-1">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <h4 className="font-semibold text-sm text-zinc-900 dark:text-zinc-50">{section.title}</h4>
+                                    {isCompleted ? (
+                                      <Badge variant="default" className="bg-zinc-400 text-white text-[10px] px-1.5 py-0">
+                                        {language === 'en' ? 'Completed' : '완료'}
+                                      </Badge>
+                                    ) : isLocked ? (
+                                      <Badge variant="outline" className="text-zinc-400 border-zinc-200 text-[10px] px-1.5 py-0">
+                                        {language === 'en' ? 'Locked' : '잠금'}
+                                      </Badge>
+                                    ) : isStarted ? (
+                                      <Badge variant="secondary" className="bg-green-700 text-white text-[10px] px-1.5 py-0">
+                                        {t('statusLearning')}
+                                      </Badge>
+                                    ) : (
+                                      <Badge variant="outline" className="text-zinc-400 border-zinc-200 text-[10px] px-1.5 py-0">
+                                        {language === 'en' ? 'Pending' : '대기 중'}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-muted-foreground line-clamp-1">{section.description}</p>
+                                </div>
+
+                                <div className="shrink-0 self-end sm:self-center">
+                                  {courseDetail.user_subscribed ? (
+                                    <Button
+                                      variant={isCompleted ? 'outline' : 'default'}
+                                      size="sm"
+                                      onClick={() => cardIndex !== -1 && router.push(`/learn/${courseDetail.slug}?card=${cardIndex + 1}`)}
+                                      disabled={isLocked}
+                                      className={isCompleted 
+                                        ? 'border-zinc-300 text-zinc-700 hover:bg-zinc-50 text-xs h-8' 
+                                        : 'bg-green-700 hover:bg-green-700 text-white text-xs h-8'
+                                      }
+                                    >
+                                      {isCompleted ? (
+                                        language === 'en' ? 'Review' : '다시 보기'
+                                      ) : isStarted ? (
+                                        t('continueLearning')
+                                      ) : (
+                                        language === 'en' ? 'Start Learn' : '학습 시작'
+                                      )}
+                                    </Button>
                                   ) : (
-                                    <Badge variant="outline" className="text-zinc-400 border-zinc-200 text-[10px] px-1.5 py-0">
-                                      {language === 'en' ? 'Pending' : '대기 중'}
-                                    </Badge>
+                                    <Button variant="secondary" size="sm" onClick={handleSubscribe} disabled={registering} className="border border-zinc-200 text-xs h-8">
+                                      {language === 'en' ? 'Enroll Required' : '수강 필요'}
+                                    </Button>
                                   )}
                                 </div>
-                                <p className="text-xs text-muted-foreground line-clamp-1">{section.description}</p>
-                              </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })
+                      ) : (
+                        chapter.filename && (() => {
+                          const cardIndex = courseDetail.cards?.indexOf(chapter.filename) ?? -1;
+                          const isCompleted = cardIndex !== -1 && cardIndex < completedSubcourses;
+                          const isStarted = cardIndex !== -1 && cardIndex === completedSubcourses;
+                          const isLocked = courseDetail.sequential_play && cardIndex !== -1 && cardIndex > completedSubcourses;
 
-                              <div className="shrink-0 self-end sm:self-center">
-                                {courseDetail.user_subscribed ? (
-                                  <Button
-                                    variant={isCompleted ? 'outline' : 'default'}
-                                    size="sm"
-                                    onClick={() => cardIndex !== -1 && router.push(`/learn/${courseDetail.slug}?card=${cardIndex + 1}`)}
-                                    disabled={isLocked}
-                                    className={isCompleted 
-                                      ? 'border-zinc-300 text-zinc-700 hover:bg-zinc-50 text-xs h-8' 
-                                      : 'bg-green-700 hover:bg-green-700 text-white text-xs h-8'
-                                    }
-                                  >
+                          return (
+                            <Card 
+                              className={`border hover:shadow-sm transition-all overflow-hidden bg-white dark:bg-zinc-900 ${
+                                isCompleted 
+                                  ? 'border-green-100 bg-zinc-50 dark:border-green-950/20 dark:bg-zinc-900/50' 
+                                  : isStarted && !isLocked
+                                    ? 'border-emerald-100 dark:border-emerald-950' 
+                                    : 'border-zinc-200 dark:border-zinc-800'
+                              } ${isLocked ? 'opacity-60 bg-zinc-50/30' : ''}`}
+                            >
+                              <CardContent className="px-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                <div className="space-y-1 flex-1">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <h4 className="font-semibold text-sm text-zinc-900 dark:text-zinc-50">{chapter.title}</h4>
                                     {isCompleted ? (
-                                      language === 'en' ? 'Review' : '다시 보기'
+                                      <Badge variant="default" className="bg-zinc-400 text-white text-[10px] px-1.5 py-0">
+                                        {language === 'en' ? 'Completed' : '완료'}
+                                      </Badge>
+                                    ) : isLocked ? (
+                                      <Badge variant="outline" className="text-zinc-400 border-zinc-200 text-[10px] px-1.5 py-0">
+                                        {language === 'en' ? 'Locked' : '잠금'}
+                                      </Badge>
                                     ) : isStarted ? (
-                                      t('continueLearning')
+                                      <Badge variant="secondary" className="bg-green-700 text-white text-[10px] px-1.5 py-0">
+                                        {t('statusLearning')}
+                                      </Badge>
                                     ) : (
-                                      language === 'en' ? 'Start Learn' : '학습 시작'
+                                      <Badge variant="outline" className="text-zinc-400 border-zinc-200 text-[10px] px-1.5 py-0">
+                                        {language === 'en' ? 'Pending' : '대기 중'}
+                                      </Badge>
                                     )}
-                                  </Button>
-                                ) : (
-                                  <Button variant="secondary" size="sm" onClick={handleSubscribe} disabled={registering} className="border border-zinc-200 text-xs h-8">
-                                    {language === 'en' ? 'Enroll Required' : '수강 필요'}
-                                  </Button>
-                                )}
-                              </div>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
+                                  </div>
+                                  <p className="text-xs text-muted-foreground line-clamp-1">{chapter.description}</p>
+                                </div>
+
+                                <div className="shrink-0 self-end sm:self-center">
+                                  {courseDetail.user_subscribed ? (
+                                    <Button
+                                      variant={isCompleted ? 'outline' : 'default'}
+                                      size="sm"
+                                      onClick={() => cardIndex !== -1 && router.push(`/learn/${courseDetail.slug}?card=${cardIndex + 1}`)}
+                                      disabled={isLocked}
+                                      className={isCompleted 
+                                        ? 'border-zinc-300 text-zinc-700 hover:bg-zinc-50 text-xs h-8' 
+                                        : 'bg-green-700 hover:bg-green-700 text-white text-xs h-8'
+                                      }
+                                    >
+                                      {isCompleted ? (
+                                        language === 'en' ? 'Review' : '다시 보기'
+                                      ) : isStarted ? (
+                                        t('continueLearning')
+                                      ) : (
+                                        language === 'en' ? 'Start Learn' : '학습 시작'
+                                      )}
+                                    </Button>
+                                  ) : (
+                                    <Button variant="secondary" size="sm" onClick={handleSubscribe} disabled={registering} className="border border-zinc-200 text-xs h-8">
+                                      {language === 'en' ? 'Enroll Required' : '수강 필요'}
+                                    </Button>
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })()
+                      )}
                     </div>
                   )}
                 </div>

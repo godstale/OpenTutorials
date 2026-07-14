@@ -1,3 +1,22 @@
+## [2026-07-14] fix | 단일 카드를 가지는 챕터(자식이 없는 챕터)의 커리큘럼 렌더링 수정
+
+### 작업 내용
+- 강좌 커리큘럼(TOC)에서 자식(children) 섹션이 없고 직접 단일 카드를 참조하는 챕터(예: "강좌 소개", "2장. 네트워크 설정" 등)를 unfold/상세조회했을 때 내부 카드가 표시되지 않던 문제를 해결.
+- 강좌 상세 화면 및 강좌 목록 다이얼로그의 커리큘럼 렌더링 로직을 보완하여 단일 카드를 갖는 챕터도 온전하게 리스트 아이템으로 렌더링되도록 개선.
+
+### 주요 변경 및 구현 상세
+1. **강좌 상세 화면 커리큘럼 렌더링 수정 (`app/(user)/courses/[slug]/client.tsx`)**:
+   - `isChapterCompleted` 계산 시 `chapter.children`이 없는 경우 `chapter.filename`이 완료되었는지 체크하도록 로직 확장.
+   - 챕터 확장 시 (`isExpanded`) `chapter.children`이 존재할 때는 기존과 같이 자식 섹션들을 렌더링하고, 존재하지 않으면서 `chapter.filename`이 있을 때는 챕터 자체를 단일 섹션 카드로 간주하여 렌더링하도록 렌더링 조건 및 UI 분기 추가.
+2. **강좌 목록 상세 팝업 커리큘럼 렌더링 수정 (`app/(user)/courses/page.tsx`)**:
+   - 아코디언 컴포넌트 내의 챕터 목록 표시 영역에서 `chapter.children`이 없고 `chapter.filename`만 정의된 경우, 단일 항목으로 구성된 리스트가 생성되도록 UI 구조 보강.
+
+### 변경된 파일
+- `app/(user)/courses/[slug]/client.tsx`
+- `app/(user)/courses/page.tsx`
+
+---
+
 ## [2026-07-13] fix | LLM 에이전트 QnA 전체 목차 컨텍스트 추가 및 하네스 에이전트 카드 내용 전송 로직 개선
 
 ### 작업 내용
@@ -187,6 +206,32 @@ Ran lint. See lint-report.md for details.
 # Wiki Log
 
 <!-- Append-only. 최신 항목을 위에 추가. -->
+
+## 2026-07-14 (16th Session)
+
+- **[REFACTOR] 하드코딩된 오프라인 폴백 강좌 및 동기화 주입 로직 전체 제거**
+  - **수정/갱신 파일**:
+    - [app/(user)/courses/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/page.tsx) — 하드코딩된 오프라인 폴백 강좌 및 `ensureRequiredCourses` 함수를 완전히 삭제하고, 원격 데이터 획득 실패 시 빈 배열로 복구되도록 단순화.
+    - [app/(user)/courses/manage/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/manage/page.tsx) — 하드코딩된 `OFFLINE_FALLBACK_COURSES` 배열을 완전히 비우고, `fetchOnlineCourses` 시 로컬 폴백을 강제 보정 주입하는 루프 로직을 제거.
+    - [app/(user)/courses/[slug]/client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/[slug]/client.tsx) — 동일하게 하드코딩 `OFFLINE_FALLBACK_COURSES` 배치를 비우고, 업데이트 대조 시 하드코딩된 폴백 목록을 확인 및 추가하는 로직을 제거.
+  - **작업 내용**:
+    - 로컬에 하드코딩으로 강제 보존되던 캐시성 오프라인 폴백 강좌들을 일괄 제거했습니다.
+    - 이를 통해 강좌 데이터의 신뢰성을 확보하고, 사용자가 파일로 직접 등록하거나 GITHUB 스토어 연동을 통해서만 강좌를 노출 및 수강 신청하도록 단순화했습니다.
+  - **Concepts**: [[RemoveOfflineFallbacks]], [[DynamicCourseFetchingOnly]]
+
+## 2026-07-14 (15th Session)
+
+- **[BUGFIX] GITHUB에서 삭제된 "신경망과 LLM 개론" 강좌 노출 및 학습 오류 해결**
+  - **수정/갱신 파일**:
+    - [app/(user)/courses/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/page.tsx) — 온라인 강좌 검색 및 오프라인 폴백 목록에서 "신경망과 LLM 개론" 강좌 하드코딩 제거, `ensureRequiredCourses` 기본 강좌 자동 추가 로직 수정.
+    - [app/(user)/courses/manage/page.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/manage/page.tsx) — 강좌 관리 오프라인 폴백 목록(`OFFLINE_FALLBACK_COURSES`)에서 해당 강좌 제거.
+    - [app/(user)/courses/[slug]/client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/[slug]/client.tsx) — 수강 상세 오프라인 폴백 목록(`OFFLINE_FALLBACK_COURSES`)에서 해당 강좌 제거.
+    - [db.json](file:///C:/Workspace/Projects/OpenTutorials/db.json) — 로컬 데이터베이스 파일 내에서 "신경망과 LLM 개론" 강좌 패키지(`course_packages`), 수강 상태(`user_package_subscriptions`), 진행 상황(`user_progress`) 및 AI 튜터 지식 베이스(`course_wiki`) 항목 일괄 제거.
+    - [public/courses/neutral-network-and-llm](file:///C:/Workspace/Projects/OpenTutorials/public/courses/neutral-network-and-llm) — 불필요해진 로컬 강좌 리소스 디렉토리 삭제.
+  - **작업 내용**:
+    - GITHUB 등 원격지에서 삭제된 "신경망과 LLM 개론" 강좌가 클라이언트 단의 오프라인 하드코딩 폴백 및 로컬 DB 잔재 데이터로 인해 검색 화면에 계속 노출되고, 학습도 가능했던 버그를 해결했습니다.
+    - 뷰단(검색, 상세, 관리)의 하드코딩 데이터를 걷어내고, 로컬 DB 내 관련 엔티티들을 정리 및 리소스 폴더를 삭제함으로써 강좌가 비활성화되도록 수정했습니다.
+  - **Concepts**: [[CourseDeactivation]], [[CleanUpDbJson]], [[RemoveHardcodedCourses]], [[ResourceDirectoryRemoval]]
 
 ## 2026-07-12 (14th Session)
 
@@ -2453,3 +2498,22 @@ Ran lint. See lint-report.md for details.
     - **로컬 DB 갱신 및 중복 필드 픽스**: `db.json` 내의 로컬 강좌 패키지 데이터(`iot-communication` 및 `neutral-network-and-llm`)에 `"license": "CC-BY-NC-4.0"`과 `"license_file": "LICENSE"`를 추가했습니다. 특히, 기존 파일 맨 끝에 중복 정의되어 덮어쓰기를 유발하던 `"license": "all-rights-reserved"`와 `"license_file": null` 필드를 완전히 제거 및 교체하여, 로컬 데이터베이스 조회 시 라이선스가 정상 리턴되도록 버그를 최종 해결했습니다.
     - **동적 로컬 라이선스 파일 검증 및 공식 설명서 리다이렉트**: 강좌 번들 내에 실제 라이선스 파일이 서빙되고 있는지 서버 단([route.ts](file:///C:/Workspace/Projects/OpenTutorials/app/api/courses/[slug]/route.ts))에서 `fs.existsSync`를 이용해 판단하고, 그 결과를 `license_file_exists` 플래그로 응답하도록 조치했습니다. 클라이언트([client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/[slug]/client.tsx))에서는 이 플래그에 따라 파일이 존재하면 로컬 첨부파일로 바로 링크하고, 존재하지 않을 때만 크리에이티브 커먼즈(CC) 공식 약관 및 설명서 페이지로 리다이렉트하여 404 에러를 방지하면서도 첨부파일 우선 노출 요구사항을 모두 충족했습니다.
   - **Concepts**: [[CourseLicenseCorrection]], [[LicenseFallbackChange]], [[LocalDbLicenseUpdate]], [[DuplicateJsonFieldFix]], [[LicenseDocument404Fix]], [[CcLicenseRedirect]], [[DynamicLicenseFileCheck]]
+
+## 2026-07-14 (12th Session)
+
+- **[BUGFIX/UI] 강좌 커리큘럼에서 완료된 챕터(또는 단일 카드 챕터) unfold가 작동하지 않는 버그 수정**
+  - **수정 파일**:
+    - [app/(user)/courses/[slug]/client.tsx](file:///C:/Workspace/Projects/OpenTutorials/app/(user)/courses/[slug]/client.tsx)
+  - **작업 내용**:
+    - **초기 상태 토글 오류 수정**: `expandedChapters`의 초기 상태가 `undefined`일 때 토글 함수 `toggleChapter`가 무조건 `false`로 설정하던 문제를 해결했습니다. `toggleChapter`가 컴포넌트 렌더링 시점에 연산된 현재 `isExpanded` 값을 매개변수로 직접 받도록 리팩토링하고, 클릭 시 해당 상태의 반대 값(`!currentExpanded`)으로 전환하게 함으로써 완료되었거나 단일 카드로 구성된 챕터를 클릭해도 정상적으로 접기/펼치기(fold/unfold)가 상호작용하도록 버그를 해결했습니다.
+  - **Concepts**: [[CurriculumToggleFix]], [[UnfoldCompletedChapterFix]], [[ExpandedStateToggleCorrectness]]
+
+- **[CHORE/DB] 수동 강좌 전체 삭제 반영 및 신규 브랜치 분리 생성**
+  - **수정 파일**:
+    - [db.json](file:///C:/Workspace/Projects/OpenTutorials/db.json)
+  - **작업 내용**:
+    - **초기 상태 데이터 정돈**: 로컬 DB 꼬임 현상으로 인해 강좌 데이터를 수동으로 전체 삭제하고 초기 상태(`course_packages: []`, `user_package_subscriptions: []`, `user_progress: []`)로 수렴하도록 `db.json`을 정리했습니다.
+    - **버전 관리 브랜치 분리**: 해당 변경 사항을 안전하게 격리하고 관리할 수 있도록 신규 브랜치 `reset-courses-state`를 생성하고 원격 저장소(`origin`)에 푸시하여 반영했습니다.
+  - **Concepts**: [[DatabaseReset]], [[BranchIsolation]], [[EmptyCoursesState]]
+
+
