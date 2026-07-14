@@ -2463,3 +2463,12 @@ Ran lint. See lint-report.md for details.
     - **초기 상태 토글 오류 수정**: `expandedChapters`의 초기 상태가 `undefined`일 때 토글 함수 `toggleChapter`가 무조건 `false`로 설정하던 문제를 해결했습니다. `toggleChapter`가 컴포넌트 렌더링 시점에 연산된 현재 `isExpanded` 값을 매개변수로 직접 받도록 리팩토링하고, 클릭 시 해당 상태의 반대 값(`!currentExpanded`)으로 전환하게 함으로써 완료되었거나 단일 카드로 구성된 챕터를 클릭해도 정상적으로 접기/펼치기(fold/unfold)가 상호작용하도록 버그를 해결했습니다.
   - **Concepts**: [[CurriculumToggleFix]], [[UnfoldCompletedChapterFix]], [[ExpandedStateToggleCorrectness]]
 
+- **[CHORE/DB] 수동 강좌 전체 삭제 반영 및 신규 브랜치 분리 생성**
+  - **수정 파일**:
+    - [db.json](file:///C:/Workspace/Projects/OpenTutorials/db.json)
+  - **작업 내용**:
+    - **초기 상태 데이터 정돈**: 로컬 DB 꼬임 현상으로 인해 강좌 데이터를 수동으로 전체 삭제하고 초기 상태(`course_packages: []`, `user_package_subscriptions: []`, `user_progress: []`)로 수렴하도록 `db.json`을 정리했습니다.
+    - **버전 관리 브랜치 분리**: 해당 변경 사항을 안전하게 격리하고 관리할 수 있도록 신규 브랜치 `reset-courses-state`를 생성하고 원격 저장소(`origin`)에 푸시하여 반영했습니다.
+  - **Concepts**: [[DatabaseReset]], [[BranchIsolation]], [[EmptyCoursesState]]
+
+
